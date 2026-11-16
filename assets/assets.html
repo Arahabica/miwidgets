@@ -1,0 +1,337 @@
+<!-- 資産損益推移テンプレート: 保有銘柄ごとの損益(円)の日次推移を折れ線チャートで表示する。 -->
+<div id="root" style="box-sizing:border-box;font-family:inherit;color:var(--hatch-widget-text,#1c1c1e);margin:0;padding:10px 4% 16px;width:100%;">
+<div id="head" style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;"></div>
+<svg id="chart" viewBox="0 0 360 200" style="width:100%;display:block;touch-action:manipulation;aspect-ratio:360/200;"></svg>
+<div id="lgbox" style="position:relative;">
+<div id="legend" class="lgwrap"></div>
+<div id="panel" style="display:none;"></div>
+</div>
+<style>
+.lgwrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 8px;}
+.lg{display:flex;align-items:center;gap:4px;background:none;border:none;padding:3px 1px;font-size:11px;line-height:1.6;overflow:visible;color:var(--hatch-widget-text,#1c1c1e);cursor:pointer;text-align:left;min-width:0;}
+.lg .sw{width:10px;height:3px;border-radius:2px;flex:none;}
+.lg .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.lg .vl{margin-left:auto;font-weight:600;flex:none;}
+svg .ln{transition:opacity .15s;}
+#panel{position:absolute;inset:0;background:var(--w-panel-bg);color:var(--w-panel-text);border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,0.28);padding:8px 10px;overflow-y:auto;z-index:2;}
+#panel .prow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px 10px;font-size:11px;}
+#panel .pi{display:flex;align-items:center;gap:4px;min-width:0;line-height:1.6;padding:1px 0;}
+#panel .pi .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#panel .pi .vl{margin-left:auto;font-weight:600;flex:none;}
+</style>
+<script>
+(function(){
+try {
+/* ============================================================
+ * data: 変更しうる値はすべてここに集約。
+ * 以下の描画ロジックは data だけを参照して生成する。
+ * ============================================================ */
+var data = {
+  /* ---- 表示テキスト -------------------------------------------
+   * 型: { [キー]: string } ・すべて必須
+   */
+  text: {
+    totalLabel: '通算損益',                  // string: ヘッダーの合計ラベル
+    dayChangeLabel: '前日比',                // string: ヘッダーの前日比ラベル
+    panelTotalLabel: '合計損益',             // string: パネル内の合計ラベル
+    asOfSuffix: '時点',                      // string: パネル見出しの日付の後ろに付く語
+    noData: 'この時点のデータはありません',  // string: 選択銘柄に値がない日のメッセージ
+    unitYen: '円',                           // string: 金額の単位
+    unitMan: '万'                            // string: 凡例・Y軸の単位(1万=10000円)
+  },
+
+  /* ---- 色 -----------------------------------------------------
+   * 型: { [キー]: string(CSSの色: '#rrggbb' など) } ・すべて必須
+   */
+  colors: {
+    up: '#1a9e54',         // 利益(本体: ヘッダー・凡例)
+    down: '#d33',          // 損失(本体)
+    panelUp: '#178a4c',    // 利益(パネル内)
+    panelDown: '#d33',     // 損失(パネル内)
+    panelBg: '#ffffff',    // パネル背景
+    panelText: '#1c1c1e',  // パネル文字
+    panelMuted: '#6e6e73', // パネルの補助文字
+    panelZeroLine: '#c7c7cc', // ミニチャートの0ライン
+    dotStroke: '#ffffff'   // 選択点の縁
+  },
+
+  /* ---- ヘッダー(サマリー) -------------------------------------
+   * 型: { returnPct: number, dayChange: number }
+   * 通算損益(金額)は totals の末尾から自動表示。
+   * ※ 手入力。totals / items の値と食い違わないよう注意。
+   */
+  summary: {
+    returnPct: 1.2,      // number: 通算損益率(%)。例: 1.2 → (+1.2%)
+    dayChange: -11800    // number: 前日比(円)。負で赤、正で緑
+  },
+
+  /* ---- チャートのレイアウト・スケール --------------------------
+   * 型: { [キー]: number } ・すべて必須。座標は viewBox(width × height)基準
+   */
+  chart: {
+    width: 360, height: 200,    // number: viewBox のサイズ
+    left: 36, right: 342,       // number: プロット領域のX範囲(left < right)
+    top: 10, bottom: 180,       // number: プロット領域のY範囲(top < bottom)
+    xLabelY: 195,               // number: X軸ラベルのY位置
+    xLabelStep: 2,              // number(整数>=1): X軸ラベルを何点おきに出すか(先頭と末尾は常に表示)
+    yTickStep: 10000,           // number(>0): Y軸目盛り間隔(円)。データの幅に合わせて調整
+    yPadRatio: 0.07,            // number(>=0): データ範囲の上下余白(比率)
+    lineWidth: 1.6,             // number: 折れ線の太さ
+    endDotR: 2.2,               // number: 折れ線の末尾の点の半径
+    guideDotR: 2.6,             // number: 日付選択時の点の半径
+    fontSize: 8                 // number: 軸ラベルの文字サイズ
+  },
+
+  /* ---- 銘柄別ミニチャート(パネル内) ---------------------------
+   * 型: { [キー]: number } ・すべて必須
+   */
+  mini: {
+    width: 300, height: 72,     // number: viewBox のサイズ
+    padX: 8, padY: 6,           // number: 内側の余白
+    lineWidth: 1.8,             // number: 折れ線の太さ
+    endDotR: 2.2,               // number: 末尾の点の半径
+    selDotR: 3.2                // number: 選択日の点の半径
+  },
+
+  /* ---- 日付(X軸) ----------------------------------------------
+   * 型: string[]  ・1件以上(2件以上推奨)
+   * 日付の間隔に関係なく等間隔で配置される。表示文字列をそのまま出す。
+   * items[].pnl と totals は、この配列と同じ長さにする。
+   */
+  dates: ['11/10', '11/11', '11/12', '11/13', '11/16', '11/17'],
+
+  /* ---- 合計損益(日付ごと) -------------------------------------
+   * 型: number[]  ・単位は円 ・長さは dates と同じ
+   * ※ 手入力。各銘柄の pnl の合計と一致させる。
+   * ※ 説明用の架空データ
+   */
+  totals: [0, 19500, -13900, 38100, 47900, 36100],
+
+  /* ---- 銘柄ごとの損益推移 -------------------------------------
+   * 型: { name: string, color: string, pnl: (number|null)[] }[]
+   *   name:  凡例・パネルに出す銘柄名
+   *   color: 折れ線・凡例の色(CSSの色)
+   *   pnl:   日付ごとの損益(円)。長さは dates と同じ。
+   *          その日のデータがなければ null(線はその点を飛ばす)
+   * 1銘柄以上。pnl に数値が1つも無い銘柄は不可。
+   * 凡例の値は、各銘柄の最後の数値(null以外)を自動表示。
+   * ※ 説明用の架空データ(実際の株価ではない)
+   */
+  items: [
+    { name: 'オルカン',   color: '#3a5ad1', pnl: [0, 8000, -6000, 16000, 22000, 18000] },
+    { name: '日経平均',   color: '#d1993a', pnl: [0, 2700, -1800, 4500, 6300, 3600] },
+    { name: 'Nvidia',     color: '#4aa83a', pnl: [0, 11200, -7600, 14000, 20800, 12400] },
+    { name: 'Apple',      color: '#a93ad1', pnl: [0, -2400, 1500, 3600, -1200, 2100] }
+  ]
+};
+
+/* ============================================================
+ * 以下は data からの描画ロジック
+ * ============================================================ */
+var T = data.text, C = data.colors, CH = data.chart, MI = data.mini;
+var NS = 'http://www.w3.org/2000/svg';
+
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function sign(v){ return v > 0 ? '+' : ''; }
+function fmt(v){ return sign(v) + v.toLocaleString('ja-JP') + T.unitYen; }
+function fmtMan(v){ return sign(v) + (v / 10000).toFixed(1) + T.unitMan; }
+function fmtTick(v){ return v === 0 ? '0' + T.unitMan : sign(v) + (v / 10000) + T.unitMan; }
+function colHead(v){ return v < 0 ? C.down : C.up; }
+function colPanel(v){ return v < 0 ? C.panelDown : C.panelUp; }
+function last(arr){ return arr[arr.length - 1]; }
+
+/* ---- 派生値 ---- */
+var N = data.dates.length;
+var xs = data.dates.map(function(_, j){ return CH.left + j * ((CH.right - CH.left) / (N - 1)); });
+var all = [];
+data.items.forEach(function(it){ it.pnl.forEach(function(v){ if (v !== null) all.push(v); }); });
+var dMin = Math.min.apply(null, all), dMax = Math.max.apply(null, all);
+var pad = (dMax - dMin) * CH.yPadRatio;
+var lo = dMin - pad, hi = dMax + pad;
+function Y(v){ return CH.top + (hi - v) * ((CH.bottom - CH.top) / (hi - lo)); }
+function r1(n){ return n.toFixed(1); }
+data.items.forEach(function(it){
+  it.ys = it.pnl.map(function(v){ return v === null ? null : Y(v); });
+  it.total = last(it.pnl.filter(function(v){ return v !== null; }));
+});
+
+/* ---- ヘッダー ---- */
+function buildHead(){
+  var total = last(data.totals);
+  var pct = data.summary.returnPct;
+  document.getElementById('head').innerHTML =
+    '<span style="font-size:12px;color:var(--hatch-widget-muted,#6e6e73);">' + esc(T.totalLabel) + '</span>' +
+    '<span style="font-size:22px;font-weight:700;color:' + colHead(total) + ';">' + fmt(total) + '</span>' +
+    '<span style="font-size:12px;color:' + colHead(pct) + ';">(' + sign(pct) + pct + '%)</span>' +
+    '<span style="font-size:12px;margin-left:auto;">' + esc(T.dayChangeLabel) + ' <b style="color:' + colHead(data.summary.dayChange) + ';">' + fmt(data.summary.dayChange) + '</b></span>';
+}
+
+/* ---- メインチャート ---- */
+function buildChart(){
+  var svg = document.getElementById('chart');
+  svg.setAttribute('viewBox', '0 0 ' + CH.width + ' ' + CH.height);
+  var s = '', fs = CH.fontSize;
+  // Y軸グリッドと目盛り
+  for (var t = Math.ceil(lo / CH.yTickStep) * CH.yTickStep; t <= hi; t += CH.yTickStep) {
+    var y = r1(Y(t)), zero = (t === 0);
+    s += '<line x1="' + CH.left + '" y1="' + y + '" x2="' + CH.right + '" y2="' + y + '" stroke="var(--hatch-widget-border,#d1d1d6)" stroke-width="' + (zero ? 1.4 : 0.6) + '"' + (zero ? ' stroke-dasharray="3 3"' : '') + '/>';
+    s += '<text x="' + (CH.left - 3) + '" y="' + r1(Y(t) + 3) + '" font-size="' + fs + '" text-anchor="end" fill="var(--hatch-widget-muted,#6e6e73)">' + fmtTick(t) + '</text>';
+  }
+  // 銘柄ごとの折れ線
+  data.items.forEach(function(it, i){
+    var d = '', lx = null, ly = null;
+    it.ys.forEach(function(y, j){
+      if (y === null) return;
+      d += (d ? ' L' : 'M') + r1(xs[j]) + ',' + r1(y);
+      lx = xs[j]; ly = y;
+    });
+    s += '<path class="ln" data-i="' + i + '" d="' + d + '" fill="none" stroke="' + it.color + '" stroke-width="' + CH.lineWidth + '" stroke-linejoin="round"/>';
+    s += '<circle class="ln" data-i="' + i + '" cx="' + r1(lx) + '" cy="' + r1(ly) + '" r="' + CH.endDotR + '" fill="' + it.color + '"/>';
+  });
+  s += '<line id="guide" y1="' + CH.top + '" y2="' + CH.bottom + '" stroke="var(--hatch-widget-muted,#6e6e73)" stroke-width="1" stroke-dasharray="2 2" style="display:none;"/><g id="dots"></g>';
+  // X軸ラベル
+  var lastIdx = N - 1;
+  data.dates.forEach(function(dt, j){
+    if (j % CH.xLabelStep !== 0 && j !== lastIdx) return;
+    var anchor = j === 0 ? 'start' : (j === lastIdx ? 'end' : 'middle');
+    s += '<text x="' + r1(xs[j]) + '" y="' + CH.xLabelY + '" font-size="' + fs + '" text-anchor="' + anchor + '" fill="var(--hatch-widget-muted,#6e6e73)">' + esc(dt) + '</text>';
+  });
+  s += '<rect id="hit" x="' + CH.left + '" y="0" width="' + (CH.right - CH.left) + '" height="' + CH.bottom + '" fill="transparent"/>';
+  svg.innerHTML = s;
+}
+
+/* ---- 凡例 ---- */
+function buildLegend(){
+  document.getElementById('legend').innerHTML = data.items.map(function(it, i){
+    return '<button class="lg" data-i="' + i + '"><span class="sw" style="background:' + it.color + '"></span><span class="nm">' + esc(it.name) + '</span><span class="vl" style="color:' + colHead(it.total) + '">' + fmtMan(it.total) + '</span></button>';
+  }).join('');
+}
+
+/* ---- パネル内ミニチャート ---- */
+function miniChart(it, dj){
+  var pts = [];
+  it.pnl.forEach(function(v, j){ if (v !== null) pts.push([j, v]); });
+  if (!pts.length) return '';
+  var mn = Math.min.apply(null, pts.map(function(p){ return p[1]; }));
+  var mx = Math.max.apply(null, pts.map(function(p){ return p[1]; }));
+  var p2 = (mx - mn) * 0.15 || 1000;
+  var l = mn - p2, h = mx + p2;
+  var w = MI.width - MI.padX * 2, ph = MI.height - MI.padY * 2 - 2;
+  function X(j){ return MI.padX + j * (w / (N - 1)); }
+  function Ym(v){ return MI.padY + (h - v) * (ph / (h - l)); }
+  var d = pts.map(function(p, k){ return (k === 0 ? 'M' : 'L') + r1(X(p[0])) + ',' + r1(Ym(p[1])); }).join(' ');
+  var s = '<svg viewBox="0 0 ' + MI.width + ' ' + MI.height + '" style="width:100%;display:block;margin-top:4px;">';
+  if (l < 0 && h > 0) s += '<line x1="' + MI.padX + '" y1="' + r1(Ym(0)) + '" x2="' + (MI.width - MI.padX) + '" y2="' + r1(Ym(0)) + '" stroke="' + C.panelZeroLine + '" stroke-width="0.8" stroke-dasharray="3 3"/>';
+  s += '<path d="' + d + '" fill="none" stroke="' + it.color + '" stroke-width="' + MI.lineWidth + '" stroke-linejoin="round"/>';
+  var lp = last(pts);
+  s += '<circle cx="' + r1(X(lp[0])) + '" cy="' + r1(Ym(lp[1])) + '" r="' + MI.endDotR + '" fill="' + it.color + '"/>';
+  if (it.pnl[dj] !== null) s += '<circle cx="' + r1(X(dj)) + '" cy="' + r1(Ym(it.pnl[dj])) + '" r="' + MI.selDotR + '" fill="' + it.color + '" stroke="' + C.dotStroke + '" stroke-width="1.2"/>';
+  return s + '</svg>';
+}
+
+/* ---- 状態と再描画 ---- */
+if (!window.hatchWidget) {
+  var memState = null;
+  window.hatchWidget = { getState: function(d){ return memState || d; }, setState: function(s){ memState = s; } };
+}
+var st = window.hatchWidget.getState({sel:-1, date:-1});
+
+function render(){
+  var sel = st.sel, dj = st.date;
+  document.querySelectorAll('svg .ln').forEach(function(el){
+    el.style.opacity = (sel < 0 || +el.dataset.i === sel) ? '1' : '0.12';
+  });
+  document.querySelectorAll('.lg').forEach(function(b){
+    b.style.opacity = (sel < 0 || +b.dataset.i === sel) ? '1' : '0.45';
+    b.style.fontWeight = (+b.dataset.i === sel) ? '700' : '400';
+  });
+  var guide = document.getElementById('guide');
+  var dots = document.getElementById('dots');
+  var panel = document.getElementById('panel');
+  if (dj < 0) { guide.style.display = 'none'; dots.innerHTML = ''; panel.style.display = 'none'; return; }
+  guide.setAttribute('x1', xs[dj]); guide.setAttribute('x2', xs[dj]); guide.style.display = '';
+  var dh = '';
+  data.items.forEach(function(it){
+    var y = it.ys[dj];
+    if (y === null) return;
+    dh += '<circle cx="' + xs[dj] + '" cy="' + y + '" r="' + CH.guideDotR + '" fill="' + it.color + '" stroke="' + C.dotStroke + '" stroke-width="0.8"/>';
+  });
+  dots.innerHTML = dh;
+  panel.innerHTML = panelHtml(sel, dj);
+  panel.style.display = '';
+}
+
+/* パネルの中身(HTML文字列)を組み立てる */
+function panelHtml(sel, dj){
+  var asOf = esc(data.dates[dj]) + esc(T.asOfSuffix);
+  if (sel >= 0) {
+    var it = data.items[sel], v = it.pnl[dj];
+    var body = (v === null)
+      ? '<div style="font-size:12px;color:' + C.panelMuted + ';">' + esc(T.noData) + '</div>'
+      : '<div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:4px;border-radius:2px;background:' + it.color + ';flex:none;"></span><span style="font-size:13px;font-weight:700;">' + esc(it.name) + '</span><span style="margin-left:auto;font-size:16px;font-weight:700;color:' + colPanel(v) + '">' + fmt(v) + '</span></div>';
+    return '<div style="font-size:12px;font-weight:700;margin-bottom:4px;">' + asOf + '</div>' + body + miniChart(it, dj);
+  } else {
+    var rows = '';
+    data.items.forEach(function(it){
+      var v = it.pnl[dj];
+      if (v === null) return;
+      rows += '<div class="pi"><span style="width:10px;height:3px;border-radius:2px;background:' + it.color + ';flex:none;"></span><span class="nm">' + esc(it.name) + '</span><span class="vl" style="color:' + colPanel(v) + '">' + fmt(v) + '</span></div>';
+    });
+    var tv = data.totals[dj];
+    return '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:12px;font-weight:700;">' + asOf + '</span><span style="font-size:11px;color:' + C.panelMuted + ';">' + esc(T.panelTotalLabel) + '</span><span style="font-size:15px;font-weight:700;color:' + colPanel(tv) + '">' + fmt(tv) + '</span></div><div class="prow">' + rows + '</div>';
+  }
+}
+
+/* パネルがスクロールなしで収まるよう、凡例エリアの最小高さを確保する。
+ * 凡例の銘柄数が少なくてもパネルが切れない。幅が変わったら再計算する */
+function reserve(){
+  var box = document.getElementById('lgbox');
+  var panel = document.getElementById('panel');
+  box.style.minHeight = '';
+  panel.style.visibility = 'hidden';
+  panel.style.display = '';
+  panel.style.bottom = 'auto';
+  var need = 0;
+  function measure(html){ panel.innerHTML = html; need = Math.max(need, Math.ceil(panel.getBoundingClientRect().height) + 2); }
+  data.dates.forEach(function(_, j){ measure(panelHtml(-1, j)); });
+  data.items.forEach(function(_, i){ data.dates.forEach(function(__, j){ measure(panelHtml(i, j)); }); });
+  panel.style.bottom = '';
+  panel.style.visibility = '';
+  panel.style.display = 'none';
+  box.style.minHeight = need + 'px';
+}
+function set(next){ st = next; window.hatchWidget.setState(st); render(); }
+
+/* ---- 初期化 ---- */
+var rootEl = document.getElementById('root');
+rootEl.style.setProperty('--w-panel-bg', C.panelBg);
+rootEl.style.setProperty('--w-panel-text', C.panelText);
+buildHead(); buildChart(); buildLegend(); reserve();
+
+document.querySelectorAll('.lg').forEach(function(b){
+  b.addEventListener('click', function(){
+    var i = +b.dataset.i;
+    set({sel: (st.sel === i ? -1 : i), date: st.date});
+  });
+});
+document.getElementById('chart').addEventListener('click', function(e){
+  var r = e.currentTarget.getBoundingClientRect();
+  var x = (e.clientX - r.left) * (CH.width / r.width);
+  var best = 0, bd = 1e9;
+  xs.forEach(function(xv, j){ var dd = Math.abs(xv - x); if (dd < bd) { bd = dd; best = j; } });
+  set({sel: st.sel, date: (st.date === best ? -1 : best)});
+});
+rootEl.addEventListener('click', function(e){
+  if (e.target.closest('.lg') || e.target.closest('#chart') || e.target.closest('#panel')) return;
+  if (st.sel >= 0 || st.date >= 0) set({sel: -1, date: -1});
+});
+window.addEventListener('resize', function(){ reserve(); render(); });
+window.addEventListener('hatch-widget-state', function(e){ st = e.detail.state; render(); });
+render();
+
+} catch (err) {
+  document.getElementById('root').insertAdjacentHTML('afterbegin','<pre style="white-space:pre-wrap;color:#d33;font-size:11px;">ERROR: '+String(err && err.stack || err).replace(/</g,'&lt;')+'</pre>');
+}
+})();
+</script>
+</div>
