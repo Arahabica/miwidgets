@@ -27,24 +27,27 @@ Muse のチャット吹き出し内に HTML を表示する機能（本プロジ
 ├── README.md
 ├── docs/
 │   └── inline-widget-spec.md   # inline widget の仕様メモ
-└── assets/
-    ├── assets.html             # テンプレート本体(資産損益推移)
-    └── assets_sample.html      # Muse のチャット画面を模したプレビュー用ページ
+├── assets/
+│   ├── assets.html             # テンプレート本体(資産損益推移)
+│   └── assets_sample.html      # Muse のチャット画面を模したプレビュー用ページ
+└── weather/
+    ├── weather.html            # 天気ウィジェット(Aurora Glass: 空のグラデーション × 6時間ごとの気温曲線)
+    └── weather_sample.html     # Muse のチャット画面を模したプレビュー用ページ
 ```
 
 テンプレートが増えたら、ここに追記していきます。
 
 ## プレビュー
 
-`assets_sample.html` は、`assets.html` を `fetch` で読み込んで、Muse のチャット画面を模した吹き出しの中に表示します。`fetch` を使うため、ローカルサーバー経由で開きます。
+`assets/assets_sample.html` と `weather/weather_sample.html` は、各テンプレートを `fetch` で読み込んで、Muse のチャット画面を模した吹き出しの中に表示します。`fetch` を使うため、ローカルサーバー経由で開きます。
 
 ```
-cd assets
+cd assets    # 天気は cd weather
 python3 -m http.server 8000
-# → http://localhost:8000/assets_sample.html
+# → http://localhost:8000/assets_sample.html   (天気は weather_sample.html)
 ```
 
-`assets.html` を編集して保存し、ブラウザをリロードすれば反映されます。
+テンプレートを編集して保存し、ブラウザをリロードすれば反映されます。
 
 ※ 吹き出しの見た目は推測による再現で、実際の Muse の画面とは異なります。
 
