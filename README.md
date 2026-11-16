@@ -25,6 +25,7 @@ Muse のチャット吹き出し内に HTML を表示する機能（本プロジ
 ```
 .
 ├── README.md
+├── LICENSE                     # MIT License
 ├── docs/
 │   └── inline-widget-spec.md   # inline widget の仕様メモ
 ├── assets/
@@ -54,3 +55,7 @@ python3 -m http.server 8000
 ## ステータス
 
 準備中。まずは仕様の整理を行っています。未確認事項は仕様メモ内にまとめています。
+
+## ライセンス
+
+[MIT License](LICENSE)
