@@ -25,11 +25,28 @@ Muse のチャット吹き出し内に HTML を表示する機能（本プロジ
 ```
 .
 ├── README.md
-└── docs/
-    └── inline-widget-spec.md   # inline widget の仕様メモ
+├── docs/
+│   └── inline-widget-spec.md   # inline widget の仕様メモ
+└── assets/
+    ├── assets.html             # テンプレート本体(資産損益推移)
+    └── assets_sample.html      # Muse のチャット画面を模したプレビュー用ページ
 ```
 
 テンプレートが増えたら、ここに追記していきます。
+
+## プレビュー
+
+`assets_sample.html` は、`assets.html` を `fetch` で読み込んで、Muse のチャット画面を模した吹き出しの中に表示します。`fetch` を使うため、ローカルサーバー経由で開きます。
+
+```
+cd assets
+python3 -m http.server 8000
+# → http://localhost:8000/assets_sample.html
+```
+
+`assets.html` を編集して保存し、ブラウザをリロードすれば反映されます。
+
+※ 吹き出しの見た目は推測による再現で、実際の Muse の画面とは異なります。
 
 ## ステータス
 
