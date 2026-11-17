@@ -43,6 +43,9 @@ Muse のチャット吹き出し内に HTML を表示する機能（本プロジ
 ├── quiz/
 │   ├── quiz.html               # 4択クイズ(Duolingo 風・高さ 600px 固定。一通り解いたら、まちがえた問題をすべて直すまで繰り返し、そのあと結果表示)
 │   └── quiz_sample.html        # プレビュー用ページ
+├── secret/
+│   ├── secret.html             # 秘密のメッセージ(金庫風。スマホの数字キーボードで6桁のパスコードを入れると開き、テキスト/画像/両方のメッセージ。「閉じる」でロックに戻る)
+│   └── secret_sample.html      # プレビュー用ページ(パスコードは 123456)
 └── route/
     ├── route.html              # 乗り換え案内(縦のタイムライン × 現在時刻に応じた「次の行動」表示。所要時間・運賃などは経路から自動計算)
     └── route_sample.html       # プレビュー用ページ(現在時刻を固定した6パターン)
@@ -52,10 +55,10 @@ Muse のチャット吹き出し内に HTML を表示する機能（本プロジ
 
 ## プレビュー
 
-各ディレクトリの `*_sample.html`(`assets_sample.html`、`weather_sample.html`、`clock_sample.html`、`omikuji_sample.html`、`quiz_sample.html`、`route_sample.html`)は、各テンプレートを `fetch` で読み込んで、Muse のチャット画面を模した吹き出しの中に表示します。`fetch` を使うため、ローカルサーバー経由で開きます。
+各ディレクトリの `*_sample.html`(`assets_sample.html`、`weather_sample.html`、`clock_sample.html`、`omikuji_sample.html`、`quiz_sample.html`、`secret_sample.html`、`route_sample.html`)は、各テンプレートを `fetch` で読み込んで、Muse のチャット画面を模した吹き出しの中に表示します。`fetch` を使うため、ローカルサーバー経由で開きます。
 
 ```
-cd assets    # 他は cd weather / clock / omikuji / quiz / route
+cd assets    # 他は cd weather / clock / omikuji / quiz / secret / route
 python3 -m http.server 8000
 # → http://localhost:8000/assets_sample.html   (他は各 *_sample.html)
 ```
