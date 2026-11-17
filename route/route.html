@@ -1,0 +1,139 @@
+<!-- 乗り換え案内テンプレート: 乗換案内アプリ風の縦のタイムライン。現在時刻に合わせて「次は3番線、東京行きに乗ってください」のような次の行動を強調し、いまの位置(赤い点)を表示する。経路(路線・時刻・乗換・番線・行先)はスクリプト冒頭の data で変更でき、所要時間・乗換回数・運賃は自動計算される。Muse のテーマに追従する背景なしのデザイン。 -->
+<div id="route-w"></div>
+<style>
+#route-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#route-w *{box-sizing:border-box;}
+#route-w button{font:inherit;color:inherit;}
+
+#route-w{padding:14px 12px 14px;color:var(--hatch-widget-text,#1c1c1e);}
+#route-w .hd{display:flex;justify-content:space-between;align-items:baseline;margin:0 4px;}
+#route-w .ti{font-size:18px;font-weight:800;}
+#route-w .dt{font-size:12px;color:var(--hatch-widget-muted,#6e6e73);}
+#route-w .bn{margin:10px 0 0;padding:12px 14px;border-radius:16px;color:#fff;background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 70%,#000));box-shadow:0 6px 16px color-mix(in srgb,var(--c) 35%,transparent);}
+#route-w .bt{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.15em;padding:1px 9px;border-radius:999px;background:rgba(255,255,255,.25);}
+#route-w .bm{font-size:17px;font-weight:800;line-height:1.35;margin-top:6px;}
+#route-w .bs{font-size:12px;margin-top:4px;opacity:.92;}
+#route-w .sm{display:grid;grid-template-columns:1.5fr 1fr .8fr 1.1fr;gap:6px;margin:14px -12px 14px;padding:10px 12px;border-radius:0;background:color-mix(in srgb,var(--hatch-widget-text,#1c1c1e) 6%,transparent);text-align:left;}
+#route-w .sm small{display:block;font-size:10px;color:var(--hatch-widget-muted,#6e6e73);}
+#route-w .sm b{font-size:12.5px;font-variant-numeric:tabular-nums;}
+#route-w .rw{position:relative;display:grid;grid-template-columns:44px 20px minmax(0,1fr);column-gap:8px;row-gap:0;align-items:stretch;}
+#route-w .rw.ps{opacity:.42;}
+#route-w .tt{font-size:14px;font-weight:700;text-align:left;font-variant-numeric:tabular-nums;padding:3px 0;}
+#route-w .rl{position:relative;}
+#route-w .rl i{position:absolute;left:50%;top:-1px;bottom:-1px;width:6px;margin-left:-3px;border-radius:0;}
+#route-w .rl i.ds{background:repeating-linear-gradient(180deg,var(--hatch-widget-muted,#8e8e93) 0 4px,transparent 4px 8px);width:2px;margin-left:-1px;}
+#route-w .rl b{position:absolute;left:50%;top:7px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#fff;border:4px solid;}
+#route-w .rw.dep .rl i{top:14px;}
+#route-w .rw.arr .rl i{bottom:auto;height:15px;}
+#route-w .ct{padding:3px 0;display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;min-width:0;}
+#route-w .sn{font-size:15px;font-weight:700;}
+#route-w .pf{font-size:11px;color:var(--hatch-widget-muted,#6e6e73);border:1px solid var(--hatch-widget-border,#d1d1d6);border-radius:4px;padding:0 5px;}
+#route-w .nx{font-size:10.5px;font-weight:700;color:#fff;padding:1px 8px;border-radius:999px;}
+#route-w .rw.ride .ct{padding:10px 0;}
+#route-w .ln{font-size:11px;font-weight:700;color:#fff;padding:2px 9px;border-radius:999px;}
+#route-w .du{font-size:12px;color:var(--hatch-widget-muted,#6e6e73);}
+#route-w .rw.tr .ct{padding:9px 0;}
+#route-w .tc{font-size:12px;color:var(--hatch-widget-muted,#6e6e73);}
+#route-w .nw{position:absolute;left:0;width:44px;transform:translateY(-50%);text-align:right;z-index:2;}
+#route-w .nw span{display:inline-block;white-space:nowrap;font-size:11px;font-weight:700;color:#fff;background:#e5484d;border-radius:999px;padding:1px 6px;font-variant-numeric:tabular-nums;}
+#route-w .nd{position:absolute;left:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#e5484d;border:2px solid #fff;z-index:2;animation:rtp 1.6s ease-out infinite;}
+@keyframes rtp{0%{box-shadow:0 0 0 0 rgba(229,72,77,.55)}100%{box-shadow:0 0 0 10px rgba(229,72,77,0)}}
+
+</style>
+<script>
+(function(){
+var R = document.getElementById("route-w");
+try {
+/* Muse 以外のブラウザでも動くよう、hatchWidget が無ければメモリ上の代替を使う */
+var HW = window.hatchWidget || (function(){ var s = null; return { getState: function(d){ return s === null ? d : s; }, setState: function(v){ s = v; } }; })();
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ===== data: 表示内容はすべてここで変える(架空の経路・時刻) ===== */
+var data = {
+  now: null,                         // string | null: 現在時刻を固定する(例 '08:20')。null なら端末の現在時刻。プレビュー用
+  title: '新宿 → 国際会館',          // string: 見出し
+  date: '11/20(木)',                  // string: 日付の表示
+  /* 経路。上から順に並べる。型:
+   *   乗車: { type: 'train', line: string(路線・列車名), color: string(路線色), from: string, dep: 'HH:MM', to: string, arr: 'HH:MM', platform: string, bound?: string(行先。省略時は to), note?: string, fare: number(円) }
+   *   乗換: { type: 'transfer', walk: number(徒歩の分), note?: string }   ← 前後の乗車の間に1つ置く
+   * 所要時間・乗換回数・運賃合計・待ち時間は、ここから自動計算される。 */
+  segments: [
+    { type: 'train', line: '中央線快速', color: '#f15a22', from: '新宿', dep: '07:58', to: '東京', arr: '08:12', platform: '3番線', bound: '東京', fare: 210 },
+    { type: 'transfer', walk: 9, note: '新幹線乗り場へ' },
+    { type: 'train', line: '東海道新幹線 のぞみ201号', color: '#0a3a8a', from: '東京', dep: '08:30', to: '京都', arr: '10:44', platform: '14番線', bound: '新大阪', note: '指定席 8号車', fare: 13980 },
+    { type: 'transfer', walk: 7, note: '地下鉄乗り場へ' },
+    { type: 'train', line: '京都市営地下鉄 烏丸線', color: '#2fa84f', from: '京都', dep: '10:56', to: '国際会館', arr: '11:19', platform: '1番線', bound: '国際会館', fare: 330 }
+  ]
+};
+
+function tm(s){ var a = s.split(':'); return +a[0] * 60 + +a[1]; }
+function dur(a, b){ var d = tm(b) - tm(a); return d < 0 ? d + 1440 : d; }
+function hm(min){ var h = Math.floor(min / 60), m = min % 60; return h ? h + '時間' + (m ? m + '分' : '') : m + '分'; }
+function yen(n){ return n.toLocaleString('ja-JP') + '円'; }
+function p2(n){ return (n < 10 ? '0' : '') + n; }
+var S = data.segments, trains = S.filter(function(s){ return s.type === 'train'; });
+var first = trains[0], last = trains[trains.length - 1];
+var total = dur(first.dep, last.arr), transfers = trains.length - 1;
+var fare = trains.reduce(function(a, s){ return a + s.fare; }, 0);
+/* 各区間の所要分(乗車=乗車時間、乗換=前の到着から次の出発まで)と、乗換の待ち時間 */
+S.forEach(function(s, i){
+  if (s.type === 'train') s.min = dur(s.dep, s.arr);
+  else { s.min = dur(S[i - 1].arr, S[i + 1].dep); s.wait = Math.max(0, s.min - s.walk); }
+});
+function bound(s){ return s.bound || s.to; }
+
+/* 現在時刻(分)。始発より前は出発前、最終の到着後は到着済みとして扱う */
+function nowMin(){ if (data.now) return tm(data.now); var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+
+function stn(name, time, cls, color, extra, past){
+  return '<div class="rw ' + cls + (past ? ' ps' : '') + '"><div class="tt">' + time + '</div><div class="rl"><i style="background:' + color + '"></i><b style="border-color:' + color + '"></b></div><div class="ct"><span class="sn">' + esc(name) + '</span>' + (extra || '') + '</div></div>';
+}
+function render(){
+  var now = nowMin(), i, s, cur = -1, nxt = -1, nextTrain = null;
+  /* いまの区間(cur)と、次に乗る列車(nxt) */
+  for (i = 0; i < S.length; i++) {
+    s = S[i];
+    var a = s.type === 'train' ? tm(s.dep) : tm(S[i - 1].arr), b = s.type === 'train' ? tm(s.arr) : tm(S[i + 1].dep);
+    if (now >= a && now < b) cur = i;
+    if (s.type === 'train' && tm(s.dep) > now && nxt < 0) nxt = i;
+  }
+  /* いちばん上の「次にすること」 */
+  var bt, bm, bs, bc;
+  if (now < tm(first.dep)) { s = first; bt = '出発前'; bm = '次は' + esc(s.platform) + '、' + esc(bound(s)) + '行きに乗ってください'; bs = s.dep + '発 ' + esc(s.line) + ' · あと' + hm(tm(s.dep) - now); bc = s.color; }
+  else if (now >= tm(last.arr)) { bt = '到着'; bm = esc(last.to) + 'に到着しました'; bs = last.arr + '着 · おつかれさまでした'; bc = '#12a150'; }
+  else if (cur >= 0 && S[cur].type === 'train') {
+    s = S[cur]; var rest = tm(s.arr) - now;
+    bt = '乗車中'; bc = s.color;
+    bm = rest <= 3 ? '次は' + esc(s.to) + 'で降ります' : esc(s.line) + ' に乗車中';
+    bs = esc(s.to) + 'まで あと' + hm(rest) + (S[cur + 1] && S[cur + 1].type === 'transfer' ? ' · ' + esc(s.to) + 'で乗換' : '');
+  } else {
+    var t = cur >= 0 ? S[cur] : null, nt = S[cur + 1], elapsed = now - tm(S[cur - 1].arr), walking = elapsed < t.walk;
+    bt = '乗換中'; bc = nt.color;
+    bm = '次は' + esc(nt.platform) + '、' + esc(bound(nt)) + '行きに乗ってください';
+    bs = (walking ? (t.note ? esc(t.note) + '(徒歩' + t.walk + '分)' : '徒歩' + t.walk + '分') : '待ち時間') + ' · ' + nt.dep + '発 あと' + hm(tm(nt.dep) - now);
+  }
+  var h = '<div class="hd"><div class="ti">' + esc(data.title) + '</div><div class="dt">' + esc(data.date) + '</div></div>' +
+    '<div class="bn" style="--c:' + bc + '"><div class="bt">' + bt + '</div><div class="bm">' + bm + '</div><div class="bs">' + bs + '</div></div>' +
+    '<div class="sm"><div><small>出発 → 到着</small><b>' + first.dep + ' → ' + last.arr + '</b></div><div><small>所要</small><b>' + hm(total) + '</b></div><div><small>乗換</small><b>' + transfers + '回</b></div><div><small>運賃</small><b>' + yen(fare) + '</b></div></div><div class="tl">';
+  S.forEach(function(s, i){
+    var isCur = i === cur, f = 0;
+    if (isCur) { var a = tm(s.type === 'train' ? s.dep : S[i - 1].arr); f = Math.min(1, Math.max(0, (now - a) / (s.min || 1))); }
+    var mark = isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div><div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '';
+    if (s.type === 'train') {
+      var pastDep = now >= tm(s.dep), pastArr = now >= tm(s.arr);
+      h += stn(s.from, s.dep, 'dep' + (i === S.indexOf(trains[0]) || true ? '' : ''), s.color, '<span class="pf">' + esc(s.platform) + '発</span>' + (i === nxt ? '<span class="nx" style="background:' + s.color + '">次はここから乗車</span>' : ''), pastDep);
+      h += '<div class="rw ride' + (pastArr ? ' ps' : '') + '"><div class="tt"></div><div class="rl"><i style="background:' + s.color + '"></i>' + (isCur ? '<div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '') + '</div><div class="ct"><span class="ln" style="background:' + s.color + '">' + esc(s.line) + '</span><span class="du">' + hm(s.min) + (s.note ? ' · ' + esc(s.note) : '') + '</span></div>' + (isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div>' : '') + '</div>';
+      h += stn(s.to, s.arr, 'arr', s.color, '', pastArr);
+    } else {
+      var pastTr = now >= tm(S[i + 1].dep);
+      h += '<div class="rw tr' + (pastTr ? ' ps' : '') + '"><div class="tt"></div><div class="rl"><i class="ds"></i>' + (isCur ? '<div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '') + '</div><div class="ct"><span class="tc">乗換 徒歩' + s.walk + '分' + (s.wait ? ' + 待ち' + s.wait + '分' : '') + (s.note ? ' · ' + esc(s.note) : '') + '</span></div>' + (isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div>' : '') + '</div>';
+    }
+  });
+  R.innerHTML = h + '</div>';
+}
+render();
+if (!data.now) setInterval(render, 10000);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + String(e) + '</pre>'; }
+})();
+</script>
