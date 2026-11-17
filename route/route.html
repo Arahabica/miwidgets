@@ -9,11 +9,11 @@
 #route-w .hd{display:flex;justify-content:space-between;align-items:baseline;margin:0 4px;}
 #route-w .ti{font-size:18px;font-weight:800;}
 #route-w .dt{font-size:12px;color:var(--hatch-widget-muted,#6e6e73);}
-#route-w .bn{margin:10px 0 0;padding:12px 14px;border-radius:16px;color:#fff;background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 70%,#000));box-shadow:0 6px 16px color-mix(in srgb,var(--c) 35%,transparent);}
+#route-w .bn{margin:0 0 16px;padding:12px 14px;border-radius:16px;color:#fff;background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 70%,#000));box-shadow:0 6px 16px color-mix(in srgb,var(--c) 35%,transparent);}
 #route-w .bt{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.15em;padding:1px 9px;border-radius:999px;background:rgba(255,255,255,.25);}
 #route-w .bm{font-size:17px;font-weight:800;line-height:1.35;margin-top:6px;}
 #route-w .bs{font-size:12px;margin-top:4px;opacity:.92;}
-#route-w .sm{display:grid;grid-template-columns:1.5fr 1fr .8fr 1.1fr;gap:6px;margin:14px -12px 14px;padding:10px 12px;border-radius:0;background:color-mix(in srgb,var(--hatch-widget-text,#1c1c1e) 6%,transparent);text-align:left;}
+#route-w .sm{display:grid;grid-template-columns:1.5fr 1fr .8fr 1.1fr;gap:6px;margin:10px -12px 14px;padding:10px 12px;border-radius:0;background:color-mix(in srgb,var(--hatch-widget-text,#1c1c1e) 6%,transparent);text-align:left;}
 #route-w .sm small{display:block;font-size:10px;color:var(--hatch-widget-muted,#6e6e73);}
 #route-w .sm b{font-size:12.5px;font-variant-numeric:tabular-nums;}
 #route-w .rw{position:relative;display:grid;grid-template-columns:44px 20px minmax(0,1fr);column-gap:8px;row-gap:0;align-items:stretch;}
@@ -113,8 +113,8 @@ function render(){
     bs = (walking ? (t.note ? esc(t.note) + '(徒歩' + t.walk + '分)' : '徒歩' + t.walk + '分') : '待ち時間') + ' · ' + nt.dep + '発 あと' + hm(tm(nt.dep) - now);
   }
   var h = '<div class="hd"><div class="ti">' + esc(data.title) + '</div><div class="dt">' + esc(data.date) + '</div></div>' +
-    '<div class="bn" style="--c:' + bc + '"><div class="bt">' + bt + '</div><div class="bm">' + bm + '</div><div class="bs">' + bs + '</div></div>' +
-    '<div class="sm"><div><small>出発 → 到着</small><b>' + first.dep + ' → ' + last.arr + '</b></div><div><small>所要</small><b>' + hm(total) + '</b></div><div><small>乗換</small><b>' + transfers + '回</b></div><div><small>運賃</small><b>' + yen(fare) + '</b></div></div><div class="tl">';
+    '<div class="sm"><div><small>出発 → 到着</small><b>' + first.dep + ' → ' + last.arr + '</b></div><div><small>所要</small><b>' + hm(total) + '</b></div><div><small>乗換</small><b>' + transfers + '回</b></div><div><small>運賃</small><b>' + yen(fare) + '</b></div></div>' +
+    '<div class="bn" style="--c:' + bc + '"><div class="bt">' + bt + '</div><div class="bm">' + bm + '</div><div class="bs">' + bs + '</div></div><div class="tl">';
   S.forEach(function(s, i){
     var isCur = i === cur, f = 0;
     if (isCur) { var a = tm(s.type === 'train' ? s.dep : S[i - 1].arr); f = Math.min(1, Math.max(0, (now - a) / (s.min || 1))); }
