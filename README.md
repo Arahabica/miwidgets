@@ -29,7 +29,7 @@ Muse のチャット吹き出し内に HTML を表示する機能（本プロジ
 ├── docs/
 │   └── inline-widget-spec.md   # inline widget の仕様メモ
 ├── assets/
-│   ├── assets.html             # テンプレート本体(資産損益推移)
+│   ├── assets.html             # 資産損益推移(前日比を強調 × 折れ線チャート × 銘柄別の凡例。Muse のテーマに追従)
 │   └── assets_sample.html      # Muse のチャット画面を模したプレビュー用ページ
 └── weather/
     ├── weather.html            # 天気ウィジェット(Aurora Glass: 空のグラデーション × 6時間ごとの気温曲線)
