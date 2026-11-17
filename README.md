@@ -34,11 +34,8 @@ Muse のチャット吹き出し内に HTML を表示する機能（本プロジ
 ├── weather/
 │   ├── weather.html            # 天気ウィジェット(Aurora Glass: 空のグラデーション × 6時間ごとの気温曲線)
 │   └── weather_sample.html     # プレビュー用ページ
-├── clock/                      # 時計(4案)
-│   ├── clock_1_analog.html     # Analog Classic: 秒針つきアナログ時計
-│   ├── clock_2_neon.html       # Digital Neon: 光るデジタル時計 × 1日の進捗バー
-│   ├── clock_3_sky.html        # Sky: 時間帯で空の色が変わる × 太陽と月の軌道
-│   ├── clock_4_world.html      # World Clock: 世界の時刻(昼夜で色が変わる)
+├── clock/
+│   ├── clock.html              # 時計(秒針つきのアナログ時計。Muse のテーマに追従)
 │   └── clock_sample.html       # プレビュー用ページ
 ├── omikuji/
 │   ├── omikuji.html            # おみくじ(水彩・絵本風の箱を振って引く × 和紙の短冊に縦書きで結果表示。結果は引く前から決まっていて、HTML には結果1件だけを入れる)

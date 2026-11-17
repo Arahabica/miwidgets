@@ -6,7 +6,7 @@
 <title>時計 プレビュー(Muse チャット画面の再現)</title>
 <!--
   Muse のモバイルチャット画面を模したプレビュー用ページ。
-  時計のテンプレート(複数案)を fetch で読み込み、アシスタントの吹き出し(角丸の四角)の中に並べて表示する。
+  時計のテンプレートを fetch で読み込み、アシスタントの吹き出し(角丸の四角)の中に並べて表示する。
   ※ 見た目は推測による再現で、実際の Muse の画面とは異なる。
   ※ fetch を使うため、ローカルサーバー経由で開く必要がある(file:// では読み込めない)。
      例: cd clock && python3 -m http.server 8000 → http://localhost:8000/clock_sample.html
@@ -84,10 +84,7 @@ body{
 <script>
 /* 表示するテンプレート。上から順に吹き出しの中へ表示する */
 var WIDGETS = [
-  { file: 'clock_1_analog.html', label: '案1  Analog Classic(アナログ時計)' },
-  { file: 'clock_2_neon.html', label: '案2  Digital Neon(光るデジタル時計)' },
-  { file: 'clock_3_sky.html', label: '案3  Sky(時間帯で変わる空)' },
-  { file: 'clock_4_world.html', label: '案4  World Clock(世界の時刻)' }
+  { file: 'clock.html', label: 'clock.html' }
 ];
 
 /* Muse の hatchWidget の代わり(状態をメモリ上に持つ) */
