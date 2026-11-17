@@ -1,0 +1,83 @@
+<!-- 時計テンプレート 案3「Sky」: 時間帯で空の色とあいさつが変わる時計。太陽と月が弧を描いて動く。場所・タイムゾーン・時間帯の色はスクリプト冒頭の data で変更できる。 -->
+<div id="ck3"><div class="top"><span class="lb"></span><span class="gr"></span></div><svg class="arc" viewBox="0 0 300 80"><defs><mask id="mk3"><rect x="-20" y="-20" width="40" height="40" fill="#fff"/><circle cx="4.5" cy="-3" r="6.5" fill="#000"/></mask></defs><path d="M20 66 A130 56 0 0 1 280 66"/><line x1="8" y1="66" x2="292" y2="66" stroke="rgba(255,255,255,.35)" stroke-width="1"/><g class="ob"><g class="sun"><circle r="16" fill="#ffe27a" opacity=".3"/><circle r="9" fill="#ffe27a"/></g><g class="moon" style="display:none"><circle r="8" fill="#f4f1de" mask="url(#mk3)"/></g></g></svg><div class="tm"></div><div class="dt"></div></div>
+<style>
+#ck3{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#ck3 *{box-sizing:border-box;}
+#ck3 button{font:inherit;color:inherit;}
+
+#ck3{padding:16px 18px 18px;color:#fff;transition:background .6s;text-shadow:0 1px 8px rgba(0,0,0,.18);}
+#ck3 .top{display:flex;justify-content:space-between;font-size:12px;opacity:.92;}
+#ck3 .gr{font-weight:700;letter-spacing:.06em;}
+#ck3 .arc{display:block;width:100%;height:auto;aspect-ratio:300/80;margin-top:6px;overflow:visible;}
+#ck3 .arc path{fill:none;stroke:rgba(255,255,255,.55);stroke-width:1.2;stroke-dasharray:3 4;}
+#ck3 .tm{font-size:76px;font-weight:200;line-height:1;letter-spacing:.01em;text-align:center;margin-top:2px;font-variant-numeric:tabular-nums;}
+#ck3 .tm small{font-size:26px;margin-left:6px;opacity:.85;}
+#ck3 .dt{margin-top:8px;text-align:center;font-size:14px;opacity:.95;}
+
+</style>
+<script>
+(function(){
+var R = document.getElementById("ck3");
+try {
+/* Muse 以外のブラウザでも動くよう、hatchWidget が無ければメモリ上の代替を使う */
+var HW = window.hatchWidget || (function(){ var s = null; return { getState: function(d){ return s === null ? d : s; }, setState: function(v){ s = v; } }; })();
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  label: '東京',               // string: 場所の表示名
+  timezone: 'Asia/Tokyo',      // string | null: IANA タイムゾーン名。null で端末の地域
+  showSeconds: false,          // boolean: 秒を出すか
+  /* 時間帯ごとの空の色とあいさつ。型: { from: number, to: number, name: string, greeting: string, top: string, bottom: string }[]
+   * from <= 時 < to で判定する(0〜4時は 24〜28 として扱う)。夜は to を 29 にして翌朝5時までつなぐ。 */
+  phases: [
+    { from: 5,  to: 10, name: '朝', greeting: 'おはようございます', top: '#ffb48a', bottom: '#7fc4ff' },
+    { from: 10, to: 16, name: '昼', greeting: 'こんにちは',         top: '#3d9bff', bottom: '#a6e4ff' },
+    { from: 16, to: 19, name: '夕', greeting: 'お疲れさまです',     top: '#7a4fd1', bottom: '#ff9a62' },
+    { from: 19, to: 29, name: '夜', greeting: 'こんばんは',         top: '#090e2b', bottom: '#2b3278' }
+  ]
+};
+
+function parts(tz){
+  var o = { hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit', year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short' }, m = {};
+  function run(){ new Intl.DateTimeFormat('ja-JP', o).formatToParts(new Date()).forEach(function(p){ m[p.type] = p.value; }); }
+  try { if (tz) o.timeZone = tz; run(); } catch (e) { delete o.timeZone; run(); } // 不正なタイムゾーンは端末の地域で代用
+  return { h: +m.hour, mi: +m.minute, s: +m.second, y: +m.year, mo: +m.month, d: +m.day, wd: m.weekday };
+}
+function p2(n){ return (n < 10 ? '0' : '') + n; }
+function dateText(p){ return p.y + '年' + p.mo + '月' + p.d + '日(' + p.wd + ')'; }
+/* アナログ時計の文字盤(viewBox 0 0 200 200)。full=false なら目盛りは12個だけ */
+function analog(full){
+  var t = '', i, a, big, r1, r2;
+  for (i = 0; i < (full ? 60 : 12); i++) {
+    a = i * (full ? 6 : 30) * Math.PI / 180; big = !full || i % 5 === 0; r1 = big ? 80 : 89; r2 = 96;
+    t += '<line class="tk" x1="' + (100 + r1 * Math.sin(a)).toFixed(1) + '" y1="' + (100 - r1 * Math.cos(a)).toFixed(1) + '" x2="' + (100 + r2 * Math.sin(a)).toFixed(1) + '" y2="' + (100 - r2 * Math.cos(a)).toFixed(1) + '" stroke-width="' + (big ? (full ? 3 : 5) : 1.4) + '" stroke-linecap="round"/>';
+  }
+  if (full) [[12, 100, 38], [3, 162, 100], [6, 100, 162], [9, 38, 100]].forEach(function(n){ t += '<text class="nu" x="' + n[1] + '" y="' + n[2] + '" text-anchor="middle" dominant-baseline="central">' + n[0] + '</text>'; });
+  return t + '<g class="hh"><line x1="100" y1="104" x2="100" y2="' + (full ? 52 : 50) + '" stroke-width="' + (full ? 7 : 9) + '" stroke-linecap="round"/></g>' +
+    '<g class="mh"><line x1="100" y1="106" x2="100" y2="' + (full ? 30 : 28) + '" stroke-width="' + (full ? 4.5 : 6) + '" stroke-linecap="round"/></g>' +
+    (full ? '<g class="sh"><line x1="100" y1="118" x2="100" y2="22" stroke-width="2" stroke-linecap="round"/></g>' : '') +
+    '<circle cx="100" cy="100" r="' + (full ? 5 : 6) + '" class="pv"/>';
+}
+function hands(root, p){
+  function rot(c, deg){ var g = root.querySelector(c); if (g) g.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ' 100 100)'); }
+  rot('.hh', (p.h % 12 + p.mi / 60) * 30); rot('.mh', (p.mi + p.s / 60) * 6); rot('.sh', p.s * 6);
+}
+
+R.querySelector('.lb').textContent = data.label;
+function tick(){
+  var p = parts(data.timezone), hh = p.h + p.mi / 60, hx = p.h < 5 ? p.h + 24 : p.h, ph = data.phases[0], i;
+  for (i = 0; i < data.phases.length; i++) if (hx >= data.phases[i].from && hx < data.phases[i].to) ph = data.phases[i];
+  R.style.background = 'linear-gradient(180deg,' + ph.top + ',' + ph.bottom + ')';
+  R.querySelector('.gr').textContent = ph.name + ' · ' + ph.greeting;
+  R.querySelector('.tm').innerHTML = p2(p.h) + ':' + p2(p.mi) + (data.showSeconds ? '<small>' + p2(p.s) + '</small>' : '');
+  R.querySelector('.dt').textContent = dateText(p);
+  var day = hh >= 6 && hh < 18, t = day ? (hh - 6) / 12 : ((hh - 18 + 24) % 24) / 12;
+  var x = 20 + 260 * t, y = 66 - 56 * Math.sin(Math.PI * t);
+  R.querySelector('.ob').setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')');
+  R.querySelector('.sun').style.display = day ? '' : 'none'; R.querySelector('.moon').style.display = day ? 'none' : '';
+}
+tick(); setInterval(tick, 1000);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + String(e) + '</pre>'; }
+})();
+</script>

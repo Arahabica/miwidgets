@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>おみくじ プレビュー(Muse チャット画面の再現)</title>
+<!--
+  Muse のモバイルチャット画面を模したプレビュー用ページ。
+  おみくじのテンプレート(複数案)を fetch で読み込み、アシスタントの吹き出し(角丸の四角)の中に並べて表示する。
+  ※ 見た目は推測による再現で、実際の Muse の画面とは異なる。
+  ※ fetch を使うため、ローカルサーバー経由で開く必要がある(file:// では読み込めない)。
+     例: cd omikuji && python3 -m http.server 8000 → http://localhost:8000/omikuji_sample.html
+-->
+<style>
+:root{
+  --page-bg:#ffffff;
+  --bubble-user-bg:#3a5ad1;
+  --bubble-user-text:#ffffff;
+  --bubble-ai-bg:#f2f2f7;
+  --bubble-ai-text:#1c1c1e;
+  --meta-text:#8e8e93;
+  /* Muse がウィジェットに渡すテーマ変数(推測) */
+  --hatch-widget-text:#1c1c1e;
+  --hatch-widget-muted:#6e6e73;
+  --hatch-widget-border:#d1d1d6;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --page-bg:#000000;
+    --bubble-ai-bg:#2c2c2e;
+    --bubble-ai-text:#f2f2f7;
+    --meta-text:#8e8e93;
+    --hatch-widget-text:#f2f2f7;
+    --hatch-widget-muted:#98989f;
+    --hatch-widget-border:#3a3a3c;
+  }
+}
+*{box-sizing:border-box;}
+html,body{margin:0;}
+body{
+  background:#d9d9de;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+@media (prefers-color-scheme: dark){ body{background:#111;} }
+
+/* スマホ画面。PCでは幅390pxの端末風、実機ではそのまま全画面 */
+.phone{
+  display:flex;flex-direction:column;
+  width:100%;max-width:390px;min-height:100vh;min-height:100dvh;
+  margin:0 auto;
+  background:var(--page-bg);
+  position:relative;
+}
+@media (min-width:430px){
+  body{display:flex;align-items:flex-start;justify-content:center;padding:24px 0;}
+  .phone{border-radius:28px;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+}
+
+.chat{flex:1;padding:44px 12px 24px;display:flex;flex-direction:column;gap:10px;}
+.stamp{align-self:center;font-size:11px;color:var(--meta-text);margin:2px 0;}
+
+.msg{max-width:88%;}
+.msg.user{align-self:flex-end;}
+.msg.ai{align-self:flex-start;width:100%;max-width:100%;}
+.bubble{border-radius:18px;font-size:14px;line-height:1.55;padding:9px 13px;overflow-wrap:anywhere;}
+.msg.user .bubble{background:var(--bubble-user-bg);color:var(--bubble-user-text);border-bottom-right-radius:6px;}
+.msg.ai .bubble{background:var(--bubble-ai-bg);color:var(--bubble-ai-text);border-bottom-left-radius:6px;}
+/* ウィジェット入りの吹き出し: 余白をなくし、中身を角丸の内側に収める */
+.msg.ai .bubble.widget{padding:0;overflow:hidden;}
+.label{align-self:flex-start;font-size:11px;color:var(--meta-text);margin:8px 4px -4px;letter-spacing:.04em;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="chat" id="chat">
+    <div class="stamp">今日 9:41</div>
+
+    <div class="msg user"><div class="bubble">おみくじを引きたい</div></div>
+
+    <div class="msg ai"><div class="bubble">おみくじを用意しました。箱をタップして引いてください。</div></div>
+  </div>
+</div>
+<script>
+/* 表示するテンプレート。上から順に吹き出しの中へ表示する */
+var WIDGETS = [
+  { file: 'omikuji.html', label: 'omikuji.html' }
+];
+
+/* Muse の hatchWidget の代わり(状態をメモリ上に持つ) */
+function makeStore(){ var s = null; return { getState: function(d){ return s === null ? d : s; }, setState: function(v){ s = v; } }; }
+
+/* 各テンプレートを fetch で読み込んで差し込む。保存→リロードで最新が反映される */
+var chat = document.getElementById('chat');
+WIDGETS.forEach(function(w){
+  var label = document.createElement('div');
+  label.className = 'label';
+  label.textContent = w.label;
+  var msg = document.createElement('div');
+  msg.className = 'msg ai';
+  msg.innerHTML = '<div class="bubble widget"></div>';
+  chat.appendChild(label);
+  chat.appendChild(msg);
+  var mount = msg.firstChild;
+  fetch(w.file, {cache: 'no-store'})
+    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+    .then(function(html){
+      mount.innerHTML = html;
+      window.hatchWidget = makeStore(); // ウィジェットごとに独立した状態の保存先
+      // innerHTML で差し込んだ <script> は実行されないため、作り直して実行させる
+      mount.querySelectorAll('script').forEach(function(old){
+        var el = document.createElement('script');
+        el.textContent = old.textContent;
+        old.replaceWith(el);
+      });
+    })
+    .catch(function(err){
+      mount.innerHTML = '<div style="padding:12px;font-size:12px;line-height:1.6;color:#d33;">' + w.file + ' を読み込めません(' + String(err).replace(/</g,'&lt;') + ')。<br>file:// で開いている場合は、ローカルサーバー経由で開いてください:<br><code>cd assets &amp;&amp; python3 -m http.server 8000</code></div>';
+    });
+});
+</script>
+</body>
+</html>

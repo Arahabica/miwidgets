@@ -1,0 +1,77 @@
+<!-- 時計テンプレート 案2「Digital Neon」: 暗い背景に光るデジタル時計。コロンの点滅と、1日の経過を示す進捗バー付き。場所・タイムゾーン・発光色はスクリプト冒頭の data で変更できる。 -->
+<div id="ck2"><div class="top"><span class="lb"></span><span class="dt"></span></div><div class="tm"><span class="hm"><span class="h"></span><span class="co">:</span><span class="m"></span></span><span class="sc"></span></div><div class="bar"><i></i></div><div class="bl"><span>0:00</span><span class="pc"></span><span>24:00</span></div></div>
+<style>
+#ck2{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#ck2 *{box-sizing:border-box;}
+#ck2 button{font:inherit;color:inherit;}
+
+#ck2{padding:18px 18px 16px;border-radius:0;color:#e9f7ff;background:radial-gradient(120% 90% at 85% 0%,#2b1763 0%,transparent 60%),linear-gradient(160deg,#080c20,#10163a);}
+#ck2 .top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#9fb4d8;}
+#ck2 .lb{letter-spacing:.3em;font-weight:700;color:var(--glow);text-shadow:0 0 10px var(--glow);}
+#ck2 .tm{display:flex;align-items:baseline;justify-content:center;margin:14px 0 10px;font-variant-numeric:tabular-nums;color:#fff;text-shadow:0 0 14px var(--glow),0 0 34px var(--glow);}
+#ck2 .hm{font-size:68px;font-weight:200;letter-spacing:.02em;line-height:1;}
+#ck2 .co{display:inline-block;margin:0 2px;animation:ck2b 1s steps(1) infinite;}
+#ck2 .sc{font-size:26px;font-weight:300;margin-left:8px;color:var(--glow);opacity:.9;}
+@keyframes ck2b{50%{opacity:.15;}}
+#ck2 .bar{height:4px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden;}
+#ck2 .bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--glow),var(--glow2));box-shadow:0 0 10px var(--glow);}
+#ck2 .bl{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:#7f93b8;}
+
+</style>
+<script>
+(function(){
+var R = document.getElementById("ck2");
+try {
+/* Muse 以外のブラウザでも動くよう、hatchWidget が無ければメモリ上の代替を使う */
+var HW = window.hatchWidget || (function(){ var s = null; return { getState: function(d){ return s === null ? d : s; }, setState: function(v){ s = v; } }; })();
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  label: 'TOKYO',              // string: 場所の表示名
+  timezone: 'Asia/Tokyo',      // string | null: IANA タイムゾーン名。null で端末の地域
+  showSeconds: true,           // boolean: 秒を出すか
+  glow: '#4de3ff',             // string: 数字の発光色(CSSの色)
+  glow2: '#b45cff'             // string: 進捗バーのグラデーション終点色
+};
+
+function parts(tz){
+  var o = { hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit', year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short' }, m = {};
+  function run(){ new Intl.DateTimeFormat('ja-JP', o).formatToParts(new Date()).forEach(function(p){ m[p.type] = p.value; }); }
+  try { if (tz) o.timeZone = tz; run(); } catch (e) { delete o.timeZone; run(); } // 不正なタイムゾーンは端末の地域で代用
+  return { h: +m.hour, mi: +m.minute, s: +m.second, y: +m.year, mo: +m.month, d: +m.day, wd: m.weekday };
+}
+function p2(n){ return (n < 10 ? '0' : '') + n; }
+function dateText(p){ return p.y + '年' + p.mo + '月' + p.d + '日(' + p.wd + ')'; }
+/* アナログ時計の文字盤(viewBox 0 0 200 200)。full=false なら目盛りは12個だけ */
+function analog(full){
+  var t = '', i, a, big, r1, r2;
+  for (i = 0; i < (full ? 60 : 12); i++) {
+    a = i * (full ? 6 : 30) * Math.PI / 180; big = !full || i % 5 === 0; r1 = big ? 80 : 89; r2 = 96;
+    t += '<line class="tk" x1="' + (100 + r1 * Math.sin(a)).toFixed(1) + '" y1="' + (100 - r1 * Math.cos(a)).toFixed(1) + '" x2="' + (100 + r2 * Math.sin(a)).toFixed(1) + '" y2="' + (100 - r2 * Math.cos(a)).toFixed(1) + '" stroke-width="' + (big ? (full ? 3 : 5) : 1.4) + '" stroke-linecap="round"/>';
+  }
+  if (full) [[12, 100, 38], [3, 162, 100], [6, 100, 162], [9, 38, 100]].forEach(function(n){ t += '<text class="nu" x="' + n[1] + '" y="' + n[2] + '" text-anchor="middle" dominant-baseline="central">' + n[0] + '</text>'; });
+  return t + '<g class="hh"><line x1="100" y1="104" x2="100" y2="' + (full ? 52 : 50) + '" stroke-width="' + (full ? 7 : 9) + '" stroke-linecap="round"/></g>' +
+    '<g class="mh"><line x1="100" y1="106" x2="100" y2="' + (full ? 30 : 28) + '" stroke-width="' + (full ? 4.5 : 6) + '" stroke-linecap="round"/></g>' +
+    (full ? '<g class="sh"><line x1="100" y1="118" x2="100" y2="22" stroke-width="2" stroke-linecap="round"/></g>' : '') +
+    '<circle cx="100" cy="100" r="' + (full ? 5 : 6) + '" class="pv"/>';
+}
+function hands(root, p){
+  function rot(c, deg){ var g = root.querySelector(c); if (g) g.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ' 100 100)'); }
+  rot('.hh', (p.h % 12 + p.mi / 60) * 30); rot('.mh', (p.mi + p.s / 60) * 6); rot('.sh', p.s * 6);
+}
+
+R.style.setProperty('--glow', data.glow); R.style.setProperty('--glow2', data.glow2);
+R.querySelector('.lb').textContent = data.label;
+if (!data.showSeconds) R.querySelector('.sc').style.display = 'none';
+function tick(){
+  var p = parts(data.timezone), f = (p.h * 3600 + p.mi * 60 + p.s) / 86400;
+  R.querySelector('.h').textContent = p2(p.h); R.querySelector('.m').textContent = p2(p.mi); R.querySelector('.sc').textContent = p2(p.s);
+  R.querySelector('.dt').textContent = dateText(p);
+  R.querySelector('.bar i').style.width = (f * 100).toFixed(2) + '%';
+  R.querySelector('.pc').textContent = '今日の ' + Math.floor(f * 100) + '% が経過';
+}
+tick(); setInterval(tick, 1000);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + String(e) + '</pre>'; }
+})();
+</script>

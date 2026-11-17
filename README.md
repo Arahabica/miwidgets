@@ -31,21 +31,33 @@ Muse のチャット吹き出し内に HTML を表示する機能（本プロジ
 ├── assets/
 │   ├── assets.html             # 資産損益推移(前日比を強調 × 折れ線チャート × 銘柄別の凡例。Muse のテーマに追従)
 │   └── assets_sample.html      # Muse のチャット画面を模したプレビュー用ページ
-└── weather/
-    ├── weather.html            # 天気ウィジェット(Aurora Glass: 空のグラデーション × 6時間ごとの気温曲線)
-    └── weather_sample.html     # Muse のチャット画面を模したプレビュー用ページ
+├── weather/
+│   ├── weather.html            # 天気ウィジェット(Aurora Glass: 空のグラデーション × 6時間ごとの気温曲線)
+│   └── weather_sample.html     # プレビュー用ページ
+├── clock/                      # 時計(4案)
+│   ├── clock_1_analog.html     # Analog Classic: 秒針つきアナログ時計
+│   ├── clock_2_neon.html       # Digital Neon: 光るデジタル時計 × 1日の進捗バー
+│   ├── clock_3_sky.html        # Sky: 時間帯で空の色が変わる × 太陽と月の軌道
+│   ├── clock_4_world.html      # World Clock: 世界の時刻(昼夜で色が変わる)
+│   └── clock_sample.html       # プレビュー用ページ
+├── omikuji/
+│   ├── omikuji.html            # おみくじ(水彩・絵本風の箱を振って引く × 和紙の短冊に縦書きで結果表示。結果は引く前から決まっていて、HTML には結果1件だけを入れる)
+│   └── omikuji_sample.html     # プレビュー用ページ
+└── route/
+    ├── route.html              # 乗り換え案内(縦のタイムライン × 現在時刻に応じた「次の行動」表示。所要時間・運賃などは経路から自動計算)
+    └── route_sample.html       # プレビュー用ページ(現在時刻を固定した6パターン)
 ```
 
 テンプレートが増えたら、ここに追記していきます。
 
 ## プレビュー
 
-`assets/assets_sample.html` と `weather/weather_sample.html` は、各テンプレートを `fetch` で読み込んで、Muse のチャット画面を模した吹き出しの中に表示します。`fetch` を使うため、ローカルサーバー経由で開きます。
+各ディレクトリの `*_sample.html`(`assets_sample.html`、`weather_sample.html`、`clock_sample.html`、`omikuji_sample.html`、`route_sample.html`)は、各テンプレートを `fetch` で読み込んで、Muse のチャット画面を模した吹き出しの中に表示します。`fetch` を使うため、ローカルサーバー経由で開きます。
 
 ```
-cd assets    # 天気は cd weather
+cd assets    # 他は cd weather / clock / omikuji / route
 python3 -m http.server 8000
-# → http://localhost:8000/assets_sample.html   (天気は weather_sample.html)
+# → http://localhost:8000/assets_sample.html   (他は各 *_sample.html)
 ```
 
 テンプレートを編集して保存し、ブラウザをリロードすれば反映されます。
