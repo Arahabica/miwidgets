@@ -4,12 +4,18 @@
 <svg class="chart" viewBox="0 0 360 200"></svg>
 <div class="lgbox"><div class="legend"></div><div class="panel" style="display:none;"></div></div>
 <style>
-#assets-w .lgbox{position:relative;}
+#assets-w .lgbox{display:grid;}
+#assets-w .legend,#assets-w .panel{grid-area:1/1;}
 #assets-w .chart{width:100%;display:block;touch-action:manipulation;aspect-ratio:360/200;}
 #assets-w .ln{transition:opacity .15s;}
+#assets-w .draw-line{animation:assetsDraw .7s ease-out both;}
+#assets-w .end-dot{animation:assetsAppear .2s ease-out .7s both;}
+@keyframes assetsDraw{from{stroke-dasharray:1;stroke-dashoffset:1;}to{stroke-dasharray:1;stroke-dashoffset:0;}}
+@keyframes assetsAppear{from{opacity:0;}to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){#assets-w .draw-line,#assets-w .end-dot{animation:none;}}
 #assets-w .lg{cursor:pointer;font:inherit;text-align:left;min-width:0;}
 #assets-w .lg .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
-#assets-w .panel{position:absolute;inset:0;background:var(--w-panel-bg);color:var(--w-panel-text);border-radius:12px;box-shadow:0 8px 26px rgba(0,0,0,.35);padding:10px 12px;overflow-y:auto;z-index:2;}
+#assets-w .panel{position:relative;align-self:start;min-width:0;background:var(--w-panel-bg);color:var(--w-panel-text);border-radius:12px;box-shadow:0 8px 26px rgba(0,0,0,.35);padding:10px 12px;z-index:2;}
 #assets-w .panel .prow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px 12px;font-size:11px;margin-top:2px;}
 #assets-w .panel .pi{display:flex;align-items:center;gap:4px;min-width:0;line-height:1.7;padding:1px 0;}
 #assets-w .panel .pi .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -203,6 +209,37 @@ function pathOf(P){
   return d;
 }
 
+/* 選択日までと、その後の線を分ける。元の曲線の制御点は変えない。 */
+function splitTimeline(pointRuns, cutX){
+  var past = [], future = [];
+  pointRuns.forEach(function(points){
+    var d = pathOf(points);
+    if (cutX === null) { past.push(d); return; }
+    var split = points.findIndex(function(p){ return p[0] > cutX; });
+    if (split < 0) { past.push(d); return; }
+    if (split === 0) { future.push(d); return; }
+    var commands = d.match(/[MLC][^MLC]*/g);
+    past.push(commands.slice(0, split).join(''));
+    var p = points[split - 1];
+    future.push('M' + r1(p[0]) + ',' + r1(p[1]) + commands.slice(split).join(''));
+  });
+  return {past: past.join(' '), future: future.join(' ')};
+}
+function timelineHtml(pointRuns, cutX, color, width){
+  var paths = splitTimeline(pointRuns, cutX);
+  function line(part, opacity){
+    return '<path class="draw-line ' + part + '-line" pathLength="1" d="' + paths[part] + '" fill="none" stroke="' + color + '" stroke-width="' + width + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + opacity + '"/>';
+  }
+  return line('past', 1) + line('future', .25);
+}
+function updateTimeline(container, pointRuns, cutX){
+  var paths = splitTimeline(pointRuns, cutX);
+  container.querySelector('.past-line').setAttribute('d', paths.past);
+  container.querySelector('.future-line').setAttribute('d', paths.future);
+  var tail = container.querySelector('.tail');
+  tail.setAttribute('opacity', cutX !== null && +tail.dataset.x > cutX ? '.25' : '1');
+}
+
 /* ---- メインチャート(全案共通。見た目は data.chart / data.colors と CSS で変える) ---- */
 function buildChart(){
   var svg = q('.chart');
@@ -214,11 +251,13 @@ function buildChart(){
     s += '<text x="' + (CH.left - 4) + '" y="' + r1(Y(t) + 3) + '" font-size="' + fs + '" text-anchor="end" fill="' + C.muted + '">' + fmtTick(t) + '</text>';
   }
   data.items.forEach(function(it, i){
-    var rs = runs(it.ys), d = rs.map(pathOf).join(' '), p = last(last(rs));
+    var rs = runs(it.ys), p = last(last(rs));
+    it.chartRuns = rs;
     s += '<g class="ln" data-i="' + i + '" style="color:' + it.color + '">';
-    s += '<path d="' + d + '" fill="none" stroke="' + it.color + '" stroke-width="' + CH.lineWidth + '" stroke-linecap="round" stroke-linejoin="round"/>';
+    s += timelineHtml(rs, null, it.color, CH.lineWidth);
+    s += '<g class="tail" data-x="' + p[0] + '">';
     if (CH.haloR > 0) s += '<circle cx="' + r1(p[0]) + '" cy="' + r1(p[1]) + '" r="' + CH.haloR + '" fill="' + it.color + '" fill-opacity=".25"/>';
-    s += '<circle cx="' + r1(p[0]) + '" cy="' + r1(p[1]) + '" r="' + CH.endDotR + '" fill="' + it.color + '"/></g>';
+    s += '<circle class="end-dot" cx="' + r1(p[0]) + '" cy="' + r1(p[1]) + '" r="' + CH.endDotR + '" fill="' + it.color + '"/></g></g>';
   });
   s += '<line class="guide" y1="' + CH.top + '" y2="' + CH.bottom + '" stroke="' + C.muted + '" stroke-width="1" stroke-dasharray="2 2" style="display:none;"/><g class="dots"></g>';
   data.dates.forEach(function(dt, j){
@@ -241,13 +280,13 @@ function miniChart(it, dj){
   var w = MI.width - MI.padX * 2, ph = MI.height - MI.padY * 2 - 2;
   function X(j){ return MI.padX + j * (w / (N - 1)); }
   function Ym(v){ return MI.padY + (h - v) * (ph / (h - l)); }
-  var d = pathOf(pts.map(function(p){ return [X(p[0]), Ym(p[1])]; }));
+  var points = pts.map(function(p){ return [X(p[0]), Ym(p[1])]; });
   var s = '<svg viewBox="0 0 ' + MI.width + ' ' + MI.height + '" style="width:100%;display:block;margin-top:4px;">';
   if (l < 0 && h > 0) s += '<line x1="' + MI.padX + '" y1="' + r1(Ym(0)) + '" x2="' + (MI.width - MI.padX) + '" y2="' + r1(Ym(0)) + '" stroke="' + C.panelZeroLine + '" stroke-width="0.8" stroke-dasharray="3 3"/>';
-  s += '<path d="' + d + '" fill="none" stroke="' + it.color + '" stroke-width="' + MI.lineWidth + '" stroke-linecap="round" stroke-linejoin="round"/>';
+  s += timelineHtml([points], X(dj), it.color, MI.lineWidth);
   var lp = last(pts);
-  s += '<circle cx="' + r1(X(lp[0])) + '" cy="' + r1(Ym(lp[1])) + '" r="' + MI.endDotR + '" fill="' + it.color + '"/>';
-  if (it.pnl[dj] !== null) s += '<circle cx="' + r1(X(dj)) + '" cy="' + r1(Ym(it.pnl[dj])) + '" r="' + MI.selDotR + '" fill="' + it.color + '" stroke="' + C.dotStroke + '" stroke-width="1.2"/>';
+  s += '<g opacity="' + (lp[0] > dj ? '.25' : '1') + '"><circle class="end-dot" cx="' + r1(X(lp[0])) + '" cy="' + r1(Ym(lp[1])) + '" r="' + MI.endDotR + '" fill="' + it.color + '"/></g>';
+  if (it.pnl[dj] !== null) s += '<circle class="end-dot" cx="' + r1(X(dj)) + '" cy="' + r1(Ym(it.pnl[dj])) + '" r="' + MI.selDotR + '" fill="' + it.color + '" stroke="' + C.dotStroke + '" stroke-width="1.2"/>';
   return s + '</svg>';
 }
 
@@ -257,10 +296,9 @@ function sparkline(it, w, h, sw){
   vs.forEach(function(v){ if (v !== null) { mn = Math.min(mn, v); mx = Math.max(mx, v); } });
   var span = (mx - mn) || 1, pts = [];
   vs.forEach(function(v, j){ if (v !== null) pts.push([2 + j * ((w - 4) / (N - 1)), 2 + (mx - v) * ((h - 4) / span)]); });
-  var save = CH.smooth;
-  var d = pathOf(pts); CH.smooth = save;
+  it.sparkPoints = pts;
   var p = last(pts);
-  return '<svg class="sp" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '" style="display:block;overflow:visible"><path d="' + d + '" fill="none" stroke="' + it.color + '" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round"/><circle cx="' + r1(p[0]) + '" cy="' + r1(p[1]) + '" r="' + (sw + 0.6) + '" fill="' + it.color + '"/></svg>';
+  return '<svg class="sp" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '" style="display:block;overflow:visible">' + timelineHtml([pts], null, it.color, sw) + '<g class="tail" data-x="' + p[0] + '"><circle class="end-dot" cx="' + r1(p[0]) + '" cy="' + r1(p[1]) + '" r="' + (sw + 0.6) + '" fill="' + it.color + '"/></g></svg>';
 }
 
 /* ---- パネルの中身(HTML文字列) ---- */
@@ -324,10 +362,14 @@ var st = window.hatchWidget.getState({sel:-1, date:-1});
 
 function render(){
   var sel = st.sel, dj = st.date;
-  qa('.chart .ln').forEach(function(el){ el.style.opacity = (sel < 0 || +el.dataset.i === sel) ? '1' : '0.12'; });
+  qa('.chart .ln').forEach(function(el){
+    el.style.opacity = (sel < 0 || +el.dataset.i === sel) ? '1' : '0.12';
+    updateTimeline(el, data.items[+el.dataset.i].chartRuns, dj < 0 ? null : xs[dj]);
+  });
   qa('.lg').forEach(function(b){
     b.style.opacity = (sel < 0 || +b.dataset.i === sel) ? '1' : '0.45';
     b.style.fontWeight = (+b.dataset.i === sel) ? '700' : '';
+    updateTimeline(b.querySelector('.sp'), [data.items[+b.dataset.i].sparkPoints], dj < 0 ? null : 2 + dj * (60 / (N - 1)));
   });
   var guide = q('.guide'), dots = q('.dots'), panel = q('.panel');
   if (dj < 0) { guide.style.display = 'none'; dots.innerHTML = ''; panel.style.display = 'none'; return; }
@@ -343,24 +385,12 @@ function render(){
   panel.style.display = '';
 }
 
-/* パネルがスクロールなしで収まるよう、凡例エリアの最小高さを確保する(幅が変わったら再計算) */
-function reserve(){
-  var box = q('.lgbox'), panel = q('.panel');
-  box.style.minHeight = '';
-  panel.style.visibility = 'hidden'; panel.style.display = ''; panel.style.bottom = 'auto';
-  var need = 0;
-  function measure(html){ panel.innerHTML = html; need = Math.max(need, Math.ceil(panel.getBoundingClientRect().height) + 2); }
-  data.dates.forEach(function(_, j){ measure(panelHtml(-1, j)); });
-  data.items.forEach(function(_, i){ data.dates.forEach(function(__, j){ measure(panelHtml(i, j)); }); });
-  panel.style.bottom = ''; panel.style.visibility = ''; panel.style.display = 'none';
-  box.style.minHeight = need + 'px';
-}
 function set(next){ st = next; window.hatchWidget.setState(st); render(); }
 
 /* ---- 初期化 ---- */
 R.style.setProperty('--w-panel-bg', C.panelBg);
 R.style.setProperty('--w-panel-text', C.panelText);
-buildHead(); buildChart(); buildLegend(); reserve();
+buildHead(); buildChart(); buildLegend();
 
 qa('.lg').forEach(function(b){
   b.addEventListener('click', function(){
@@ -379,7 +409,6 @@ R.addEventListener('click', function(e){
   if (e.target.closest('.lg') || e.target.closest('.chart') || e.target.closest('.panel')) return;
   if (st.sel >= 0 || st.date >= 0) set({sel: -1, date: -1});
 });
-window.addEventListener('resize', function(){ reserve(); render(); });
 window.addEventListener('hatch-widget-state', function(e){ st = e.detail.state; render(); });
 render();
 
