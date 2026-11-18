@@ -135,9 +135,10 @@ html{scroll-padding-top:20px}
 .widget-prompts{padding:0 20px;margin-bottom:10px}
 .widget-source{padding:10px 20px 0}
 .widget-preview.is-overflowing.is-collapsed .phone-box{position:relative;max-height:630px;overflow:hidden}
-.widget-preview.is-overflowing.is-collapsed .phone-box::after{content:"";position:absolute;inset:auto 0 0;height:140px;background:linear-gradient(transparent,var(--phone-bg,#fff));pointer-events:none}
+.widget-preview.is-overflowing.is-collapsed .phone-box::after{content:"";position:absolute;inset:auto 0 0;height:180px;background:linear-gradient(transparent,var(--phone-bg,#fff) 65%);pointer-events:none}
 .widget-preview.is-overflowing .expand-button{display:flex;align-items:center;justify-content:center;width:calc(100% - 40px);margin:4px auto 0;padding:8px 15px;border:0;background:none;color:var(--accent);font-size:14px;font-weight:650;line-height:1.5}
 .widget-preview.is-overflowing .expand-button::after{content:"";width:7px;height:7px;margin-left:10px;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg)}
+.widget-preview.is-overflowing.is-collapsed .expand-button{position:absolute;left:0;right:0;bottom:16px;z-index:1;margin:0 auto}
 .widget-preview.is-overflowing:not(.is-collapsed) .expand-button::after{transform:translateY(2px) rotate(-135deg)}
 .closing{padding:48px 0}
 .closing .section-title{font-size:27px}

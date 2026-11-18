@@ -103,7 +103,7 @@ if (location.protocol === 'file:') {
     var sec = document.createElement('section');
     sec.id = t.id;
     sec.className = 'widget-preview is-collapsed';
-    sec.innerHTML = '<div class="phone-box"><h2></h2><iframe loading="eager"></iframe></div><button type="button" class="expand-button" aria-expanded="false">続きを読む</button><footer class="widget-source"><a target="_blank" rel="noopener"></a></footer>';
+    sec.innerHTML = '<div class="phone-box"><h2></h2><iframe loading="eager"></iframe><button type="button" class="expand-button" aria-expanded="false">続きを読む</button></div><footer class="widget-source"><a target="_blank" rel="noopener"></a></footer>';
     var expand = sec.querySelector('.expand-button');
     expand.setAttribute('aria-label', t.name + 'の続きを読む');
     expand.addEventListener('click', function(){
