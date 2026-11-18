@@ -6,7 +6,7 @@
 - `index.html`: ランディングページと全テンプレートのサンプル
 - `resources/landing.css`・`resources/landing.js`: ランディングページのスタイルとコピー機能
 - `resources/widgets.js`: サンプルの会話・シナリオと iframe の表示処理
-- `resources/ogp.png`: OGP画像（1200 × 630px）
+- `resources/ogp-<hash>.png`: 採用したOGP画像（1200 × 630px）
 - `version.txt`: サイトとテンプレート全体の公開バージョン
 - `docs/inline-widget-spec.md`: 仕様・制約・未確認事項
 
@@ -48,7 +48,11 @@ OGP内の株価チャート画像は `resources/hero-assets-widget.png`（366 ×
 
 Muse向けの登録手順はHTMLの `main` 内の先頭に置き、JavaScriptなしでもテンプレートへのリンクと更新確認方法を読めるようにします。画面ではCSS Gridでヒーロー・ウィジェット一覧・登録への案内・登録手順の順に表示し、登録手順を本文の一番下に置きます。登録手順自体は非表示や折りたたみにしません。
 
-OGP画像は `resources/ogp.png` を直接更新します。画像サイズは1200 × 630pxとし、主要な内容は中央834 × 630pxに収めます。ロゴ・見出し・登録文・ウィジェットの紹介は中央630 × 630pxで切り取っても残るようにします。
+OGP画像のサイズは1200 × 630pxとし、主要な内容は中央834 × 630pxに収めます。ロゴ・見出し・ウィジェットの紹介は中央630 × 630pxで切り取っても残るようにします。
+
+採用した案06の画像は `resources/ogp-<hash>.png` の1ファイルだけを保存します。別パターンの `resources/ogp-option-07.png` は比較用に残しています。
+
+**OGP画像を更新するときは、必ず画像URLも変更してください。** 画像内容のSHA-256ハッシュ先頭12桁をファイル名に付け、`index.html` の `og:image` と `twitter:image` の両方を新しい絶対URLへ更新します。同じURLでの上書きや、JavaScriptによるメタタグの書き換えは行いません。差し替え後は以前の採用画像を削除し、同じ画像を別名で重複保存しないでください。
 
 ### グラデーションの描画
 
