@@ -25,45 +25,34 @@ Muse のチャット吹き出し内に HTML を表示する機能（本プロジ
 ```
 .
 ├── README.md
+├── index.html                  # 全テンプレートのサンプルをまとめたプレビュー用ページ
 ├── LICENSE                     # MIT License
 ├── docs/
 │   └── inline-widget-spec.md   # inline widget の仕様メモ
-├── assets/
-│   ├── assets.html             # 資産損益推移(前日比を強調 × 折れ線チャート × 銘柄別の凡例。Muse のテーマに追従)
-│   └── assets_sample.html      # Muse のチャット画面を模したプレビュー用ページ
-├── weather/
-│   ├── weather.html            # 天気ウィジェット(Aurora Glass: 空のグラデーション × 6時間ごとの気温曲線)
-│   └── weather_sample.html     # プレビュー用ページ
-├── clock/
-│   ├── clock.html              # 時計(秒針つきのアナログ時計。Muse のテーマに追従)
-│   └── clock_sample.html       # プレビュー用ページ
-├── omikuji/
-│   ├── omikuji.html            # おみくじ(水彩・絵本風の箱を振って引く × 和紙の短冊に縦書きで結果表示。結果は引く前から決まっていて、HTML には結果1件だけを入れる)
-│   └── omikuji_sample.html     # プレビュー用ページ
-├── quiz/
-│   ├── quiz.html               # 4択クイズ(Duolingo 風・高さ 600px 固定。一通り解いたら、まちがえた問題をすべて直すまで繰り返し、そのあと結果表示)
-│   └── quiz_sample.html        # プレビュー用ページ
-├── secret/
-│   ├── secret.html             # 秘密のメッセージ(金庫風。スマホの数字キーボードで6桁のパスコードを入れると開き、テキスト/画像/両方のメッセージ。「閉じる」でロックに戻る)
-│   └── secret_sample.html      # プレビュー用ページ(パスコードは 123456)
-└── route/
-    ├── route.html              # 乗り換え案内(縦のタイムライン × 現在時刻に応じた「次の行動」表示。所要時間・運賃などは経路から自動計算)
-    └── route_sample.html       # プレビュー用ページ(現在時刻を固定した6パターン)
+└── template/
+    ├── assets.html             # 資産損益推移（折れ線チャート・銘柄別の凡例）
+    ├── clock.html              # 時計（秒針つきのアナログ時計）
+    ├── omikuji.html            # おみくじ（箱をタップして引く。HTML には結果1件だけを入れる）
+    ├── quiz.html               # 4択クイズ（まちがえた問題をすべて直すまで繰り返す）
+    ├── secret.html             # 秘密のメッセージ（6桁のパスコードで開く金庫）
+    ├── weather.html            # 天気（空のグラデーション・6時間ごとの気温曲線）
+    └── route.html              # 乗り換え案内（経路から所要時間・運賃を自動計算）
 ```
 
 テンプレートが増えたら、ここに追記していきます。
 
 ## プレビュー
 
-各ディレクトリの `*_sample.html`(`assets_sample.html`、`weather_sample.html`、`clock_sample.html`、`omikuji_sample.html`、`quiz_sample.html`、`secret_sample.html`、`route_sample.html`)は、各テンプレートを `fetch` で読み込んで、Muse のチャット画面を模した吹き出しの中に表示します。`fetch` を使うため、ローカルサーバー経由で開きます。
+`index.html` に全テンプレートのサンプルをまとめています。`template/` の HTML を `fetch` で読み込み、Muse のチャット画面を模した吹き出しの中に表示します。リポジトリのルートでローカルサーバーを立てて開きます。
 
 ```
-cd assets    # 他は cd weather / clock / omikuji / quiz / secret / route
 python3 -m http.server 8000
-# → http://localhost:8000/assets_sample.html   (他は各 *_sample.html)
+# → http://localhost:8000/
 ```
 
-テンプレートを編集して保存し、ブラウザをリロードすれば反映されます。
+天気は7パターン、乗り換え案内は端末の時計と現在時刻を固定した5パターンを表示します。秘密のメッセージのパスコードは `123456` です。
+
+テンプレートを編集して保存し、ブラウザをリロードすれば反映されます。サンプルの会話・シナリオは `index.html` で管理します。テンプレートを追加するときは `TEMPLATES` と上のディレクトリ構成に追記してください。
 
 ※ 吹き出しの見た目は推測による再現で、実際の Muse の画面とは異なります。
 
