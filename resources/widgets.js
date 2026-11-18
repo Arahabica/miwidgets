@@ -102,14 +102,24 @@ if (location.protocol === 'file:') {
   TEMPLATES.forEach(function(t){
     var sec = document.createElement('section');
     sec.id = t.id;
-    sec.className = 'widget-preview';
-    sec.innerHTML = '<div class="phone-box"><h2></h2><iframe loading="eager"></iframe></div><footer class="widget-source"><a target="_blank" rel="noopener"></a></footer>';
+    sec.className = 'widget-preview is-collapsed';
+    sec.innerHTML = '<div class="phone-box"><h2></h2><iframe loading="eager"></iframe></div><button type="button" class="expand-button" aria-expanded="false">続きを読む</button><footer class="widget-source"><a target="_blank" rel="noopener"></a></footer>';
+    var expand = sec.querySelector('.expand-button');
+    expand.setAttribute('aria-label', t.name + 'の続きを読む');
+    expand.addEventListener('click', function(){
+      var collapsed = sec.classList.toggle('is-collapsed');
+      expand.textContent = collapsed ? '続きを読む' : '閉じる';
+      expand.setAttribute('aria-expanded', String(!collapsed));
+      expand.setAttribute('aria-label', t.name + (collapsed ? 'の続きを読む' : 'を閉じる'));
+      // 閉じたときにカードの先頭が画面外なら、カードの先頭まで戻す。
+      if (collapsed && sec.getBoundingClientRect().top < 0) sec.scrollIntoView({block: 'start'});
+    });
     sec.querySelector('h2').textContent = t.name;
     var prompts = document.createElement('div');
     prompts.className = 'widget-prompts';
     var row = document.createElement('div');
     row.className = 'prompt-example';
-    row.innerHTML = '<p></p><button type="button" class="copy-button prompt-copy" data-copy="' + t.id + '-prompt">プロンプトをコピー <span aria-hidden="true">↗</span></button>';
+    row.innerHTML = '<p></p><button type="button" class="copy-button prompt-copy" data-copy="' + t.id + '-prompt"><svg class="copy-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>プロンプトをコピー</button>';
     var text = row.querySelector('p');
     text.id = t.id + '-prompt';
     text.textContent = PROMPT_EXAMPLES[t.id];
@@ -130,16 +140,21 @@ if (location.protocol === 'file:') {
   });
 }
 
-/* スマホ表示では内容に合わせて伸ばし、ページ全体でスクロールする。 */
+/* スマホ表示では内容に合わせて伸ばし、ページ全体でスクロールする。長いものは折りたたむ。 */
+var COLLAPSED_HEIGHT = 630;
 function configurePreviewSize(frame){
   var doc = frame.contentDocument;
   var phone = doc.querySelector('.phone');
   var mobile = window.matchMedia('(max-width: 768px)');
+  var sec = frame.closest('.widget-preview');
+  var box = frame.closest('.phone-box');
   function resize(){
     doc.documentElement.classList.toggle('expanded-preview', mobile.matches);
     if (mobile.matches) {
       var height = Math.ceil(phone.getBoundingClientRect().height) + 'px';
       if (frame.style.height !== height) frame.style.height = height;
+      // 折りたたみ時の高さを超えるときだけ「続きを読む」を出す。
+      sec.classList.toggle('is-overflowing', box.scrollHeight > COLLAPSED_HEIGHT + 80);
     } else {
       frame.style.removeProperty('height');
     }
