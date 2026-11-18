@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>muse-inline-widget 一覧</title>
+<title>Muse Inline Widget</title>
 <!-- template/ の全テンプレートをチャット風に表示するサンプルページ。
      python3 -m http.server 8000 → http://localhost:8000/ -->
 <style>
@@ -16,22 +16,19 @@ html,body{margin:0;}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;}
 header{position:sticky;top:0;z-index:1;background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;}
 h1{font-size:16px;margin:0;}
-nav{display:flex;flex-wrap:wrap;gap:6px;}
-nav a{font-size:13px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;}
-nav a:hover{border-color:var(--accent);}
-main{display:flex;flex-wrap:wrap;gap:24px;padding:20px 16px 40px;align-items:flex-start;justify-content:center;}
+main{display:flex;flex-wrap:wrap;gap:24px;padding:20px 16px 40px;align-items:flex-start;justify-content:flex-start;}
 section{width:440px;max-width:100%;scroll-margin-top:70px;}
 section h2{font-size:15px;margin:0 4px 2px;display:flex;align-items:baseline;gap:8px;}
 section h2 a{font-size:12px;font-weight:normal;color:var(--muted);}
 section p{font-size:12px;color:var(--muted);margin:0 4px 8px;line-height:1.5;}
-iframe{display:block;width:100%;height:600px;border:0;background:transparent;}
+/* スマホ画面900px + 上下の余白32px */
+iframe{display:block;width:100%;height:932px;border:0;background:transparent;}
 .err{font-size:13px;line-height:1.7;color:#d33;padding:16px;}
 </style>
 </head>
 <body>
 <header>
   <h1>muse-inline-widget 一覧</h1>
-  <nav id="nav"></nav>
 </header>
 <main id="main"></main>
 <template id="preview-shell">
@@ -68,20 +65,20 @@ body{
 }
 @media (prefers-color-scheme: dark){ body{background:#111;} }
 
-/* スマホ画面。PCでは幅390pxの端末風、実機ではそのまま全画面 */
+/* スマホ画面。高さ900pxで固定し、収まらない内容は画面内でスクロールする */
 .phone{
   display:flex;flex-direction:column;
-  width:100%;max-width:390px;min-height:100vh;min-height:100dvh;
+  width:100%;max-width:390px;height:900px;overflow-y:auto;
   margin:0 auto;
   background:var(--page-bg);
   position:relative;
 }
 @media (min-width:430px){
   body{display:flex;align-items:flex-start;justify-content:center;padding:24px 0;}
-  .phone{border-radius:28px;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+  .phone{border-radius:28px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
 }
 
-.chat{flex:1;padding:44px 12px 24px;display:flex;flex-direction:column;gap:10px;}
+.chat{flex:1 0 auto;padding:44px 12px 24px;display:flex;flex-direction:column;gap:10px;}
 .stamp{align-self:center;font-size:11px;color:var(--meta-text);margin:2px 0;}
 
 .msg{max-width:88%;}
@@ -94,7 +91,7 @@ body{
 .msg.ai .bubble.widget{padding:0;overflow:hidden;}
 .label{align-self:flex-start;font-size:11px;color:var(--meta-text);margin:8px 4px -4px;letter-spacing:.04em;}
 
-.phone{min-height:0;} body{background:transparent;padding:4px 0 28px;}
+body{background:transparent;padding:4px 0 28px;}
 </style>
 <div class="phone"><div class="chat" id="chat"><div class="stamp">今日 9:41</div></div></div>
 </template>
@@ -176,18 +173,12 @@ var TEMPLATES = [
   { id: 'route', name: '乗り換え案内', file: 'template/route.html', note: '端末の時計 + 現在時刻を固定した5パターン', user: '明日の朝、新宿から国際会館までの行き方を教えて', reply: '新宿から国際会館までの経路です。現在時刻に合わせて、次にすることを表示します。', scenarios: ROUTE_SCENARIOS }
 ];
 
-var nav = document.getElementById('nav');
 var main = document.getElementById('main');
 
 if (location.protocol === 'file:') {
   main.innerHTML = '<div class="err">file:// では各プレビューを読み込めません。リポジトリのルートでローカルサーバーを立てて開いてください:<br><code>python3 -m http.server 8000</code> → <code>http://localhost:8000/</code></div>';
 } else {
   TEMPLATES.forEach(function(t){
-    var a = document.createElement('a');
-    a.href = '#' + t.id;
-    a.textContent = t.name;
-    nav.appendChild(a);
-
     var sec = document.createElement('section');
     sec.id = t.id;
     sec.innerHTML = '<h2><span></span><a target="_blank"></a></h2><p></p><iframe loading="eager"></iframe>';
@@ -220,9 +211,6 @@ async function renderPreview(frame, t){
   }
   message('user', t.user);
   message('ai', t.reply);
-  var update = function(){ frame.style.height = Math.ceil(doc.body.getBoundingClientRect().height) + 'px'; };
-  new ResizeObserver(update).observe(doc.body);
-  update();
   try {
     var response = await fetch(t.file, {cache: 'no-store'});
     if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -260,7 +248,6 @@ async function renderPreview(frame, t){
     error.textContent = t.file + ' を読み込めません(' + String(err) + ')。';
     chat.appendChild(error);
   }
-  update();
 }
 </script>
 </body>
