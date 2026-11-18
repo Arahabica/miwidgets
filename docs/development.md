@@ -4,6 +4,7 @@
 
 - `template/*.html`: Muse 向けのテンプレート本体
 - `index.html`: 全テンプレートをまとめたサンプルページ
+- `version.txt`: サイトとテンプレート全体の公開バージョン
 - `docs/inline-widget-spec.md`: 仕様・制約・未確認事項
 
 「inline widget」は本プロジェクト上の便宜的な呼び名です。仕様・制約やテンプレート作成の方針は [仕様メモ](inline-widget-spec.md) を参照してください。
@@ -28,9 +29,34 @@ python3 -m http.server 8000
 
 サンプルの会話や天気・経路のシナリオは `index.html` で管理します。ウィジェットの仕様や作成方針は [仕様メモ](inline-widget-spec.md#テンプレート作成時のガイドライン) を参照してください。
 
+### グラデーションの描画
+
+SVG のグラデーション（`<linearGradient>`・`<radialGradient>` と `url(#...)` による参照）は使わないでください。Muse デスクトップ版では、天気アイコンのグラデーションが適用されない現象を確認しています。
+
+背景には CSS のグラデーションを使います。アイコンやグラフなどの形状にグラデーションが必要な場合は、Canvas で描画して PNG の `data:` URI として埋め込みます。単色の図形・線・文字には引き続き SVG を使用できます。
+
 ## テンプレートの追加
 
 1. `template/` に HTML を追加します。
 2. `index.html` の `TEMPLATES` にテンプレートの情報とサンプルの会話を追加します。複数パターンを表示する場合は `scenarios` を設定します。
 3. README のテンプレート一覧にリンクと説明を追加します。
 4. プレビューで表示と操作を確認します。
+
+## 公開バージョンと更新確認
+
+`version.txt` には `1.0.1` のようなバージョン番号だけを記載します。サイトまたはテンプレートを更新して公開するときは、この番号も上げ、変更と同じコミットに含めてください。小さな修正では末尾の番号を1つ増やします。バージョン番号は自動では更新されません。
+
+外部から利用する側は、利用のたびに `https://miwidgets.com/version.txt` を取得し、前回の番号と比較します。番号が変わったときだけ必要なテンプレートを再取得します。
+
+ブラウザから確認する場合は、キャッシュを避けるため、毎回異なるクエリと `cache: 'no-store'` を指定します。
+
+```js
+const response = await fetch(
+  `https://miwidgets.com/version.txt?check=${Date.now()}`,
+  { cache: 'no-store' }
+);
+if (!response.ok) throw new Error(`HTTP ${response.status}`);
+const version = (await response.text()).trim();
+```
+
+テンプレートを再取得するURLにも `?v=1.0.1` のように取得したバージョンを付けると、以前のキャッシュと区別できます。更新確認は外部アクセス可能なクライアント側で行います。Muse 内のウィジェットから外部通信する実装は追加しません。
