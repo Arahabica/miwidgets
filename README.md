@@ -9,7 +9,7 @@ Muse のチャット吹き出し内で使える HTML ウィジェットのテン
 | [資産損益推移](template/assets.html) | 損益の推移を折れ線チャートと銘柄別の凡例で表示 |
 | [時計](template/clock.html) | 秒針つきのアナログ時計 |
 | [おみくじ](template/omikuji.html) | 箱をタップして引くおみくじ |
-| [4択クイズ](template/quiz.html) | まちがえた問題を解き直せるクイズ |
+| [クイズ](template/quiz.html) | 選択肢の数を変えられる、解き直し付きのクイズ |
 | [秘密のメッセージ](template/secret.html) | 6桁のパスコードで開くメッセージ |
 | [天気](template/weather.html) | 天気と6時間ごとの気温・降水確率を表示 |
 | [乗り換え案内](template/route.html) | 経路と、現在時刻に応じた次の行動を表示 |

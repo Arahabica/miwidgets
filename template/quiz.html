@@ -1,4 +1,4 @@
-<!-- クイズテンプレート: Duolingo 風の白い画面(高さ 600px 固定)。進行バーと、下に厚みのある立体的なボタン。4択を答え合わせし、最後まで行ったらまちがえた問題をすべて直すまで繰り返し、そのあと結果を表示する。問題(最大10問)・画像・文言はスクリプト冒頭の data と IMAGES で変更できる。 -->
+<!-- クイズテンプレート: Duolingo 風の白い画面(高さ 600px 固定)。進行バーと、下に厚みのある立体的なボタン。選択式の問題を答え合わせし、最後まで行ったらまちがえた問題をすべて直すまで繰り返し、そのあと結果を表示する。問題(最大10問)・選択肢の数・画像・文言はスクリプト冒頭の data と IMAGES で変更できる。 -->
 <div id="quiz-w"></div>
 <style>
 #quiz-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
@@ -68,6 +68,7 @@
 #quiz-w .rl .ck{display:flex;color:#58cc02;} #quiz-w .rl .ck .ic{width:22px;height:22px;}
 #quiz-w{background:#fff;color:#3c3c3c;}
 #quiz-w .bar{background:#e5e5e5;} #quiz-w .bar i{background:#58cc02;}
+#quiz-w.review .bar i{background:#ff9600;}
 #quiz-w .cnt{color:#afafaf;}
 #quiz-w .im{border:2px solid #e5e5e5;}
 #quiz-w .c{background:#fff;color:#4b4b4b;border:2px solid #e5e5e5;border-radius:14px;box-shadow:0 4px 0 #e5e5e5;}
@@ -99,19 +100,20 @@ var HW = window.hatchWidget || (function(){ var s = null; return { getState: fun
 var data = {
   title: 'いきもの・れきしクイズ',        // string: 見出し
   /* 問題(1〜10問)。上から順に出題する。型:
-   *   { text: string, image?: string, choices: [string, string, string, string], answer: number(0〜3), explanation?: string }
+   *   { text: string, image?: string, choices: string[], answer: number, explanation?: string }
+   *   choices: 選択肢の配列(2件以上)。問題ごとに3択・4択・5択などを指定できる
    *   image:   下の IMAGES のキー(画像なしの問題は省略)
-   *   answer:  正解の選択肢の番号(0 始まり)
+   *   answer:  正解の選択肢の番号(0 始まり。choices の要素数未満)
    *   explanation: 答え合わせのあとに出す解説(省略可) */
   questions: [
     { text: 'こちらの画像の動物の名前をお答えください。', image: 'raccoon',
       choices: ['たぬき', 'アライグマ', 'レッサーパンダ', 'アナグマ'], answer: 1,
       explanation: 'しま模様のしっぽと、目のまわりの黒い模様が特徴です。たぬきのしっぽには、しま模様がありません。' },
     { text: 'こちらの画像の花の名前をお答えください。', image: 'pansy',
-      choices: ['コスモス', 'たんぽぽ', 'チューリップ', 'パンジー'], answer: 3,
+      choices: ['たんぽぽ', 'チューリップ', 'パンジー'], answer: 2,
       explanation: '丸く重なる大きな花びらと、中心の濃い模様(顔のように見える)が特徴です。' },
     { text: '鎌倉幕府の第3代執権はだれ？',
-      choices: ['源頼朝', '源義経', '源実朝', '北条泰時'], answer: 3,
+      choices: ['源頼朝', '源義経', '源実朝', '北条義時', '北条泰時'], answer: 4,
       explanation: '第3代執権は北条泰時。御成敗式目を定めました。源頼朝は初代将軍、源実朝は第3代将軍です。' }
   ],
   text: {                                  // 画面の文言
@@ -147,8 +149,12 @@ R.innerHTML = '<div class="top"><div class="bar"><i></i></div><span class="stk">
 var body = R.querySelector('.body');
 
 function render(){
-  R.querySelector('.bar i').style.width = (st.done.length / N * 100) + '%';
-  R.querySelector('.cnt').textContent = st.done.length + '/' + N;
+  // 正誤ではなく、その周で答え合わせを終えた問題数を進捗にする。
+  var total = st.fin ? N : st.queue.length;
+  var answered = st.fin ? N : Math.min(st.pos + (st.chk ? 1 : 0), total);
+  R.querySelector('.bar i').style.width = (answered / total * 100) + '%';
+  R.querySelector('.cnt').textContent = answered + '/' + total;
+  R.classList.toggle('review', st.round > 0 && !st.fin);
   var sk = R.querySelector('.stk'); sk.innerHTML = st.streak >= 2 ? FLAME + '<b>' + st.streak + '</b>' : ''; sk.title = T.streak;
   R.classList.toggle('fin', !!st.fin);
   if (st.fin) return result();
