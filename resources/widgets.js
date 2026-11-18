@@ -78,7 +78,7 @@ var TEMPLATES = [
   { id: 'weather', name: '天気', file: 'template/weather.html', user: '各地の天気をおしえて', reply: '各地の今日の天気です。', scenarios: WEATHER_SCENARIOS },
   { id: 'route', name: '乗り換え案内', file: 'template/route.html', user: '明日の朝、新宿から国際会館までの行き方を教えて', reply: '新宿から国際会館までの経路です。現在時刻に合わせて、次にすることを表示します。', scenarios: ROUTE_SCENARIOS },
   { id: 'omikuji', name: 'おみくじ', file: 'template/omikuji.html', user: 'おみくじを引きたい', reply: 'おみくじを用意しました。箱をタップして引いてください。' },
-  { id: 'assets', name: '資産損益推移', file: 'template/assets.html', user: '一週間の資産の推移を見せて', reply: '直近1週間の損益推移です。' },
+  { id: 'assets', name: '株価チャート', file: 'template/assets.html', user: '一週間の資産の推移を見せて', reply: '直近1週間の損益推移です。' },
   { id: 'quiz', name: 'クイズ', file: 'template/quiz.html', user: 'クイズを出して', reply: 'クイズです。答えを選んで「OK」を押してください。' },
   { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
   { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' }
@@ -88,7 +88,7 @@ var PROMPT_EXAMPLES = {
   weather: 'miwidgets.comの天気ウィジェットで明日の新宿の天気を表示',
   route: 'miwidgets.comの乗り換え案内ウィジェットで明日の朝9時に新宿から東京駅に着く経路を表示',
   omikuji: 'miwidgets.comのおみくじウィジェットで今日の運勢を占って',
-  assets: 'miwidgets.comの資産損益推移ウィジェットでサンプルデータを使って1週間の損益を表示',
+  assets: 'miwidgets.comの株価チャートウィジェットでサンプルデータを使って1週間の損益を表示',
   quiz: 'miwidgets.comのクイズウィジェットで日本の地理のクイズを5問出して',
   clock: 'miwidgets.comのアナログ時計ウィジェットで現在時刻を表示',
   secret: 'miwidgets.comの秘密のメッセージウィジェットで、パスコード123456で開く「お誕生日おめでとう！」のメッセージを作成'
