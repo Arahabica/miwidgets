@@ -1,5 +1,5 @@
 /* ウィジェットのサンプルと描画処理。 */
-var PREVIEW_SHELL = "\n<style>\n:root{\n  --page-bg:#ffffff;\n  --bubble-user-bg:#3a5ad1;\n  --bubble-user-text:#ffffff;\n  --bubble-ai-bg:#f2f2f7;\n  --bubble-ai-text:#1c1c1e;\n  --meta-text:#8e8e93;\n  /* Muse がウィジェットに渡すテーマ変数(推測) */\n  --hatch-widget-text:#1c1c1e;\n  --hatch-widget-muted:#6e6e73;\n  --hatch-widget-border:#d1d1d6;\n}\n@media (prefers-color-scheme: dark){\n  :root{\n    --page-bg:#000000;\n    --bubble-ai-bg:#2c2c2e;\n    --bubble-ai-text:#f2f2f7;\n    --meta-text:#8e8e93;\n    --hatch-widget-text:#f2f2f7;\n    --hatch-widget-muted:#98989f;\n    --hatch-widget-border:#3a3a3c;\n  }\n}\n*{box-sizing:border-box;}\nhtml,body{margin:0;}\nbody{\n  background:transparent;\n  font-family:-apple-system,BlinkMacSystemFont,\"Hiragino Sans\",\"Noto Sans JP\",sans-serif;\n  -webkit-text-size-adjust:100%;\n}\n/* 枠内の残りの高さに合わせ、収まらない会話はスクロールする */\n.phone{\n  display:flex;flex-direction:column;\n  width:100%;height:100vh;overflow-y:auto;\n  background:var(--page-bg);\n  position:relative;\n}\n\n.chat{flex:1 0 auto;padding:12px 12px 24px;display:flex;flex-direction:column;gap:10px;}\n.stamp{align-self:center;font-size:11px;color:var(--meta-text);margin:2px 0;}\n\n.msg{max-width:88%;}\n.msg.user{align-self:flex-end;}\n.msg.ai{align-self:flex-start;width:100%;max-width:100%;}\n.bubble{border-radius:18px;font-size:14px;line-height:1.55;padding:9px 13px;overflow-wrap:anywhere;}\n.msg.user .bubble{background:var(--bubble-user-bg);color:var(--bubble-user-text);border-bottom-right-radius:6px;}\n.msg.ai .bubble{background:var(--bubble-ai-bg);color:var(--bubble-ai-text);border-bottom-left-radius:6px;}\n/* ウィジェット入りの吹き出し: 余白をなくし、中身を角丸の内側に収める */\n.msg.ai .bubble.widget{padding:0;overflow:hidden;}\n\n\n.widget-identity{flex:none;display:flex;align-items:center;flex-direction:column;margin:0 auto 16px;}\n.widget-avatar{flex:none;width:60px;height:60px;border-radius:50%;overflow:hidden;background:var(--page-bg);border:1px solid var(--hatch-widget-border);}\n.widget-avatar img{display:block;width:100%;height:100%;object-fit:contain;transform:scale(1.12) translateY(4px);}\n.widget-badge{position:relative;z-index:1;display:block;margin-top:-7px;padding:3px 14px;border-radius:999px;background:var(--page-bg);color:var(--bubble-ai-text);box-shadow:0 3px 12px #0000000d;font-size:11px;font-weight:700;line-height:1.5;letter-spacing:.015em;}\n</style>\n<div class=\"phone\"><div class=\"widget-identity\"><div class=\"widget-avatar\"><img src=\"resources/wolly.png\" width=\"60\" height=\"60\" alt=\"Wollyのアバター\" loading=\"lazy\"></div><span class=\"widget-badge\">miwidgets</span></div><div class=\"chat\" id=\"chat\"><div class=\"stamp\">今日 9:41</div></div></div>\n";
+var PREVIEW_SHELL = "\n<style>\n:root{\n  --page-bg:#ffffff;\n  --bubble-user-bg:#3a5ad1;\n  --bubble-user-text:#ffffff;\n  --bubble-ai-bg:#f2f2f7;\n  --bubble-ai-text:#1c1c1e;\n  --meta-text:#8e8e93;\n  /* Muse がウィジェットに渡すテーマ変数(推測) */\n  --hatch-widget-text:#1c1c1e;\n  --hatch-widget-muted:#6e6e73;\n  --hatch-widget-border:#d1d1d6;\n}\n@media (prefers-color-scheme: dark){\n  :root{\n    --page-bg:#000000;\n    --bubble-ai-bg:#2c2c2e;\n    --bubble-ai-text:#f2f2f7;\n    --meta-text:#8e8e93;\n    --hatch-widget-text:#f2f2f7;\n    --hatch-widget-muted:#98989f;\n    --hatch-widget-border:#3a3a3c;\n  }\n}\n*{box-sizing:border-box;}\nhtml,body{margin:0;}\nbody{\n  background:transparent;\n  font-family:-apple-system,BlinkMacSystemFont,\"Hiragino Sans\",\"Noto Sans JP\",sans-serif;\n  -webkit-text-size-adjust:100%;\n}\n/* 枠内の残りの高さに合わせ、収まらない会話はスクロールする */\n.phone{\n  display:flex;flex-direction:column;\n  width:100%;height:100vh;overflow-y:auto;\n  background:var(--page-bg);\n  position:relative;\n}\n\n.chat{flex:1 0 auto;padding:12px 12px 24px;display:flex;flex-direction:column;gap:10px;}\n.stamp{align-self:center;font-size:11px;color:var(--meta-text);margin:2px 0;}\n\n.msg{max-width:88%;}\n.msg.user{align-self:flex-end;}\n.msg.ai{align-self:flex-start;width:100%;max-width:100%;}\n.bubble{border-radius:18px;font-size:14px;line-height:1.55;padding:9px 13px;overflow-wrap:anywhere;}\n.msg.user .bubble{background:var(--bubble-user-bg);color:var(--bubble-user-text);border-bottom-right-radius:6px;}\n.msg.ai .bubble{background:var(--bubble-ai-bg);color:var(--bubble-ai-text);border-bottom-left-radius:6px;}\n/* ウィジェット入りの吹き出し: 余白をなくし、中身を角丸の内側に収める */\n.msg.ai .bubble.widget{padding:0;overflow:hidden;}\n\n\n.widget-identity{flex:none;display:flex;align-items:center;flex-direction:column;margin:0 auto 16px;}\n.widget-avatar{flex:none;width:60px;height:60px;border-radius:50%;overflow:hidden;background:var(--page-bg);border:1px solid var(--hatch-widget-border);}\n.widget-avatar img{display:block;width:100%;height:100%;object-fit:contain;transform:scale(1.12) translateY(4px);}\n.widget-badge{position:relative;z-index:1;display:block;margin-top:-7px;padding:3px 14px;border-radius:999px;background:var(--page-bg);color:var(--bubble-ai-text);box-shadow:0 3px 12px #0000000d;font-size:11px;font-weight:700;line-height:1.5;letter-spacing:.015em;}\n\nhtml.expanded-preview,html.expanded-preview body{height:auto;overflow:visible;}\n.expanded-preview .phone{height:auto;overflow:visible;}\n</style>\n<div class=\"phone\"><div class=\"widget-identity\"><div class=\"widget-avatar\"><img src=\"resources/wolly.png\" width=\"60\" height=\"60\" alt=\"Wollyのアバター\" loading=\"lazy\"></div><span class=\"widget-badge\">miwidgets</span></div><div class=\"chat\" id=\"chat\"><div class=\"stamp\">今日 9:41</div></div></div>\n";
 
 /* プレビュー用のデータはここで管理する。テンプレート本体は template/ に置く。 */
 var WEATHER_SCENARIOS = [
@@ -107,29 +107,46 @@ if (location.protocol === 'file:') {
     sec.querySelector('h2').textContent = t.name;
     var prompts = document.createElement('div');
     prompts.className = 'widget-prompts';
-    [
-      { label: '登録する', text: 'miwidgets.com の' + t.name + 'ウィジェットを登録' },
-      { label: '使ってみる', text: PROMPT_EXAMPLES[t.id] }
-    ].forEach(function(example, index){
-      var row = document.createElement('div');
-      row.className = 'prompt-example';
-      row.innerHTML = '<p></p><button type="button" class="copy-button prompt-copy" data-copy="' + t.id + '-prompt-' + index + '">プロンプトをコピー <span aria-hidden="true">↗</span></button>';
-      var text = row.querySelector('p');
-      text.id = t.id + '-prompt-' + index;
-      text.textContent = example.text;
-      row.querySelector('button').setAttribute('aria-label', t.name + 'を' + example.label + 'プロンプトをコピー');
-      prompts.appendChild(row);
-    });
+    var row = document.createElement('div');
+    row.className = 'prompt-example';
+    row.innerHTML = '<p></p><button type="button" class="copy-button prompt-copy" data-copy="' + t.id + '-prompt">プロンプトをコピー <span aria-hidden="true">↗</span></button>';
+    var text = row.querySelector('p');
+    text.id = t.id + '-prompt';
+    text.textContent = PROMPT_EXAMPLES[t.id];
+    row.querySelector('button').setAttribute('aria-label', t.name + 'のプロンプトをコピー');
+    prompts.appendChild(row);
     sec.appendChild(prompts);
     var link = sec.querySelector('footer a');
     link.href = t.file;
     link.textContent = 'ソース ↗';
     var frame = sec.querySelector('iframe');
     frame.title = t.name;
-    frame.addEventListener('load', function(){ renderPreview(frame, t); }, {once: true});
+    frame.addEventListener('load', function(){
+      configurePreviewSize(frame);
+      renderPreview(frame, t);
+    }, {once: true});
     frame.srcdoc = '<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + t.name + ' プレビュー</title></head><body>' + PREVIEW_SHELL + '</body></html>';
     main.appendChild(sec);
   });
+}
+
+/* スマホ表示では内容に合わせて伸ばし、ページ全体でスクロールする。 */
+function configurePreviewSize(frame){
+  var doc = frame.contentDocument;
+  var phone = doc.querySelector('.phone');
+  var mobile = window.matchMedia('(max-width: 768px)');
+  function resize(){
+    doc.documentElement.classList.toggle('expanded-preview', mobile.matches);
+    if (mobile.matches) {
+      var height = Math.ceil(phone.getBoundingClientRect().height) + 'px';
+      if (frame.style.height !== height) frame.style.height = height;
+    } else {
+      frame.style.removeProperty('height');
+    }
+  }
+  new ResizeObserver(resize).observe(phone);
+  mobile.addEventListener('change', resize);
+  resize();
 }
 
 /* テンプレートごとに iframe を分け、CSS と状態を独立させる。 */

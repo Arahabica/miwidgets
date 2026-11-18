@@ -14,10 +14,9 @@ svg{display:block}
 /* Registration instructions come first in HTML; preserve the LP's visual order. */
 #page-main{display:grid;grid-template-columns:minmax(0,1fr)}
 #page-main>.hero{grid-row:1}
-#page-main>.how-section{grid-row:2}
-#page-main>.widgets-section{grid-row:3}
-#page-main>.closing{grid-row:4}
-#page-main>.instruction-section{grid-row:5}
+#page-main>.widgets-section{grid-row:2}
+#page-main>.closing{grid-row:3}
+#page-main>.instruction-section{grid-row:4}
 .site-header{height:88px;display:flex;align-items:center;justify-content:space-between;gap:24px;position:relative;z-index:3}
 .brand{display:inline-flex;gap:10px;align-items:center;text-decoration:none;font-size:20px;font-weight:800;letter-spacing:-.8px;line-height:1}
 .brand img{width:36px;height:36px;object-fit:contain}
@@ -32,24 +31,14 @@ h1 em{font-style:normal;color:var(--accent)}
 .hero-title-line{display:block;white-space:nowrap;font-size:.8em}
 .hero-lead{font-size:16px;line-height:2;color:var(--muted);margin-bottom:28px}
 .hero-lead strong{font-weight:650;color:var(--ink)}
-.hero-actions{display:flex;align-items:center;margin-top:23px}
-.text-link{font-size:14px;font-weight:650;text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:3px}
-.text-link span{margin-left:12px}
+.install-callout{font-size:clamp(20px,1.8vw,25px);font-weight:800;line-height:1.6;color:var(--accent);margin:0 0 18px;letter-spacing:-.025em}
 .prompt-pane{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:16px 18px;max-width:590px;box-shadow:0 5px 20px #17102b04}
-.prompt-text{font-size:clamp(13px,1.35vw,16px);font-weight:650;line-height:1.9;margin:0;overflow-wrap:anywhere;letter-spacing:-.035em}
+.prompt-text{margin:0;padding:9px 13px;border-radius:18px 18px 6px 18px;background:#e3e6e9;color:#1c1c1e;font-size:14px;font-weight:400;line-height:1.55;overflow-wrap:anywhere}
 .copy-button,.primary-button{border:0;border-radius:9px;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:12px;padding:13px 21px;font-size:12px;font-weight:750;line-height:1.5;text-decoration:none;transition:background .2s,transform .2s;white-space:normal}
 .copy-button:hover,.primary-button:hover{transform:translateY(-2px);filter:brightness(1.07)}
 .prompt-pane .copy-button{margin-top:14px;width:100%;padding:12px 15px}
 .section-title{font-size:clamp(27px,3vw,40px);letter-spacing:-.05em;line-height:1.55;font-weight:750;margin:0 0 16px}
 .section-note{font-size:14px;color:var(--muted);line-height:2;margin:0}
-.how-section{padding:78px 0;border-top:1px solid var(--line)}
-.how-intro{display:flex;justify-content:space-between;align-items:end;gap:30px;margin-bottom:35px}
-.how-intro .section-note{max-width:360px}
-.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;list-style:none;padding:0;margin:0}
-.step{position:relative;padding-top:18px;border-top:1px solid var(--line)}
-.step-number{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.06em}
-.step h3{font-size:16px;margin:16px 0 8px;letter-spacing:-.025em}
-.step p{font-size:14px;color:var(--muted);line-height:1.95;margin:0}
 .instruction-section{padding:70px 0 80px;background:var(--secondary)}
 .instruction-layout{display:grid;grid-template-columns:.85fr 1.15fr;gap:65px;align-items:start;min-width:0}
 .instruction-copy .section-note{max-width:370px}
@@ -64,13 +53,13 @@ h1 em{font-style:normal;color:var(--accent)}
 .instruction-doc a{color:var(--accent)}
 .widgets-section{padding:90px 0 45px;background:var(--gallery)}
 .widget-heading{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:36px}
-.widget-heading .section-note{font-size:14px;max-width:330px}
 .widget-grid{display:grid;grid-template-columns:repeat(auto-fill,390px);gap:32px 24px;padding:12px 16px 40px;align-items:start;justify-content:center;max-width:1350px;margin:auto}
 .widget-preview{width:390px;max-width:100%;min-width:0;scroll-margin-top:80px}
 .widget-prompts{margin-top:20px;padding:0 4px}
-.prompt-example{width:100%;padding:15px;margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-.prompt-example p{margin:0;font-size:14px;font-weight:400;line-height:1.9;letter-spacing:normal;overflow-wrap:anywhere;user-select:text}
-.prompt-example .copy-button{width:100%;margin-top:12px;padding:8px 15px;background:rgba(132,96,207,.85)}
+.prompt-example{width:100%}
+.prompt-example p{margin:0;padding:9px 13px;border-radius:18px 18px 6px 18px;background:#e3e6e9;color:#1c1c1e;font-size:14px;font-weight:400;line-height:1.55;letter-spacing:normal;overflow-wrap:anywhere;user-select:text}
+.prompt-example .copy-button{width:100%;margin-top:12px;padding:7px 15px;background:inherit;color:#7852d5;border:1px solid #7852d577;font-weight:600}
+.prompt-example .copy-button:hover{filter:none;transform:none}
 .phone-box{display:flex;flex-direction:column;width:390px;max-width:100%;height:900px;scroll-margin-top:80px;background:var(--phone-bg,#fff);color:var(--phone-text,#1c1c1e);border-radius:28px;box-shadow:0 2px 8px #00000014;overflow:hidden;line-height:1.8}
 .phone-box h2{flex:none;font-size:15px;margin:0;padding:20px 16px 12px;letter-spacing:0;text-align:center}
 .phone-box footer{flex:none;padding:12px 16px 16px;text-align:right}
@@ -98,6 +87,7 @@ h1 em{font-style:normal;color:var(--accent)}
 .hero-weather-shot{position:absolute;top:20px;left:0;width:290px;margin:0;transform:rotate(-4deg);z-index:2}
 .hero-route-shot{position:absolute;top:275px;right:0;width:300px;margin:0;transform:rotate(3deg);z-index:1}
 .hero-route-shot img,.hero-weather-shot img{display:block;width:100%;height:auto;border:1px solid #ebeaf0;border-radius:20px;box-shadow:0 16px 45px #241e361a;background:#fff}
+.hero-weather-shot img{border:0;border-radius:0;box-shadow:none;background:transparent;filter:drop-shadow(0 16px 22px #241e361a)}
 @media(min-width:1500px){
 .hero h1{font-size:68px}}
 @media(max-width:1050px){
@@ -117,29 +107,19 @@ html{scroll-padding-top:20px}
 .nav-cta{padding:7px 10px}
 .hero h1{font-size:40px;line-height:1.45;letter-spacing:-.065em}
 .hero-lead{font-size:14px;margin-bottom:24px}
-.hero-actions{gap:18px}
 .prompt-pane{max-width:none}
-.prompt-text{font-size:13px}
 .copy-button{font-size:12px;padding:12px 17px}
 .hero{display:flex;flex-direction:column;align-items:stretch;gap:18px;min-height:0;padding:34px 0 45px}
-.how-section{padding:48px 0}
-.how-intro{display:block;margin-bottom:26px}
 .section-title{font-size:28px}
-.how-intro .section-note{max-width:none;margin-top:10px}
-.steps{grid-template-columns:1fr;gap:22px}
-.step{display:grid;grid-template-columns:35px 1fr;gap:0 12px;padding-top:18px}
-.step-number{grid-row:1/3;padding-top:2px}
-.step h3{font-size:15px;margin:0 0 6px}
-.step p{font-size:12px}
 .instruction-section{padding:48px 0}
 .instruction-layout{grid-template-columns:1fr;gap:25px}
 .instruction-copy .section-note{max-width:none}
 .instruction-doc{padding:20px;font-size:12px}
 .widgets-section{padding:48px 0 24px}
 .widget-heading{display:block;margin-bottom:26px}
-.widget-heading .section-note{max-width:none;margin-top:10px}
 .widget-grid{grid-template-columns:minmax(0,1fr);padding:0;gap:24px}
-.phone-box{width:100%;border-radius:0;box-shadow:none!important}
+.phone-box{width:100%;height:auto;border-radius:0;box-shadow:none!important;overflow:visible}
+.phone-box iframe{flex:none}
 .widget-preview{width:100%}
 .widget-prompts{padding:0 20px;margin-bottom:10px}
 .closing{padding:48px 0}
@@ -153,7 +133,7 @@ html{scroll-padding-top:20px}
 .brand{font-size:16px}
 .site-nav{gap:10px}
 .nav-cta{padding:6px 8px}
-.prompt-text{font-size:11px}}
+}
 @media(prefers-reduced-motion:reduce){
 html{scroll-behavior:auto}
 *,*::before,*::after{transition:none!important}}
