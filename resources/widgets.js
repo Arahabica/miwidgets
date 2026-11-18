@@ -103,7 +103,7 @@ if (location.protocol === 'file:') {
     var sec = document.createElement('section');
     sec.id = t.id;
     sec.className = 'widget-preview';
-    sec.innerHTML = '<div class="phone-box"><h2></h2><iframe loading="eager"></iframe><footer><a target="_blank" rel="noopener"></a></footer></div>';
+    sec.innerHTML = '<div class="phone-box"><h2></h2><iframe loading="eager"></iframe></div><footer class="widget-source"><a target="_blank" rel="noopener"></a></footer>';
     sec.querySelector('h2').textContent = t.name;
     var prompts = document.createElement('div');
     prompts.className = 'widget-prompts';
