@@ -8,7 +8,8 @@
 - `ja/index.html`: 日本語のランディングページ(`https://miwidgets.com/ja/`)
 - `resources/landing.css`・`resources/landing.js`: ランディングページのスタイルとコピー機能
 - `resources/widgets.js`: サンプルの会話・シナリオと iframe の表示処理
-- `resources/ogp-<hash>.png`・`resources/ogp-en-<hash>.png`: 日本語・英語のOGP画像（1200 × 630px）
+- `resources/ogp-<hash>.png`・`resources/ogp-en-<hash>.png`: 日本語・英語のOGP画像（1200 × 630pxのレイアウトを2倍解像度の2400 × 1260pxで書き出し）
+- `docs/ogp/ogp-en.html`・`docs/ogp/ogp-ja.html`: OGP画像の元になるHTML
 - `version.txt`: サイトとテンプレート全体の公開バージョン
 - `docs/inline-widget-spec.md`: 仕様・制約・未確認事項
 
@@ -51,6 +52,16 @@ OGP内の株価チャート画像は `resources/hero-assets-widget.png`（366 ×
 Muse向けの登録手順はサイトのHTMLには置かず、ルートの `register.txt` にまとめます。HTMLのページをMuseに読ませると描画後の文字だけが要約されて届き、テンプレートのCSS・JavaScript・`data` が失われるためです。`register.txt` には、ルールとテンプレートのraw URL(`https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/*.html`)をプレーンテキストで記載します。URLはMarkdownのリンクにしません。
 
 OGP画像のサイズは1200 × 630pxとし、主要な内容は中央834 × 630pxに収めます。ロゴ・見出し・ウィジェットの紹介は中央630 × 630pxで切り取っても残るようにします。
+
+OGP画像は `docs/ogp/ogp-<言語>.html` を1200 × 630pxでレイアウトし、ウィジェットの小さい文字がつぶれないよう2倍解像度で書き出します。等倍で書き出すと、縮小・回転したスクリーンショットがぼやけます。リポジトリのルートで次を実行します。
+
+```sh
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars \
+  --allow-file-access-from-files --force-device-scale-factor=2 --window-size=1200,630 \
+  --screenshot="$PWD/ogp-en.png" "file://$PWD/docs/ogp/ogp-en.html"
+```
+
+書き出した画像は下記のルールでハッシュ付きのファイル名にして `resources/` に置き、`og:image:width`・`og:image:height` は2400・1260にします。
 
 採用した案06の画像は `resources/ogp-<hash>.png` の1ファイルだけを保存します。別パターンの `resources/ogp-option-07.png` は比較用に残しています。
 
