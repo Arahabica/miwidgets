@@ -4,6 +4,8 @@ var PREVIEW_SHELL = "\n<style>\n:root{\n  --page-bg:#ffffff;\n  --bubble-user-bg
 /* ページの言語(<html lang>)と、サイトのルート URL。/ja/ からでも template/ と resources/ を正しく参照する */
 var LANG = /^en/.test(document.documentElement.lang) ? 'en' : 'ja';
 var SITE_ROOT = new URL('../', document.currentScript.src).href;
+/* 「ソース」リンクの飛び先。miwidgets.com/template/ は描画されたページになるため、ソースがそのまま読める GitHub の raw を指す */
+var RAW_ROOT = 'https://raw.githubusercontent.com/Arahabica/miwidgets/main/';
 
 /* プレビュー用のデータはここで管理する。テンプレート本体は template/ に置く。 */
 var WEATHER_SCENARIOS = [
@@ -273,7 +275,7 @@ if (location.protocol === 'file:') {
     prompts.appendChild(row);
     sec.appendChild(prompts);
     var link = sec.querySelector('footer a');
-    link.href = SITE_ROOT + t.file;
+    link.href = RAW_ROOT + t.file;
     link.textContent = UI_TEXT.source;
     var frame = sec.querySelector('iframe');
     frame.title = t.name;
