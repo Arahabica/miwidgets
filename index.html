@@ -28,7 +28,7 @@ iframe{display:block;width:100%;height:932px;border:0;background:transparent;}
 </head>
 <body>
 <header>
-  <h1>muse-inline-widget 一覧</h1>
+  <h1>Muse Inline Widget</h1>
 </header>
 <main id="main"></main>
 <template id="preview-shell">
@@ -89,7 +89,6 @@ body{
 .msg.ai .bubble{background:var(--bubble-ai-bg);color:var(--bubble-ai-text);border-bottom-left-radius:6px;}
 /* ウィジェット入りの吹き出し: 余白をなくし、中身を角丸の内側に収める */
 .msg.ai .bubble.widget{padding:0;overflow:hidden;}
-.label{align-self:flex-start;font-size:11px;color:var(--meta-text);margin:8px 4px -4px;letter-spacing:.04em;}
 
 body{background:transparent;padding:4px 0 28px;}
 </style>
@@ -98,7 +97,7 @@ body{background:transparent;padding:4px 0 28px;}
 <script>
 /* プレビュー用のデータはここで管理する。テンプレート本体は template/ に置く。 */
 var WEATHER_SCENARIOS = [
-  { label: '雨(weather.html の初期データ)', data: null },
+  { label: '雨', data: null },
   { label: '晴れ', data: {
       location: '大阪府 大阪市',
       today: { date: '11/17(火)', condition: 'sunny', temp: 22, high: 25, low: 14, pop: 10 },
@@ -215,11 +214,7 @@ async function renderPreview(frame, t){
     var response = await fetch(t.file, {cache: 'no-store'});
     if (!response.ok) throw new Error('HTTP ' + response.status);
     var source = await response.text();
-    (t.scenarios || [{label: t.id + '.html'}]).forEach(function(sc, i){
-      var label = doc.createElement('div');
-      label.className = 'label';
-      label.textContent = sc.label;
-      chat.appendChild(label);
+    (t.scenarios || [{}]).forEach(function(sc, i){
       var mount = message('ai', '');
       mount.classList.add('widget');
       var html = source;
