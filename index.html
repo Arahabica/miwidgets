@@ -7,22 +7,26 @@
 <!-- template/ の全テンプレートをチャット風に表示するサンプルページ。
      python3 -m http.server 8000 → http://localhost:8000/ -->
 <style>
-:root{--bg:#e9e9ee;--card:#fff;--text:#1c1c1e;--muted:#6e6e73;--line:#d1d1d6;--accent:#3a5ad1;}
+:root{--bg:#e9e9ee;--card:#fff;--phone-bg:#fff;--text:#1c1c1e;--muted:#6e6e73;--line:#d1d1d6;--accent:#3a5ad1;}
 @media (prefers-color-scheme: dark){
-  :root{--bg:#111;--card:#1c1c1e;--text:#f2f2f7;--muted:#98989f;--line:#3a3a3c;--accent:#7d95ff;}
+  :root{--bg:#111;--card:#1c1c1e;--phone-bg:#000;--text:#f2f2f7;--muted:#98989f;--line:#3a3a3c;--accent:#7d95ff;}
 }
 *{box-sizing:border-box;}
 html,body{margin:0;}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;}
 header{position:sticky;top:0;z-index:1;background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;}
 h1{font-size:16px;margin:0;}
-main{display:flex;flex-wrap:wrap;gap:24px;padding:20px 16px 40px;align-items:flex-start;justify-content:flex-start;}
-section{width:440px;max-width:100%;scroll-margin-top:70px;}
-section h2{font-size:15px;margin:0 4px 2px;display:flex;align-items:baseline;gap:8px;}
-section h2 a{font-size:12px;font-weight:normal;color:var(--muted);}
-section p{font-size:12px;color:var(--muted);margin:0 4px 8px;line-height:1.5;}
-/* スマホ画面900px + 上下の余白32px */
-iframe{display:block;width:100%;height:932px;border:0;background:transparent;}
+main{display:grid;grid-template-columns:repeat(auto-fill,390px);gap:24px;padding:20px 16px 40px;align-items:start;justify-content:center;}
+/* 名前・プレビュー・ソースリンクを含めて高さ900pxのスマホ枠 */
+.phone-box{display:flex;flex-direction:column;width:390px;max-width:100%;height:900px;scroll-margin-top:70px;background:var(--phone-bg);border-radius:28px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;}
+.phone-box h2{flex:none;font-size:15px;margin:0;padding:20px 16px 12px;}
+.phone-box footer{flex:none;padding:12px 16px 16px;text-align:right;}
+.phone-box footer a{font-size:12px;color:var(--muted);}
+iframe{display:block;flex:1;min-height:0;width:100%;border:0;background:transparent;}
+@media (max-width:768px){
+  main{grid-template-columns:minmax(0,1fr);padding:0 0 24px;}
+  .phone-box{width:100%;border-radius:0;box-shadow:none;}
+}
 .err{font-size:13px;line-height:1.7;color:#d33;padding:16px;}
 </style>
 </head>
@@ -59,26 +63,19 @@ iframe{display:block;width:100%;height:932px;border:0;background:transparent;}
 *{box-sizing:border-box;}
 html,body{margin:0;}
 body{
-  background:#d9d9de;
+  background:transparent;
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
   -webkit-text-size-adjust:100%;
 }
-@media (prefers-color-scheme: dark){ body{background:#111;} }
-
-/* スマホ画面。高さ900pxで固定し、収まらない内容は画面内でスクロールする */
+/* 枠内の残りの高さに合わせ、収まらない会話はスクロールする */
 .phone{
   display:flex;flex-direction:column;
-  width:100%;max-width:390px;height:900px;overflow-y:auto;
-  margin:0 auto;
+  width:100%;height:100vh;overflow-y:auto;
   background:var(--page-bg);
   position:relative;
 }
-@media (min-width:430px){
-  body{display:flex;align-items:flex-start;justify-content:center;padding:24px 0;}
-  .phone{border-radius:28px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
-}
 
-.chat{flex:1 0 auto;padding:44px 12px 24px;display:flex;flex-direction:column;gap:10px;}
+.chat{flex:1 0 auto;padding:12px 12px 24px;display:flex;flex-direction:column;gap:10px;}
 .stamp{align-self:center;font-size:11px;color:var(--meta-text);margin:2px 0;}
 
 .msg{max-width:88%;}
@@ -90,7 +87,6 @@ body{
 /* ウィジェット入りの吹き出し: 余白をなくし、中身を角丸の内側に収める */
 .msg.ai .bubble.widget{padding:0;overflow:hidden;}
 
-body{background:transparent;padding:4px 0 28px;}
 </style>
 <div class="phone"><div class="chat" id="chat"><div class="stamp">今日 9:41</div></div></div>
 </template>
@@ -163,13 +159,13 @@ var ROUTE_SCENARIOS = [
   { now: '11:30', label: '11:30 到着後' }
 ];
 var TEMPLATES = [
-  { id: 'assets', name: '資産損益推移', file: 'template/assets.html', note: '前日比を強調した折れ線チャート', user: '一週間の資産の推移を見せて', reply: '直近1週間の損益推移です。' },
-  { id: 'clock', name: '時計', file: 'template/clock.html', note: '秒針つきのアナログ時計', user: '今の時間を見せて', reply: '現在の時刻です。' },
-  { id: 'omikuji', name: 'おみくじ', file: 'template/omikuji.html', note: '箱をタップして引く', user: 'おみくじを引きたい', reply: 'おみくじを用意しました。箱をタップして引いてください。' },
-  { id: 'quiz', name: '4択クイズ', file: 'template/quiz.html', note: '選んで「OK」。まちがえた問題は最後にやり直し', user: 'クイズを出して', reply: 'クイズです。答えを選んで「OK」を押してください。' },
-  { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', note: 'パスコードは 123456', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' },
-  { id: 'weather', name: '天気', file: 'template/weather.html', note: '雨・晴れ・晴れ時々くもり・くもり・雷雨・雪・夜の7パターン', user: 'いろんな天気を見せて', reply: '各地の今日の天気です。', scenarios: WEATHER_SCENARIOS },
-  { id: 'route', name: '乗り換え案内', file: 'template/route.html', note: '端末の時計 + 現在時刻を固定した5パターン', user: '明日の朝、新宿から国際会館までの行き方を教えて', reply: '新宿から国際会館までの経路です。現在時刻に合わせて、次にすることを表示します。', scenarios: ROUTE_SCENARIOS }
+  { id: 'assets', name: '資産損益推移', file: 'template/assets.html', user: '一週間の資産の推移を見せて', reply: '直近1週間の損益推移です。' },
+  { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
+  { id: 'omikuji', name: 'おみくじ', file: 'template/omikuji.html', user: 'おみくじを引きたい', reply: 'おみくじを用意しました。箱をタップして引いてください。' },
+  { id: 'quiz', name: '4択クイズ', file: 'template/quiz.html', user: 'クイズを出して', reply: 'クイズです。答えを選んで「OK」を押してください。' },
+  { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' },
+  { id: 'weather', name: '天気', file: 'template/weather.html', user: 'いろんな天気を見せて', reply: '各地の今日の天気です。', scenarios: WEATHER_SCENARIOS },
+  { id: 'route', name: '乗り換え案内', file: 'template/route.html', user: '明日の朝、新宿から国際会館までの行き方を教えて', reply: '新宿から国際会館までの経路です。現在時刻に合わせて、次にすることを表示します。', scenarios: ROUTE_SCENARIOS }
 ];
 
 var main = document.getElementById('main');
@@ -180,12 +176,12 @@ if (location.protocol === 'file:') {
   TEMPLATES.forEach(function(t){
     var sec = document.createElement('section');
     sec.id = t.id;
-    sec.innerHTML = '<h2><span></span><a target="_blank"></a></h2><p></p><iframe loading="eager"></iframe>';
-    sec.querySelector('h2 span').textContent = t.name;
-    var link = sec.querySelector('h2 a');
+    sec.className = 'phone-box';
+    sec.innerHTML = '<h2></h2><iframe loading="eager"></iframe><footer><a target="_blank" rel="noopener"></a></footer>';
+    sec.querySelector('h2').textContent = t.name;
+    var link = sec.querySelector('footer a');
     link.href = t.file;
     link.textContent = 'ソース ↗';
-    sec.querySelector('p').textContent = t.note;
     var frame = sec.querySelector('iframe');
     frame.title = t.name;
     frame.addEventListener('load', function(){ renderPreview(frame, t); }, {once: true});
