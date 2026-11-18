@@ -11,20 +11,20 @@ img{max-width:100%}
 svg{display:block}
 ::selection{background:var(--tint);color:var(--ink)}
 .wrap{width:min(1120px,calc(100% - 64px));margin-inline:auto}
-/* Registration instructions come first in HTML; preserve the LP's visual order. */
 #page-main{display:grid;grid-template-columns:minmax(0,1fr);overflow-x:clip}
-#page-main>.hero{grid-row:1}
-#page-main>.widgets-section{grid-row:2}
-#page-main>.closing{grid-row:3}
-#page-main>.instruction-section{grid-row:4}
 .site-header{height:88px;display:flex;align-items:center;justify-content:space-between;gap:24px;position:relative;z-index:3}
 .brand{display:inline-flex;gap:10px;align-items:center;text-decoration:none;font-size:20px;font-weight:800;letter-spacing:-.8px;line-height:1}
 .brand img{width:36px;height:36px;object-fit:contain}
 .brand .domain{font-weight:500;color:var(--muted)}
 .site-nav{display:flex;align-items:center;gap:28px;font-size:14px;font-weight:650}
-.site-nav a{text-decoration:none}
+.site-nav a{text-decoration:none;white-space:nowrap}
 .site-nav a:hover{color:var(--accent-ink)}
 .nav-cta{border:1px solid var(--line);padding:9px 17px;border-radius:999px}
+.lang-switch{color:var(--muted)}
+/* 英語は和文用の詰めた字間を戻し、見出しの1行目も折り返せるようにする */
+:lang(en) h1,:lang(en) .section-title,:lang(en) .install-callout{letter-spacing:-.025em}
+:lang(en) .hero-title-line{white-space:normal}
+:lang(en) h1{line-height:1.2}
 h1,h2,h3,p{margin-top:0}
 h1{font-size:clamp(36px,4.6vw,65px);font-weight:800;line-height:1.45;letter-spacing:-.065em;margin-bottom:25px}
 h1 em{font-style:normal;color:var(--accent-ink)}
@@ -47,18 +47,6 @@ h1 em{font-style:normal;color:var(--accent-ink)}
 .trust-badges a:hover{text-decoration:underline}
 .section-title{font-size:clamp(27px,3vw,40px);letter-spacing:-.05em;line-height:1.55;font-weight:750;margin:0 0 16px}
 .section-note{font-size:14px;color:var(--muted);line-height:2;margin:0}
-.instruction-section{padding:70px 0 80px;background:var(--secondary)}
-.instruction-layout{display:grid;grid-template-columns:.85fr 1.15fr;gap:65px;align-items:start;min-width:0}
-.instruction-copy .section-note{max-width:370px}
-.instruction-doc{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;font-size:12px;line-height:1.9}
-.instruction-doc h3{font-size:15px;margin:25px 0 12px}
-.instruction-doc p{margin:0;color:var(--muted);overflow-wrap:anywhere}
-.instruction-doc table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px;text-align:left}
-.instruction-doc th,.instruction-doc td{padding:12px 8px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
-.instruction-doc th:first-child{width:34%;padding-left:0}
-.instruction-doc th{font-weight:650}
-.instruction-doc td{color:var(--muted);padding-right:0}
-.instruction-doc a{color:var(--accent-ink)}
 .widgets-section{padding:90px 0 45px;background:var(--gallery)}
 .widget-heading{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:36px}
 .widget-grid{display:grid;grid-template-columns:repeat(auto-fill,390px);gap:32px 24px;padding:12px 16px 40px;align-items:start;justify-content:center;max-width:1350px;margin:auto}
@@ -96,6 +84,8 @@ h1 em{font-style:normal;color:var(--accent-ink)}
 }
 @media(prefers-color-scheme:dark) and (min-width:769px){
 .phone-box{box-shadow:0 0 0 1px var(--line)}}
+/* 拡大したロゴ(.hero-visual::before)がコピー側まで広がるので、コピーを前面に置く */
+.hero-copy{position:relative;z-index:1}
 .hero-visual{position:relative;isolation:isolate;min-width:0;height:760px}
 .hero-visual::before{content:"";position:absolute;width:min(500px,100%);height:500px;left:50%;top:50%;transform:translate(-50%,-50%) scale(1.6);background:url("miwidgets.png") center/contain no-repeat;opacity:var(--logo-opacity);z-index:-1}
 .hero-weather-shot{position:absolute;top:20px;left:0;width:290px;margin:0;transform:rotate(-4deg);z-index:3}
@@ -110,7 +100,6 @@ h1 em{font-style:normal;color:var(--accent-ink)}
 .wrap{width:calc(100% - 48px)}
 .site-nav{gap:20px}
 .hero h1{font-size:45px}
-.instruction-layout{gap:35px}
 }
 @media(max-width:768px){
 html{scroll-padding-top:20px}
@@ -127,10 +116,6 @@ html{scroll-padding-top:20px}
 .install-steps{font-size:13px}
 .hero{display:flex;flex-direction:column;align-items:stretch;gap:18px;min-height:0;padding:34px 0 45px}
 .section-title{font-size:28px}
-.instruction-section{padding:48px 0}
-.instruction-layout{grid-template-columns:1fr;gap:25px}
-.instruction-copy .section-note{max-width:none}
-.instruction-doc{padding:20px;font-size:12px}
 .widgets-section{padding:48px 0 24px}
 .widget-heading{display:block;margin-bottom:26px}
 .widget-grid{grid-template-columns:minmax(0,1fr);padding:0;gap:24px}
@@ -168,7 +153,12 @@ html{scroll-behavior:auto}
 .hero-visual::before{height:400px}
 }
 @media(max-width:768px){
-.hero-visual{height:680px;margin:25px 0 0}
+/* モバイルでは見出しのすぐ下にスクショ群を出す。.hero-copy を解体して並び順を指定する */
+.hero{gap:0}
+.hero-copy{display:contents}
+.hero-copy>*{position:relative;z-index:1}
+.hero-copy>:not(h1){order:2}
+.hero-visual{order:1;height:680px;margin:0 0 -30px}
 .hero-visual::before{height:340px}
 .hero-weather-shot{width:62%;max-width:250px;top:15px}
 .hero-assets-shot{width:40%;max-width:150px;left:48px;bottom:75px}
@@ -182,3 +172,7 @@ html{scroll-behavior:auto}
 @media(prefers-color-scheme:dark){
 .hero-route-shot img,.hero-assets-shot img,.hero-clock-shot img{box-shadow:0 16px 45px #0006}
 .hero-weather-shot img{filter:drop-shadow(0 16px 22px #0006)}}
+/* 英語の見出しは語が長いので、和文より一回り小さくする(既存のサイズ指定より後に置く) */
+:lang(en) .hero h1{font-size:clamp(34px,4.1vw,58px)}
+@media(max-width:768px){:lang(en) .hero h1{font-size:36px}}
+@media(max-width:370px){:lang(en) .hero h1{font-size:31px}}

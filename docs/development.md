@@ -3,10 +3,12 @@
 ## ファイル構成
 
 - `template/*.html`: Muse 向けのテンプレート本体
-- `index.html`: ランディングページと全テンプレートのサンプル
+- `register.txt`: Muse が登録時に読む入口ファイル(`https://miwidgets.com/register.txt`)。ルールとテンプレートの raw URL を記載
+- `index.html`: 英語のランディングページと全テンプレートのサンプル(`https://miwidgets.com/`)
+- `ja/index.html`: 日本語のランディングページ(`https://miwidgets.com/ja/`)
 - `resources/landing.css`・`resources/landing.js`: ランディングページのスタイルとコピー機能
 - `resources/widgets.js`: サンプルの会話・シナリオと iframe の表示処理
-- `resources/ogp-<hash>.png`: 採用したOGP画像（1200 × 630px）
+- `resources/ogp-<hash>.png`・`resources/ogp-en-<hash>.png`: 日本語・英語のOGP画像（1200 × 630px）
 - `version.txt`: サイトとテンプレート全体の公開バージョン
 - `docs/inline-widget-spec.md`: 仕様・制約・未確認事項
 
@@ -46,13 +48,23 @@ OGP内の株価チャート画像は `resources/hero-assets-widget.png`（366 ×
 
 天気画像は角丸の外側を透過にします。HTMLから画像を書き出す際は、ページの白い背景を合成せず、透過を保持してください。ヒーロー側でも白い下地や枠線は重ねません。
 
-Muse向けの登録手順はHTMLの `main` 内の先頭に置き、JavaScriptなしでもテンプレートへのリンクと更新確認方法を読めるようにします。画面ではCSS Gridでヒーロー・ウィジェット一覧・登録への案内・登録手順の順に表示し、登録手順を本文の一番下に置きます。登録手順自体は非表示や折りたたみにしません。
+Muse向けの登録手順はサイトのHTMLには置かず、ルートの `register.txt` にまとめます。HTMLのページをMuseに読ませると描画後の文字だけが要約されて届き、テンプレートのCSS・JavaScript・`data` が失われるためです。`register.txt` には、ルールとテンプレートのraw URL(`https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/*.html`)をプレーンテキストで記載します。URLはMarkdownのリンクにしません。
 
 OGP画像のサイズは1200 × 630pxとし、主要な内容は中央834 × 630pxに収めます。ロゴ・見出し・ウィジェットの紹介は中央630 × 630pxで切り取っても残るようにします。
 
 採用した案06の画像は `resources/ogp-<hash>.png` の1ファイルだけを保存します。別パターンの `resources/ogp-option-07.png` は比較用に残しています。
 
 **OGP画像を更新するときは、必ず画像URLも変更してください。** 画像内容のSHA-256ハッシュ先頭12桁をファイル名に付け、`index.html` の `og:image` と `twitter:image` の両方を新しい絶対URLへ更新します。同じURLでの上書きや、JavaScriptによるメタタグの書き換えは行いません。差し替え後は以前の採用画像を削除し、同じ画像を別名で重複保存しないでください。
+
+### 英語と日本語
+
+英語ページを `/`、日本語ページを `/ja/` に置きます。2つのページは `hreflang` で相互に参照し、ヘッダーの言語リンクで切り替えます。自動のリダイレクトはしません。登録用のプロンプトは英語が「Register the widgets from miwidgets.com/register.txt」、日本語が「miwidgets.com/register.txt のウィジェットを登録して」で、どちらも同じ `register.txt` を読ませます。
+
+テンプレートは1ファイルで両方の言語に対応します。既定は日本語で、画面に組み込みの文言があるテンプレート(乗り換え案内・おみくじ・株価チャート・時計)は `data.lang` を `'en'` にすると英語の文言・書式になります。それ以外の文言はすべて `data` に置き、英語で使うときは `data` の文字列を英語にします。テンプレートのURLは言語で分けません。
+
+`resources/widgets.js` と `resources/landing.js` は `<html lang>` を見て言語を切り替えます。英語のサンプルは `widgets.js` の `EN_PATCHES` で、テンプレートの `data` の直後に上書きします。`/ja/` からも正しく読み込めるよう、テンプレートと画像はサイトのルート(`SITE_ROOT`)から参照します。
+
+英語のヒーロー画像は `resources/hero-<名前>-widget-en.png` です。日本語版と同じ条件(366px幅を2倍解像度、天気は角丸の外側を透過、乗換案内は行程部分のみ)で、`EN_PATCHES` を適用したテンプレートから撮影します。テンプレートの見た目やサンプルを変えたときは、両方の言語の画像を更新してください。OGP画像のURL変更のルールは英語版にも適用します。
 
 ### グラデーションの描画
 
@@ -63,15 +75,16 @@ SVG のグラデーション（`<linearGradient>`・`<radialGradient>` と `url(
 ## テンプレートの追加
 
 1. `template/` に HTML を追加します。
-2. `resources/widgets.js` の `TEMPLATES` にテンプレートの情報とサンプルの会話を追加します。複数パターンを表示する場合は `scenarios` を設定します。
-3. README のテンプレート一覧にリンクと説明を追加します。
-4. プレビューで表示と操作を確認します。
+2. `resources/widgets.js` の `TEMPLATES` にテンプレートの情報とサンプルの会話を追加します。複数パターンを表示する場合は `scenarios` を設定します。英語ページ用に `EN_TEMPLATES`・`EN_PATCHES`・`EN_PROMPT_EXAMPLES` にも追加します。
+3. `register.txt` のテンプレート一覧に、名前・説明・raw URLを追加します。
+4. README のテンプレート一覧にリンクと説明を追加します。
+5. 英語と日本語の両方のプレビューで表示と操作を確認します。
 
 ## 公開バージョンと更新確認
 
 `version.txt` には `1.0.1` のようなバージョン番号だけを記載します。サイトまたはテンプレートを更新して公開するときは、この番号も上げ、変更と同じコミットに含めてください。小さな修正では末尾の番号を1つ増やします。バージョン番号は自動では更新されません。
 
-`index.html` の「Museへのおねがい」にある現在のバージョン（`.current-version`）も、`version.txt` と同じ番号に更新してください。JavaScriptを実行しない読み取りにも対応するため、番号はHTMLに直接記載します。
+バージョン番号は `version.txt` だけに記載します。`register.txt` やHTMLには書きません。
 
 外部から利用する側は、利用のたびに `https://miwidgets.com/version.txt` を取得し、前回の番号と比較します。番号が変わったときだけ必要なテンプレートを再取得します。
 

@@ -41,6 +41,7 @@
 var data = {
   /* ---- 表示テキスト ---------------------------------------------
    * 型: { [キー]: string } ・すべて必須
+   * 英語で使うときは、このファイルの文字列(text・location・updatedAt・date・time・conditions の label)をすべて英語にする
    */
   text: {
     popLabel: '降水確率',          // string: 降水確率のラベル
@@ -66,7 +67,8 @@ var data = {
 
   /* ---- 6時間ごとの天気(その日の0時から24時まで) -------------
    * 型: { time: string, condition: ConditionKey, temp: number, pop: number, current?: boolean }[]
-   *   time: '0時', '6時', '12時', '18時', '24時' の5件。24時より後は表示しない
+   *   time: 時刻の表示ラベル。0時から24時まで6時間ごとの5件を順に並べる(6件目以降は表示しない)
+   *         日本語は '0時', '6時', '12時', '18時', '24時'、英語は '12 AM', '6 AM', '12 PM', '6 PM', '12 AM'
    *   current: true にすると、現在の時間帯として強調表示する(省略可。1件だけ指定)
    */
   hourly: [
@@ -195,8 +197,7 @@ try {
   root.style.setProperty('--ac', c.accent);
   var pin = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg>';
   var drop = '<svg width="11" height="13" viewBox="0 0 24 28" fill="currentColor"><path d="M12 1C8 8 3 12.5 3 18a9 9 0 0 0 18 0c0-5.5-5-10-9-17z"/></svg>';
-  var hours = ['0時', '6時', '12時', '18時', '24時'];
-  var hs = hours.map(function(time){ return data.hourly.find(function(h){ return h.time === time; }); }).filter(function(h){ return !!h; });
+  var hs = data.hourly.slice(0, 5);
   var n = hs.length;
   var W = 330, H = 140, px = 34, top = 58, ph = 36;
   var tmin = Math.min.apply(null, hs.map(function(h){ return h.temp; })), tmax = Math.max.apply(null, hs.map(function(h){ return h.temp; }));

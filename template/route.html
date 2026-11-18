@@ -50,11 +50,13 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 
 /* ===== data: 表示内容はすべてここで変える(架空の経路・時刻) ===== */
 var data = {
+  lang: 'ja',                        // 'ja' | 'en': 画面の文言の言語。英語では title・date・segments の文字列も英語にする
+  currency: 'JPY',                   // string: 運賃の通貨(ISO 4217。'JPY' / 'USD' / 'EUR' など)
   now: null,                         // string | null: 現在時刻を固定する(例 '08:20')。null なら端末の現在時刻。プレビュー用
   title: '新宿 → 国際会館',          // string: 見出し
   date: '11/20(木)',                  // string: 日付の表示
   /* 経路。上から順に並べる。型:
-   *   乗車: { type: 'train', line: string(路線・列車名), color: string(路線色), from: string, dep: 'HH:MM', to: string, arr: 'HH:MM', platform: string, bound?: string(行先。省略時は to), note?: string, fare: number(円) }
+   *   乗車: { type: 'train', line: string(路線・列車名), color: string(路線色), from: string, dep: 'HH:MM', to: string, arr: 'HH:MM', platform: string(番線。例 '3番線' / 'Track 3'), bound?: string(行先。省略時は to), note?: string, fare: number(currency の金額) }
    *   乗換: { type: 'transfer', walk: number(徒歩の分), note?: string }   ← 前後の乗車の間に1つ置く
    * 所要時間・乗換回数・運賃合計・待ち時間は、ここから自動計算される。 */
   segments: [
@@ -68,8 +70,55 @@ var data = {
 
 function tm(s){ var a = s.split(':'); return +a[0] * 60 + +a[1]; }
 function dur(a, b){ var d = tm(b) - tm(a); return d < 0 ? d + 1440 : d; }
-function hm(min){ var h = Math.floor(min / 60), m = min % 60; return h ? h + '時間' + (m ? m + '分' : '') : m + '分'; }
-function yen(n){ return n.toLocaleString('ja-JP') + '円'; }
+var EN = data.lang === 'en';
+/* 画面の文言。経路の中身(駅名・路線名など)は data に書く */
+var UI = EN ? {
+  hm: function(h, m){ return h ? h + 'h' + (m ? ' ' + m + 'm' : '') : m + ' min'; },
+  before: 'BEFORE DEPARTURE', arrived: 'ARRIVED', riding: 'ON BOARD', transfer: 'TRANSFER',
+  boardNext: function(pf, b){ return 'Next: take the train to ' + b + ' from ' + pf; },
+  departIn: function(dep, line, rest){ return 'Departs ' + dep + ' · ' + line + ' · in ' + rest; },
+  arrivedAt: function(to){ return 'Arrived at ' + to; },
+  arrivedSub: function(arr){ return 'Arrived ' + arr + ' · Well done!'; },
+  getOff: function(to){ return 'Get off at ' + to; },
+  ridingLine: function(line){ return 'Riding the ' + line; },
+  untilStop: function(to, rest){ return rest + ' to ' + to; },
+  transferAt: function(to){ return 'Transfer at ' + to; },
+  walkNote: function(note, w){ return note + ' (' + w + ' min walk)'; },
+  walk: function(w){ return w + ' min walk'; },
+  waiting: 'Waiting',
+  nextDep: function(dep, rest){ return 'Departs ' + dep + ', in ' + rest; },
+  sumRoute: 'Depart → Arrive', sumTime: 'Duration', sumTransfers: 'Transfers', sumFare: 'Fare',
+  times: function(n){ return String(n); },
+  platform: function(pf){ return pf; },
+  boardHere: 'Board here next',
+  transferRow: function(w, wait){ return 'Transfer · ' + w + ' min walk' + (wait ? ' + ' + wait + ' min wait' : ''); }
+} : {
+  hm: function(h, m){ return h ? h + '時間' + (m ? m + '分' : '') : m + '分'; },
+  before: '出発前', arrived: '到着', riding: '乗車中', transfer: '乗換中',
+  boardNext: function(pf, b){ return '次は' + pf + '、' + b + '行きに乗ってください'; },
+  departIn: function(dep, line, rest){ return dep + '発 ' + line + ' · あと' + rest; },
+  arrivedAt: function(to){ return to + 'に到着しました'; },
+  arrivedSub: function(arr){ return arr + '着 · おつかれさまでした'; },
+  getOff: function(to){ return '次は' + to + 'で降ります'; },
+  ridingLine: function(line){ return line + ' に乗車中'; },
+  untilStop: function(to, rest){ return to + 'まで あと' + rest; },
+  transferAt: function(to){ return to + 'で乗換'; },
+  walkNote: function(note, w){ return note + '(徒歩' + w + '分)'; },
+  walk: function(w){ return '徒歩' + w + '分'; },
+  waiting: '待ち時間',
+  nextDep: function(dep, rest){ return dep + '発 あと' + rest; },
+  sumRoute: '出発 → 到着', sumTime: '所要', sumTransfers: '乗換', sumFare: '運賃',
+  times: function(n){ return n + '回'; },
+  platform: function(pf){ return pf + '発'; },
+  boardHere: '次はここから乗車',
+  transferRow: function(w, wait){ return '乗換 徒歩' + w + '分' + (wait ? ' + 待ち' + wait + '分' : ''); }
+};
+function hm(min){ return UI.hm(Math.floor(min / 60), min % 60); }
+function yen(n){
+  if (!EN && data.currency === 'JPY') return n.toLocaleString('ja-JP') + '円';
+  try { return new Intl.NumberFormat(EN ? 'en-US' : 'ja-JP', { style: 'currency', currency: data.currency || 'JPY' }).format(n); }
+  catch (e) { return n.toLocaleString() + ' ' + data.currency; }
+}
 function p2(n){ return (n < 10 ? '0' : '') + n; }
 var S = data.segments, trains = S.filter(function(s){ return s.type === 'train'; });
 var first = trains[0], last = trains[trains.length - 1];
@@ -99,21 +148,21 @@ function render(){
   }
   /* いちばん上の「次にすること」 */
   var bt, bm, bs, bc;
-  if (now < tm(first.dep)) { s = first; bt = '出発前'; bm = '次は' + esc(s.platform) + '、' + esc(bound(s)) + '行きに乗ってください'; bs = s.dep + '発 ' + esc(s.line) + ' · あと' + hm(tm(s.dep) - now); bc = s.color; }
-  else if (now >= tm(last.arr)) { bt = '到着'; bm = esc(last.to) + 'に到着しました'; bs = last.arr + '着 · おつかれさまでした'; bc = '#12a150'; }
+  if (now < tm(first.dep)) { s = first; bt = UI.before; bm = UI.boardNext(esc(s.platform), esc(bound(s))); bs = UI.departIn(s.dep, esc(s.line), hm(tm(s.dep) - now)); bc = s.color; }
+  else if (now >= tm(last.arr)) { bt = UI.arrived; bm = UI.arrivedAt(esc(last.to)); bs = UI.arrivedSub(last.arr); bc = '#12a150'; }
   else if (cur >= 0 && S[cur].type === 'train') {
     s = S[cur]; var rest = tm(s.arr) - now;
-    bt = '乗車中'; bc = s.color;
-    bm = rest <= 3 ? '次は' + esc(s.to) + 'で降ります' : esc(s.line) + ' に乗車中';
-    bs = esc(s.to) + 'まで あと' + hm(rest) + (S[cur + 1] && S[cur + 1].type === 'transfer' ? ' · ' + esc(s.to) + 'で乗換' : '');
+    bt = UI.riding; bc = s.color;
+    bm = rest <= 3 ? UI.getOff(esc(s.to)) : UI.ridingLine(esc(s.line));
+    bs = UI.untilStop(esc(s.to), hm(rest)) + (S[cur + 1] && S[cur + 1].type === 'transfer' ? ' · ' + UI.transferAt(esc(s.to)) : '');
   } else {
     var t = cur >= 0 ? S[cur] : null, nt = S[cur + 1], elapsed = now - tm(S[cur - 1].arr), walking = elapsed < t.walk;
-    bt = '乗換中'; bc = nt.color;
-    bm = '次は' + esc(nt.platform) + '、' + esc(bound(nt)) + '行きに乗ってください';
-    bs = (walking ? (t.note ? esc(t.note) + '(徒歩' + t.walk + '分)' : '徒歩' + t.walk + '分') : '待ち時間') + ' · ' + nt.dep + '発 あと' + hm(tm(nt.dep) - now);
+    bt = UI.transfer; bc = nt.color;
+    bm = UI.boardNext(esc(nt.platform), esc(bound(nt)));
+    bs = (walking ? (t.note ? UI.walkNote(esc(t.note), t.walk) : UI.walk(t.walk)) : UI.waiting) + ' · ' + UI.nextDep(nt.dep, hm(tm(nt.dep) - now));
   }
   var h = '<div class="hd"><div class="ti">' + esc(data.title) + '</div><div class="dt">' + esc(data.date) + '</div></div>' +
-    '<div class="sm"><div><small>出発 → 到着</small><b>' + first.dep + ' → ' + last.arr + '</b></div><div><small>所要</small><b>' + hm(total) + '</b></div><div><small>乗換</small><b>' + transfers + '回</b></div><div><small>運賃</small><b>' + yen(fare) + '</b></div></div>' +
+    '<div class="sm"><div><small>' + UI.sumRoute + '</small><b>' + first.dep + ' → ' + last.arr + '</b></div><div><small>' + UI.sumTime + '</small><b>' + hm(total) + '</b></div><div><small>' + UI.sumTransfers + '</small><b>' + UI.times(transfers) + '</b></div><div><small>' + UI.sumFare + '</small><b>' + yen(fare) + '</b></div></div>' +
     '<div class="bn" style="--c:' + bc + '"><div class="bt">' + bt + '</div><div class="bm">' + bm + '</div><div class="bs">' + bs + '</div></div><div class="tl">';
   S.forEach(function(s, i){
     var isCur = i === cur, f = 0;
@@ -121,12 +170,12 @@ function render(){
     var mark = isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div><div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '';
     if (s.type === 'train') {
       var pastDep = now >= tm(s.dep), pastArr = now >= tm(s.arr);
-      h += stn(s.from, s.dep, 'dep' + (i === S.indexOf(trains[0]) || true ? '' : ''), s.color, '<span class="pf">' + esc(s.platform) + '発</span>' + (i === nxt ? '<span class="nx" style="background:' + s.color + '">次はここから乗車</span>' : ''), pastDep);
+      h += stn(s.from, s.dep, 'dep' + (i === S.indexOf(trains[0]) || true ? '' : ''), s.color, '<span class="pf">' + UI.platform(esc(s.platform)) + '</span>' + (i === nxt ? '<span class="nx" style="background:' + s.color + '">' + UI.boardHere + '</span>' : ''), pastDep);
       h += '<div class="rw ride' + (pastArr ? ' ps' : '') + '"><div class="tt"></div><div class="rl"><i style="background:' + s.color + '"></i>' + (isCur ? '<div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '') + '</div><div class="ct"><span class="ln" style="background:' + s.color + '">' + esc(s.line) + '</span><span class="du">' + hm(s.min) + (s.note ? ' · ' + esc(s.note) : '') + '</span></div>' + (isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div>' : '') + '</div>';
       h += stn(s.to, s.arr, 'arr', s.color, '', pastArr);
     } else {
       var pastTr = now >= tm(S[i + 1].dep);
-      h += '<div class="rw tr' + (pastTr ? ' ps' : '') + '"><div class="tt"></div><div class="rl"><i class="ds"></i>' + (isCur ? '<div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '') + '</div><div class="ct"><span class="tc">乗換 徒歩' + s.walk + '分' + (s.wait ? ' + 待ち' + s.wait + '分' : '') + (s.note ? ' · ' + esc(s.note) : '') + '</span></div>' + (isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div>' : '') + '</div>';
+      h += '<div class="rw tr' + (pastTr ? ' ps' : '') + '"><div class="tt"></div><div class="rl"><i class="ds"></i>' + (isCur ? '<div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '') + '</div><div class="ct"><span class="tc">' + UI.transferRow(s.walk, s.wait) + (s.note ? ' · ' + esc(s.note) : '') + '</span></div>' + (isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div>' : '') + '</div>';
     }
   });
   R.innerHTML = h + '</div>';

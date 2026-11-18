@@ -44,6 +44,8 @@ try {
  * data: 変更しうる値はすべてここに集約。描画ロジックは data だけを参照して生成する。
  * ============================================================ */
 var data = {
+  lang: 'ja',   // 'ja' | 'en': 金額の書式。ja は「+9,800円」「+2万」、en は「+$9,800」「+$20k」。英語では text と items の name も英語にする
+
   /* ---- 表示テキスト -------------------------------------------
    * 型: { [キー]: string } ・すべて必須
    */
@@ -54,7 +56,8 @@ var data = {
     asOfSuffix: '時点',                      // string: パネル見出しの日付の後ろに付く語
     noData: 'この時点のデータはありません',  // string: 選択銘柄に値がない日のメッセージ
     unitYen: '円',                           // string: 金額の単位
-    unitMan: '万'                            // string: 凡例・Y軸の単位(1万=10000円)
+    unitMan: '万',                           // string: 凡例・Y軸の単位(1万=10000円)
+    currencySymbol: '$'                      // string: lang が 'en' のときに金額の前に付ける記号
   },
 
   /* ---- 色 -----------------------------------------------------
@@ -155,9 +158,12 @@ var T = data.text, C = data.colors, CH = data.chart, MI = data.mini;
 
 function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function sign(v){ return v > 0 ? '+' : ''; }
-function fmt(v){ return sign(v) + v.toLocaleString('ja-JP') + T.unitYen; }
-function fmtMan(v){ return sign(v) + (v / 10000).toFixed(1) + T.unitMan; }
-function fmtTick(v){ return v === 0 ? '0' + T.unitMan : sign(v) + (v / 10000) + T.unitMan; }
+var EN = data.lang === 'en';
+/* en: 符号 → 記号 → 金額(+$9,800 / -$1.2k)。ja: 金額 → 単位(+9,800円 / -0.1万) */
+function money(v, body){ return (v < 0 ? '-' : v > 0 ? '+' : '') + T.currencySymbol + body; }
+function fmt(v){ return EN ? money(v, Math.abs(v).toLocaleString('en-US')) : sign(v) + v.toLocaleString('ja-JP') + T.unitYen; }
+function fmtMan(v){ return EN ? money(v, (Math.abs(v) / 1000).toFixed(1) + 'k') : sign(v) + (v / 10000).toFixed(1) + T.unitMan; }
+function fmtTick(v){ return EN ? (v === 0 ? T.currencySymbol + '0' : money(v, Math.abs(v) / 1000 + 'k')) : (v === 0 ? '0' + T.unitMan : sign(v) + (v / 10000) + T.unitMan); }
 function colHead(v){ return v < 0 ? C.down : C.up; }
 function colPanel(v){ return v < 0 ? C.panelDown : C.panelUp; }
 function last(arr){ return arr[arr.length - 1]; }

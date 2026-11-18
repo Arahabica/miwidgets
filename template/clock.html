@@ -25,6 +25,7 @@ var HW = window.hatchWidget || (function(){ var s = null; return { getState: fun
 
 /* ===== data: 表示内容はすべてここで変える ===== */
 var data = {
+  lang: 'ja',                  // 'ja' | 'en': 日付の表示言語
   label: '東京',               // string: 時計の名前(場所など)
   timezone: 'Asia/Tokyo',      // string | null: IANA タイムゾーン名。null で端末の地域
   showSeconds: true,           // boolean: 秒針とデジタル表示の秒を出すか
@@ -33,12 +34,13 @@ var data = {
 
 function parts(tz){
   var o = { hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit', year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short' }, m = {};
-  function run(){ new Intl.DateTimeFormat('ja-JP', o).formatToParts(new Date()).forEach(function(p){ m[p.type] = p.value; }); }
+  function run(){ new Intl.DateTimeFormat(data.lang === 'en' ? 'en-US' : 'ja-JP', o).formatToParts(new Date()).forEach(function(p){ m[p.type] = p.value; }); }
   try { if (tz) o.timeZone = tz; run(); } catch (e) { delete o.timeZone; run(); } // 不正なタイムゾーンは端末の地域で代用
   return { h: +m.hour, mi: +m.minute, s: +m.second, y: +m.year, mo: +m.month, d: +m.day, wd: m.weekday };
 }
 function p2(n){ return (n < 10 ? '0' : '') + n; }
-function dateText(p){ return p.y + '年' + p.mo + '月' + p.d + '日(' + p.wd + ')'; }
+var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function dateText(p){ return data.lang === 'en' ? p.wd + ', ' + MONTHS[p.mo - 1] + ' ' + p.d + ', ' + p.y : p.y + '年' + p.mo + '月' + p.d + '日(' + p.wd + ')'; }
 /* アナログ時計の文字盤(viewBox 0 0 200 200)。full=false なら目盛りは12個だけ */
 function analog(full){
   var t = '', i, a, big, r1, r2;

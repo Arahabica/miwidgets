@@ -1,68 +1,53 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>miwidgets — museにウィジェットを追加しよう！</title>
-<meta name="description" content="Museのチャットの吹き出しに、天気・乗換案内・クイズなどのウィジェットを表示して操作できます。「miwidgets.com のウィジェットを登録して」と送って始めよう。">
+<title>miwidgets — Add widgets to Muse</title>
+<meta name="description" content="Show interactive widgets like weather, transit directions and quizzes right inside Muse chat bubbles. Send “Register the widgets from miwidgets.com/register.txt” to get started.">
 <link rel="canonical" href="https://miwidgets.com/">
+<link rel="alternate" hreflang="en" href="https://miwidgets.com/">
+<link rel="alternate" hreflang="ja" href="https://miwidgets.com/ja/">
+<link rel="alternate" hreflang="x-default" href="https://miwidgets.com/">
 <link rel="icon" type="image/png" href="resources/miwidgets.png">
 <meta name="theme-color" content="#fdfcff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14111b" media="(prefers-color-scheme: dark)">
 <meta property="og:type" content="website">
-<meta property="og:locale" content="ja_JP">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
 <meta property="og:site_name" content="miwidgets">
-<meta property="og:title" content="museにウィジェットを追加しよう！ | miwidgets">
-<meta property="og:description" content="Museのチャットの吹き出しに、天気・乗換案内・クイズなどのウィジェットを表示して操作できます。「miwidgets.com のウィジェットを登録して」と送って始めよう。">
+<meta property="og:title" content="Add widgets to Muse | miwidgets">
+<meta property="og:description" content="Show interactive widgets like weather, transit directions and quizzes right inside Muse chat bubbles. Send “Register the widgets from miwidgets.com/register.txt” to get started.">
 <meta property="og:url" content="https://miwidgets.com/">
-<meta property="og:image" content="https://miwidgets.com/resources/ogp-19bfdc170c24.png">
+<meta property="og:image" content="https://miwidgets.com/resources/ogp-en-f6c8bc90f9d7.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="いつものMuseを、もっと便利に。チャットの吹き出しと、天気・乗換案内・株価チャートのウィジェット表示例。miwidgets.com">
+<meta property="og:image:alt" content="The Muse you know, now more useful. A chat bubble with weather, transit and stock chart widgets. miwidgets.com">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="museにウィジェットを追加しよう！ | miwidgets">
-<meta name="twitter:description" content="Museのチャットの吹き出しに、天気・乗換案内・クイズなどのウィジェットを表示して操作できます。「miwidgets.com のウィジェットを登録して」と送って始めよう。">
-<meta name="twitter:image" content="https://miwidgets.com/resources/ogp-19bfdc170c24.png">
+<meta name="twitter:title" content="Add widgets to Muse | miwidgets">
+<meta name="twitter:description" content="Show interactive widgets like weather, transit directions and quizzes right inside Muse chat bubbles. Send “Register the widgets from miwidgets.com/register.txt” to get started.">
+<meta name="twitter:image" content="https://miwidgets.com/resources/ogp-en-f6c8bc90f9d7.png">
 <link rel="stylesheet" href="resources/landing.css">
 <script src="resources/landing.js" defer></script>
 <script src="resources/widgets.js" defer></script>
 </head>
 <body>
-<a class="skip-link" href="#page-main">本文へスキップ</a>
+<a class="skip-link" href="#page-main">Skip to content</a>
 <header class="site-header wrap">
-  <a class="brand" href="index.html" aria-label="miwidgets ホーム"><img src="resources/miwidgets.png" width="36" height="36" alt="">miwidgets<span class="domain">.com</span></a>
-  <nav class="site-nav" aria-label="メインナビゲーション"><a class="nav-cta" href="#widgets">ウィジェット一覧 <span aria-hidden="true">↓</span></a></nav>
+  <a class="brand" href="./" aria-label="miwidgets home"><img src="resources/miwidgets.png" width="36" height="36" alt="">miwidgets<span class="domain">.com</span></a>
+  <nav class="site-nav" aria-label="Main navigation"><a class="lang-switch" href="ja/" hreflang="ja" lang="ja">日本語</a><a class="nav-cta" href="#widgets">Browse widgets <span aria-hidden="true">↓</span></a></nav>
 </header>
 <main id="page-main">
-<section class="instruction-section" id="instructions" aria-labelledby="instruction-title"><div class="instruction-layout wrap">
-  <div class="instruction-copy"><h2 class="section-title" id="instruction-title">Museへのおねがい</h2><p class="section-note">※このセクションはMuseが読むための説明です。</p></div>
-  <div class="instruction-doc" id="muse-instructions">
-    <p>これはMuseのチャット吹き出し内で使えるHTMLウィジェットのテンプレート集です。</p>
-    <h3 id="template-list-title">テンプレート一覧</h3>
-    <table aria-labelledby="template-list-title"><thead><tr><th scope="col">テンプレート</th><th scope="col">内容</th></tr></thead><tbody>
-<tr><th scope="row"><a href="https://miwidgets.com/template/weather.html">天気</a></th><td>1日分の天気とその6時間ごとの天気。</td></tr>
-<tr><th scope="row"><a href="https://miwidgets.com/template/route.html">乗り換え案内</a></th><td>経路と、現在時刻に応じた次の行動を表示</td></tr>
-<tr><th scope="row"><a href="https://miwidgets.com/template/omikuji.html">おみくじ</a></th><td>おみくじアプリ</td></tr>
-<tr><th scope="row"><a href="https://miwidgets.com/template/assets.html">株価チャート</a></th><td>損益の推移を折れ線チャートと銘柄別の凡例で表示</td></tr>
-<tr><th scope="row"><a href="https://miwidgets.com/template/quiz.html">クイズ</a></th><td>選択式クイズアプリ</td></tr>
-<tr><th scope="row"><a href="https://miwidgets.com/template/clock.html">アナログ時計</a></th><td>秒針つきのアナログ時計</td></tr>
-<tr><th scope="row"><a href="https://miwidgets.com/template/secret.html">秘密のメッセージ</a></th><td>6桁のパスコードで開くメッセージ</td></tr>
-    </tbody></table>
-    <h3>更新の確認</h3>
-    <p>現在のバージョン：<strong class="current-version">1.0.11</strong></p>
-    <p>使う前に <a href="https://miwidgets.com/version.txt">miwidgets.com/version.txt</a> のバージョンを確認してください。前回と番号が変わっていたら、必要なテンプレートを再取得してください。</p>
-  </div>
-</div></section>
-<section class="hero wrap" aria-labelledby="hero-title"><div class="hero-copy"><h1 id="hero-title"><span class="hero-title-line">Museのチャットに、</span><em>ウィジェット</em>を。</h1><p class="hero-lead">天気や乗換案内、チャートからクイズまで。<br><strong>Museの吹き出しの中で、そのまま動くウィジェット</strong>を追加できます。</p><p class="install-callout">インストールはプロンプトを入力するだけ！</p><div class="prompt-pane"><p class="prompt-text" id="registration-prompt">miwidgets.com のウィジェットを登録して</p><button class="copy-button" type="button" data-copy="registration-prompt"><svg class="copy-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>プロンプトをコピー</button></div><ol class="install-steps" aria-label="使い方"><li><span class="step-num" aria-hidden="true">1</span>プロンプトをコピー</li><li><span class="step-num" aria-hidden="true">2</span>Museのチャットに貼って送信</li><li><span class="step-num" aria-hidden="true">3</span>「明日の新宿の天気をウィジェットで見せて」と頼むだけ</li></ol><ul class="trust-badges" aria-label="特長"><li>無料</li><li>オープンソース（MIT）</li><li><a href="https://github.com/Arahabica/muse-inline-widget" target="_blank" rel="noopener">ソースはGitHubで公開</a></li></ul></div><div class="hero-visual" aria-label="チャット内のウィジェット表示例"><figure class="hero-weather-shot"><img src="resources/ogp-weather-widget.png" width="732" height="878" alt="天気ウィジェットの表示例。晴れの天気と気温、6時間ごとの予報" fetchpriority="high"></figure><figure class="hero-assets-shot"><img src="resources/hero-assets-widget.png" width="732" height="1000" alt="株価チャートの表示例。折れ線グラフと銘柄別の損益" fetchpriority="high"></figure><figure class="hero-clock-shot"><img src="resources/hero-clock-widget.png" width="732" height="762" alt="秒針つきアナログ時計ウィジェットの表示例" loading="eager"></figure><figure class="hero-route-shot"><img src="resources/hero-route-widget.png" width="732" height="842" alt="乗換案内の行程。07:58 新宿 3番線発から国際会館までの乗換と時刻を表示" fetchpriority="high"></figure></div></section>
+<section class="hero wrap" aria-labelledby="hero-title"><div class="hero-copy"><h1 id="hero-title"><span class="hero-title-line">Your Muse chats,</span>now with <em>widgets</em>.</h1><p class="hero-lead">Weather, transit directions, charts, quizzes and more.<br><strong>Widgets that run right inside Muse’s chat bubbles.</strong></p><p class="install-callout">Install with a single prompt!</p><div class="prompt-pane"><p class="prompt-text" id="registration-prompt">Register the widgets from miwidgets.com/register.txt</p><button class="copy-button" type="button" data-copy="registration-prompt"><svg class="copy-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>Copy prompt</button></div><ol class="install-steps" aria-label="How to use"><li><span class="step-num" aria-hidden="true">1</span>Copy the prompt</li><li><span class="step-num" aria-hidden="true">2</span>Paste it into a Muse chat and send</li><li><span class="step-num" aria-hidden="true">3</span>Then just ask, “Show tomorrow’s weather in London as a widget”</li></ol><ul class="trust-badges" aria-label="Highlights"><li>Free</li><li>Open source (MIT)</li><li><a href="https://github.com/Arahabica/miwidgets" target="_blank" rel="noopener">Source on GitHub</a></li></ul></div><div class="hero-visual" aria-label="Examples of widgets in a chat"><figure class="hero-weather-shot"><img src="resources/hero-weather-widget-en.png" width="732" height="836" alt="Weather widget example: sunny, with the temperature and a forecast every 6 hours" fetchpriority="high"></figure><figure class="hero-assets-shot"><img src="resources/hero-assets-widget-en.png" width="732" height="994" alt="Stock chart example: a line chart with profit and loss per holding" fetchpriority="high"></figure><figure class="hero-clock-shot"><img src="resources/hero-clock-widget-en.png" width="732" height="724" alt="Analog clock widget with a second hand" loading="eager"></figure><figure class="hero-route-shot"><img src="resources/hero-route-widget-en.png" width="732" height="792" alt="Transit timeline from Shinjuku, Track 3 at 07:58, to Kokusaikaikan with transfers and times" fetchpriority="high"></figure></div></section>
 
 <section class="widgets-section" id="widgets" aria-labelledby="widgets-title">
-  <div class="widget-heading wrap"><div><h2 class="section-title" id="widgets-title">何を追加しよう？</h2></div></div>
+  <div class="widget-heading wrap"><div><h2 class="section-title" id="widgets-title">What will you add?</h2></div></div>
   <div class="widget-grid" id="main"></div>
-  <noscript><p class="wrap">ウィジェットのサンプルを見るにはJavaScriptを有効にしてください。テンプレートのリンクは「Museへのおねがい」に記載しています。</p></noscript>
+  <noscript><p class="wrap">Turn on JavaScript to see the widget previews. The template sources are on <a href="https://github.com/Arahabica/miwidgets">GitHub</a>.</p></noscript>
 </section>
-<section class="closing" aria-labelledby="closing-title"><div class="wrap"><h2 class="section-title" id="closing-title">いつもの会話に、ひとつ追加。</h2><p class="section-note">「miwidgets.com のウィジェットを登録して」だけでOK。</p><button class="copy-button" type="button" data-copy="registration-prompt"><svg class="copy-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>プロンプトをコピー</button></div></section>
+<section class="closing" aria-labelledby="closing-title"><div class="wrap"><h2 class="section-title" id="closing-title">One small addition to every conversation.</h2><p class="section-note">Just send “Register the widgets from miwidgets.com/register.txt”.</p><button class="copy-button" type="button" data-copy="registration-prompt"><svg class="copy-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>Copy prompt</button></div></section>
 </main>
-<footer class="site-footer"><div class="wrap"><span>miwidgets.com — MuseのためのHTMLウィジェット集</span><div class="footer-links"><a href="https://github.com/Arahabica/muse-inline-widget" target="_blank" rel="noopener">GitHub ↗</a><a href="version.txt">バージョン</a><a href="LICENSE">MIT License</a></div></div></footer>
+<footer class="site-footer"><div class="wrap"><span>miwidgets.com — HTML widgets for Muse</span><div class="footer-links"><a href="https://github.com/Arahabica/miwidgets" target="_blank" rel="noopener">GitHub ↗</a><a href="version.txt">Version</a><a href="LICENSE">MIT License</a></div></div></footer>
 <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
 </body>
 </html>

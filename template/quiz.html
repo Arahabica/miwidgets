@@ -97,6 +97,7 @@ try {
 var HW = window.hatchWidget || (function(){ var s = null; return { getState: function(d){ return s === null ? d : s; }, setState: function(v){ s = v; } }; })();
 
 /* ===== data: 問題と表示する文言はすべてここで変える ===== */
+/* 英語で使うときは、data の文字列(問題・選択肢・解説・text・result)をすべて英語にし、text.unitQuestion を '' にする */
 var data = {
   title: 'いきもの・れきしクイズ',        // string: 見出し
   /* 問題(1〜10問)。上から順に出題する。型:
@@ -121,7 +122,8 @@ var data = {
     correct: '正解!', wrong: '不正解', answerIs: '正解',
     review: 'まちがえた問題をもう一度', streak: '連続正解',
     firstTry: '1回目で正解', rate: '正答率', reviewed: '復習した問題',
-    okFirst: '一発正解', okReview: '復習で正解'
+    okFirst: '一発正解', okReview: '復習で正解',
+    unitQuestion: '問'                     // 問題数の単位(英語では '')
   },
   /* 結果画面の見出しとひとこと。1回目でまちがえた数で、3つのうちどれを出すかが決まる。
    * 型: { title: string, message: string }
@@ -200,7 +202,7 @@ function result(){
   var key = st.first.length === 0 ? 'perfect' : st.first.length === 1 ? 'oneMiss' : 'more', tier = data.result[key];
   R.classList.remove('perfect', 'oneMiss', 'more'); R.classList.add(key);
   body.innerHTML = '<div class="res">' + (key === 'perfect' ? '<img class="tr" alt="" src="' + TROPHY_IMG + '">' : '') + '<div class="rt">' + esc(tier.title) + '</div><div class="rm">' + esc(tier.message) + '</div>' +
-    '<div class="sts"><div class="s1"><small>' + esc(T.firstTry) + '</small><b>' + firstOk + '/' + N + '</b></div><div class="s2"><small>' + esc(T.rate) + '</small><b>' + pct + '%</b></div><div class="s3"><small>' + esc(T.reviewed) + '</small><b>' + st.first.length + '問</b></div></div>' +
+    '<div class="sts"><div class="s1"><small>' + esc(T.firstTry) + '</small><b>' + firstOk + '/' + N + '</b></div><div class="s2"><small>' + esc(T.rate) + '</small><b>' + pct + '%</b></div><div class="s3"><small>' + esc(T.reviewed) + '</small><b>' + st.first.length + esc(T.unitQuestion || '') + '</b></div></div>' +
     '<ul class="rl">' + QS.map(function(q, i){ var f = st.first.indexOf(i) < 0;
       return '<li class="' + (f ? 'l1' : 'l2') + '"><span class="n">Q' + (i + 1) + '</span><span class="a">' + esc(q.choices[q.answer]) + '</span>' + (f ? '<span class="ck" title="' + esc(T.okFirst) + '">' + icon(true) + '</span>' : '<em>' + esc(T.okReview) + '</em>') + '</li>'; }).join('') + '</ul></div>';
 }
