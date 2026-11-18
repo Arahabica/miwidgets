@@ -333,29 +333,8 @@ async function renderPreview(frame, t){
     (t.scenarios || [{}]).forEach(function(sc, i){
       var mount = message('ai', '');
       mount.classList.add('widget');
-      var html = source;
-      if (t.id === 'weather') {
-        html = html.split('wx1b').join('wx1b_' + i);
-        if (sc.data) {
-          html = html.replace(/(var data = \{[\s\S]*?\n\};)/, function(m){ return m + '\nObject.assign(data, ' + JSON.stringify(sc.data) + ');'; });
-        }
-      }
-      if (t.id === 'route') {
-        html = html.split('route-w').join('route-w' + i);
-        if (sc.now) html = html.replace('now: null', "now: '" + sc.now + "'");
-      }
-      // 英語ページでは、テンプレートの data の直後で英語のサンプルに置き換える。
-      if (t.dataPatch) {
-        html = html.replace(/(\nvar data = \{[\s\S]*?\n\};)/, function(m){ return m + '\n(' + t.dataPatch.toString() + ')(data);'; });
-      }
-      mount.innerHTML = html;
-      // innerHTML 内の script を作り直し、各テンプレートを実行する。
-      // hatchWidget がない場合、テンプレート自身が独立したメモリ上の状態を用意する。
-      mount.querySelectorAll('script').forEach(function(old){
-        var el = doc.createElement('script');
-        el.textContent = old.textContent;
-        old.replaceWith(el);
-      });
+      mount.innerHTML = templateHtml(source, t, sc, i);
+      runScripts(mount, doc);
     });
   } catch (err) {
     var error = doc.createElement('div');
@@ -364,3 +343,62 @@ async function renderPreview(frame, t){
     chat.appendChild(error);
   }
 }
+
+/* テンプレートの HTML にサンプルのデータを当てる。suffix を渡すと、同じ文書に並べても ID がぶつからないよう付け替える。 */
+function templateHtml(source, t, sc, suffix){
+  var html = source;
+  if (t.id === 'weather') {
+    if (suffix != null) html = html.split('wx1b').join('wx1b_' + suffix);
+    if (sc && sc.data) {
+      html = html.replace(/(var data = \{[\s\S]*?\n\};)/, function(m){ return m + '\nObject.assign(data, ' + JSON.stringify(sc.data) + ');'; });
+    }
+  }
+  if (t.id === 'route') {
+    if (suffix != null) html = html.split('route-w').join('route-w' + suffix);
+    if (sc && sc.now) html = html.replace('now: null', "now: '" + sc.now + "'");
+  }
+  // 英語ページでは、テンプレートの data の直後で英語のサンプルに置き換える。
+  if (t.dataPatch) {
+    html = html.replace(/(\nvar data = \{[\s\S]*?\n\};)/, function(m){ return m + '\n(' + t.dataPatch.toString() + ')(data);'; });
+  }
+  return html;
+}
+
+/* innerHTML 内の script を作り直し、テンプレートを実行する。
+   hatchWidget がない場合、テンプレート自身が独立したメモリ上の状態を用意する。 */
+function runScripts(container, doc){
+  container.querySelectorAll('script').forEach(function(old){
+    var el = doc.createElement('script');
+    el.textContent = old.textContent;
+    old.replaceWith(el);
+  });
+}
+
+/* ヒーローの天気と時計は、テンプレートを DOM として描画して動かす。
+   テンプレートは ID でスコープされた HTML 片なので、ページに直接入れられる。ランディング側の CSS とクラス名がぶつからないよう注意する。 */
+var HERO_WIDTH = 366; // ヒーローの PNG は 366px 幅の表示を2倍解像度で撮影している
+
+/* テンプレートをヒーローに入れる。PNG は読み込み完了まで表示し、その後は場所取りとして残す。 */
+function mountHeroTemplate(id, selector){
+  var fig = document.querySelector(selector);
+  var t = TEMPLATES.filter(function(x){ return x.id === id; })[0];
+  if (!fig || !t || location.protocol === 'file:') return;
+  fetch(SITE_ROOT + t.file).then(function(r){
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  }).then(function(source){
+    var live = document.createElement('div');
+    live.className = 'hero-live';
+    live.setAttribute('aria-hidden', 'true'); // 内容は PNG の alt で説明済み
+    live.innerHTML = templateHtml(source, t, (t.scenarios || [])[0], null);
+    fig.appendChild(live);
+    runScripts(live, document);
+    function fit(){ live.style.transform = 'scale(' + (fig.clientWidth / HERO_WIDTH) + ')'; }
+    new ResizeObserver(fit).observe(fig);
+    fit();
+    fig.classList.add('is-live');
+  }).catch(function(){ /* 読み込めなければ PNG のまま */ });
+}
+
+mountHeroTemplate('weather', '.hero-weather-shot');
+mountHeroTemplate('clock', '.hero-clock-shot');
