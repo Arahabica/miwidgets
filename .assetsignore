@@ -8,6 +8,5 @@ _headers
 .assetsignore
 docs
 README.md
-CNAME
 b.png
 _redirects

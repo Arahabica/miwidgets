@@ -123,3 +123,8 @@ const version = (await response.text()).trim();
 - `wrangler.jsonc` の `html_handling` は `none` です。既定の `auto-trailing-slash` では `/template/weather.html` が `/template/weather` へリダイレクトされるためです。代わりに `_redirects` で `/` と `/ja/` を `index.html` に割り当てます。
 - 配信しないファイル(`docs/`・README・設定ファイルなど)は `.assetsignore` に書きます。
 - ローカルでは `npx wrangler@4 dev` で本番と同じヘッダー・リダイレクトを確認できます。
+- 次の設定は Cloudflare の管理画面にあり、リポジトリには含まれません。
+  - `miwidgets.com` は `wrangler.jsonc` の `routes` で Worker のカスタムドメインにしています。DNS レコードは Cloudflare が管理します。
+  - `www.miwidgets.com` は、プロキシを有効にした AAAA `100::` のレコードと、リダイレクトルール「Redirect from WWW to root」(`https://www.*` → `https://${1}`、301、クエリ文字列を保持)で `miwidgets.com` へ転送します。
+  - SSL/TLS の「常に HTTPS を使用」をオンにして、http を https へ転送します。
+- GitHub Pages は使いません。
