@@ -120,7 +120,7 @@ const version = (await response.text()).trim();
 
 ## 配信(Cloudflare Workers)
 
-サイトは Cloudflare Workers の静的アセットとして配信します。リポジトリのルートで `npx wrangler@4 deploy` を実行すると公開されます。git に push しただけでは公開されません。
+サイトは Cloudflare Workers の静的アセットとして配信します。`main` に push すると、Cloudflare の Workers Builds(ダッシュボードの Workers → `miwidgets` → Settings → Build で GitHub と接続済み)が `npx wrangler deploy` を実行して公開します。手元から公開するときは、リポジトリのルートで `npx wrangler@4 deploy` を実行します。
 
 - `_headers` で `template/*` を `text/plain` と `nosniff` で返し、エージェントがテンプレートのソースをそのまま取得できるようにします。サイトのプレビューは `fetch` でテンプレートを読むため、この設定の影響を受けません。
 - `wrangler.jsonc` の `html_handling` は `none` です。既定の `auto-trailing-slash` では `/template/weather.html` が `/template/weather` へリダイレクトされるためです。代わりに `_redirects` で `/` と `/ja/` を `index.html` に割り当てます。
