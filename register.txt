@@ -13,6 +13,7 @@ that persists across sessions.
 
 - Copy the template source as is. Change only the values inside `var data = {...}`.
 - Do not change the HTML, CSS, JavaScript or design.
+- The sample images in `IMAGES` are 30px placeholders. Never show them. Replace them with the user's images, or remove the image from `data` if there are none.
 - The templates are in Japanese by default. When the user writes in English, set `lang` to 'en' in `data` if it has one, and write every string in `data` in English.
 - Before each use, fetch https://miwidgets.com/version.txt. If the number has changed since you last fetched the templates, fetch them again.
 

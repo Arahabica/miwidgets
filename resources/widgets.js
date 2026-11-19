@@ -89,13 +89,13 @@ var TEMPLATES = [
 ];
 
 var PROMPT_EXAMPLES = {
-  weather: 'miwidgets.comの天気ウィジェットで明日の新宿の天気を表示',
-  route: 'miwidgets.comの乗り換え案内ウィジェットで明日の朝9時に新宿から東京駅に着く経路を表示',
-  omikuji: 'miwidgets.comのおみくじウィジェットで今日の運勢を占って',
-  assets: 'miwidgets.comの株価チャートウィジェットでサンプルデータを使って1週間の損益を表示',
-  quiz: 'miwidgets.comのクイズウィジェットで日本の地理のクイズを5問出して',
-  clock: 'miwidgets.comのアナログ時計ウィジェットで現在時刻を表示',
-  secret: 'miwidgets.comの秘密のメッセージウィジェットで、パスコード123456で開く「お誕生日おめでとう！」のメッセージを作成'
+  weather: 'miwidgets.com/register.txt の天気ウィジェットで明日の新宿の天気を表示',
+  route: 'miwidgets.com/register.txt の乗り換え案内ウィジェットで明日の朝9時に新宿から東京駅に着く経路を表示',
+  omikuji: 'miwidgets.com/register.txt のおみくじウィジェットで今日の運勢を占って',
+  assets: 'miwidgets.com/register.txt の株価チャートウィジェットでサンプルデータを使って1週間の損益を表示',
+  quiz: 'miwidgets.com/register.txt のクイズウィジェットで日本の地理のクイズを5問出して',
+  clock: 'miwidgets.com/register.txt のアナログ時計ウィジェットで現在時刻を表示',
+  secret: 'miwidgets.com/register.txt の秘密のメッセージウィジェットで、パスコード123456で開く「お誕生日おめでとう！」のメッセージを作成'
 };
 
 /* ---- 英語ページ(<html lang="en">)用のサンプル。テンプレートの data を上書きする関数を dataPatch に書く ---- */
@@ -211,13 +211,13 @@ var EN_TEMPLATES = [
   { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'Your secret message is ready. The passcode is 123456.' }
 ];
 var EN_PROMPT_EXAMPLES = {
-  weather: 'Show tomorrow\u2019s weather in London with the miwidgets.com weather widget',
-  route: 'Use the miwidgets.com transit widget to show a route from Shinjuku to Tokyo Station arriving by 9 AM tomorrow',
-  omikuji: 'Draw today\u2019s fortune with the miwidgets.com omikuji widget',
-  assets: 'Use the miwidgets.com stock chart widget to show a week of P/L with sample data',
-  quiz: 'Give me a 5-question world geography quiz with the miwidgets.com quiz widget',
-  clock: 'Show the current time with the miwidgets.com analog clock widget',
-  secret: 'Use the miwidgets.com secret message widget to make a \u201cHappy Birthday!\u201d message that opens with passcode 123456'
+  weather: 'Show tomorrow\u2019s weather in London with the miwidgets.com/register.txt weather widget',
+  route: 'Use the miwidgets.com/register.txt transit widget to show a route from Shinjuku to Tokyo Station arriving by 9 AM tomorrow',
+  omikuji: 'Draw today\u2019s fortune with the miwidgets.com/register.txt omikuji widget',
+  assets: 'Use the miwidgets.com/register.txt stock chart widget to show a week of P/L with sample data',
+  quiz: 'Give me a 5-question world geography quiz with the miwidgets.com/register.txt quiz widget',
+  clock: 'Show the current time with the miwidgets.com/register.txt analog clock widget',
+  secret: 'Use the miwidgets.com/register.txt secret message widget to make a \u201cHappy Birthday!\u201d message that opens with passcode 123456'
 };
 var UI_TEXT = LANG === 'en' ? {
   copy: 'Copy prompt', copyLabel: function(n){ return 'Copy the ' + n + ' prompt'; },
@@ -344,6 +344,12 @@ async function renderPreview(frame, t){
   }
 }
 
+/* テンプレートに埋め込んだサンプル画像は 30px の縮小版なので、サイトのプレビューでは元の画像に差し替える */
+var SAMPLE_IMAGES = {
+  quiz: { raccoon: 'resources/samples/quiz-raccoon.webp', pansy: 'resources/samples/quiz-pansy.webp' },
+  secret: { photo: 'resources/samples/secret-photo.webp' }
+};
+
 /* テンプレートの HTML にサンプルのデータを当てる。suffix を渡すと、同じ文書に並べても ID がぶつからないよう付け替える。 */
 function templateHtml(source, t, sc, suffix){
   var html = source;
@@ -356,6 +362,11 @@ function templateHtml(source, t, sc, suffix){
   if (t.id === 'route') {
     if (suffix != null) html = html.split('route-w').join('route-w' + suffix);
     if (sc && sc.now) html = html.replace('now: null', "now: '" + sc.now + "'");
+  }
+  if (SAMPLE_IMAGES[t.id]) {
+    var full = {};
+    Object.keys(SAMPLE_IMAGES[t.id]).forEach(function(k){ full[k] = SITE_ROOT + SAMPLE_IMAGES[t.id][k]; });
+    html = html.replace(/(\nvar IMAGES = \{[\s\S]*?\n\};)/, function(m){ return m + '\nObject.assign(IMAGES, ' + JSON.stringify(full) + ');'; });
   }
   // 英語ページでは、テンプレートの data の直後で英語のサンプルに置き換える。
   if (t.dataPatch) {
