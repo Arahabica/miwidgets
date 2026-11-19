@@ -201,6 +201,9 @@ var EN_PATCHES = {
     data.message.text = 'Thank you for everything.\nI have a little present for you.\nLet\u2019s go pick it up together this weekend.';
     data.message.from = '\u2014 Yuki';
     data.text = { tap: 'Tap to enter', wrong: 'Wrong passcode', opened: 'Unlocked', close: 'Close' };
+  },
+  calendar: function(data){
+    data.lang = 'en';
   }
 };
 var EN_TEMPLATES = [
@@ -210,7 +213,8 @@ var EN_TEMPLATES = [
   { id: 'assets', name: 'Stock Chart', user: 'Show me how my portfolio did this week', reply: 'Here\u2019s your profit and loss over the past week.' },
   { id: 'quiz', name: 'Quiz', user: 'Give me a quiz', reply: 'Here\u2019s a quiz. Pick an answer and tap \u201cCheck\u201d.' },
   { id: 'clock', name: 'Analog Clock', user: 'Show me the time', reply: 'Here\u2019s the current time.' },
-  { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'Your secret message is ready. The passcode is 123456.' }
+  { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'Your secret message is ready. The passcode is 123456.' },
+  { id: 'calendar', name: 'Calendar', user: 'Show me the availability for December', reply: 'Here\u2019s December\u2019s availability. Numbers show how many seats are left. Faded days aren\u2019t taking bookings.' }
 ];
 var EN_PROMPT_EXAMPLES = {
   weather: 'Show tomorrow\u2019s weather in London with the miwidgets.com/register.txt weather widget',
@@ -219,7 +223,8 @@ var EN_PROMPT_EXAMPLES = {
   assets: 'Use the miwidgets.com/register.txt stock chart widget to show a week of P/L with sample data',
   quiz: 'Give me a 5-question world geography quiz with the miwidgets.com/register.txt quiz widget',
   clock: 'Show the current time with the miwidgets.com/register.txt analog clock widget',
-  secret: 'Use the miwidgets.com/register.txt secret message widget to make a \u201cHappy Birthday!\u201d message that opens with passcode 123456'
+  secret: 'Use the miwidgets.com/register.txt secret message widget to make a \u201cHappy Birthday!\u201d message that opens with passcode 123456',
+  calendar: 'Use the miwidgets.com/register.txt calendar widget to show December with a \u25ef on the days I have plans'
 };
 var UI_TEXT = LANG === 'en' ? {
   copy: 'Copy prompt', copyLabel: function(n){ return 'Copy the ' + n + ' prompt'; },
