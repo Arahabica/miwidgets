@@ -231,10 +231,19 @@ function splitTimeline(pointRuns, cutX){
   });
   return {past: past.join(' '), future: future.join(' ')};
 }
+/* 線は左端から右端へ1本につながって描かれるように見せる。途中の時点で過去と未来に分かれているときは、
+ * 過去の線を描き終えてから未来の線を描く(描く時間は横幅で配分し、同じ速さで進める) */
+var DRAW_SEC = .7;
 function timelineHtml(pointRuns, cutX, color, width){
   var paths = splitTimeline(pointRuns, cutX);
+  var x0 = pointRuns[0][0][0], x1 = last(last(pointRuns))[0];
+  var f = cutX === null || x1 <= x0 ? 1 : Math.min(1, Math.max(0, (cutX - x0) / (x1 - x0)));
+  var timing = {
+    past: f === 1 ? '' : ' style="animation-duration:' + (DRAW_SEC * f).toFixed(3) + 's;animation-timing-function:linear"',
+    future: ' style="animation-duration:' + (DRAW_SEC * (1 - f)).toFixed(3) + 's;animation-delay:' + (DRAW_SEC * f).toFixed(3) + 's;animation-timing-function:linear"'
+  };
   function line(part, opacity){
-    return '<path class="draw-line ' + part + '-line" pathLength="1" d="' + paths[part] + '" fill="none" stroke="' + color + '" stroke-width="' + width + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + opacity + '"/>';
+    return '<path class="draw-line ' + part + '-line" pathLength="1" d="' + paths[part] + '" fill="none" stroke="' + color + '" stroke-width="' + width + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + opacity + '"' + timing[part] + '/>';
   }
   return line('past', 1) + line('future', .25);
 }
@@ -292,7 +301,9 @@ function miniChart(it, dj){
   s += timelineHtml([points], X(dj), it.color, MI.lineWidth);
   var lp = last(pts);
   s += '<g opacity="' + (lp[0] > dj ? '.25' : '1') + '"><circle class="end-dot" cx="' + r1(X(lp[0])) + '" cy="' + r1(Ym(lp[1])) + '" r="' + MI.endDotR + '" fill="' + it.color + '"/></g>';
-  if (it.pnl[dj] !== null) s += '<circle class="end-dot" cx="' + r1(X(dj)) + '" cy="' + r1(Ym(it.pnl[dj])) + '" r="' + MI.selDotR + '" fill="' + it.color + '" stroke="' + C.dotStroke + '" stroke-width="1.2"/>';
+  /* 選択日の点は、過去の線がそこまで描き終わったときに出す */
+  var fd = lp[0] > pts[0][0] ? Math.min(1, Math.max(0, (dj - pts[0][0]) / (lp[0] - pts[0][0]))) : 1;
+  if (it.pnl[dj] !== null) s += '<circle class="end-dot" style="animation-delay:' + (DRAW_SEC * fd).toFixed(3) + 's" cx="' + r1(X(dj)) + '" cy="' + r1(Ym(it.pnl[dj])) + '" r="' + MI.selDotR + '" fill="' + it.color + '" stroke="' + C.dotStroke + '" stroke-width="1.2"/>';
   return s + '</svg>';
 }
 
