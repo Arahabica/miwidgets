@@ -56,7 +56,7 @@ var data = {
     '15:00': ['◯', '△', 'x', '-', '◯', '◯', 'x'],
     '15:30': ['◯', '◯', '△', '-', '◯', '◯', 'x']
   },
-  /* 祝日('YYYY-MM-DD')。日曜と同じ赤で表示する。型: string[] ・無ければ [] */
+  /* 祝日('YYYY-MM-DD')。日曜と同じ赤で表示する。表の7日間に入らない日付は無視する。型: string[] ・無ければ [] */
   holidays: ['2026-11-23']
 };
 
@@ -74,8 +74,7 @@ var T = EN ? {
   badRow: function(k){ return k + ': write 7 values, one for each day'; },
   badType: function(k){ return k + ': write each value as a string or a number'; },
   tooLong: function(k, v){ return k + ': ' + JSON.stringify(v) + ' is too long. Each slot fits up to 2 characters'; },
-  badHolidays: "holidays must be an array of dates (e.g. ['2026-11-23'])",
-  holNotShown: function(k){ return k + ' is not one of the 7 days shown'; }
+  badHolidays: "holidays must be an array of dates (e.g. ['2026-11-23'])"
 } : {
   wd: ['日', '月', '火', '水', '木', '金', '土'],
   monthLabel: function(){ return '月'; },
@@ -87,8 +86,7 @@ var T = EN ? {
   badRow: function(k){ return k + ' の行は、7日分の値を配列で書いてください'; },
   badType: function(k){ return k + ' の値は文字か数値で書いてください'; },
   tooLong: function(k, v){ return k + ' の値 ' + JSON.stringify(v) + ' は長すぎます。1マスに入るのは2文字までです'; },
-  badHolidays: "holidays は日付の配列で書いてください(例: ['2026-11-23'])",
-  holNotShown: function(k){ return k + ' は表に出ない日付です'; }
+  badHolidays: "holidays は日付の配列で書いてください(例: ['2026-11-23'])"
 };
 /* ◯ △ x - は線で描く記号として特別扱いする。似た文字はこれらに寄せる */
 var ALIAS = { '○': '◯', '〇': '◯', '×': 'x', '✕': 'x', 'ー': '-', '−': '-' };
@@ -103,11 +101,10 @@ function iso(dt){ return dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-' + 
 var sd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(data.start));
 var first = sd && new Date(+sd[1], +sd[2] - 1, +sd[3]);
 if (!first || iso(first) !== data.start) throw new Error(T.badStart);
-var DAYS = [], SHOWN = {};
+var DAYS = [];
 for (var i = 0; i < 7; i++) {
   var dt = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i);
   DAYS.push(dt);
-  SHOWN[iso(dt)] = true;
 }
 
 /* 時刻は 0:00 からの分で扱う */
@@ -144,10 +141,8 @@ Object.keys(data.slots || {}).forEach(function(k){
 });
 var hol = {};
 if (!Array.isArray(data.holidays || [])) throw new Error(T.badHolidays);
-(data.holidays || []).forEach(function(k){
-  if (!SHOWN[k]) throw new Error(T.holNotShown(k));
-  hol[k] = true;
-});
+/* 表の7日間に入らない祝日は無視する(start だけ変えて holidays を残しても表示できるように) */
+(data.holidays || []).forEach(function(k){ hol[k] = true; });
 
 /* 記号の SVG(viewBox 0 0 24 24、単色)。色は currentColor */
 function markSvg(m){
