@@ -92,7 +92,7 @@ var TEMPLATES = [
 
 var PROMPT_EXAMPLES = {
   weather: 'miwidgets.com/register.txt の天気ウィジェットで明日の新宿の天気を表示',
-  route: 'miwidgets.com/register.txt の乗り換え案内ウィジェットで明日の朝9時に新宿から東京駅に着く経路を表示',
+  route: 'miwidgets.com/register.txt の乗り換え案内ウィジェットで明日の朝9時に新宿から羽田空港に着く経路を表示',
   omikuji: 'miwidgets.com/register.txt のおみくじウィジェットで今日の運勢を占って',
   assets: 'miwidgets.com/register.txt の株価チャートウィジェットでサンプルデータを使って1週間の損益を表示',
   quiz: 'miwidgets.com/register.txt のクイズウィジェットで日本の地理のクイズを5問出して',
@@ -133,7 +133,6 @@ var EN_PATCHES = {
   route: function(data){
     data.lang = 'en';
     data.title = 'Shinjuku → Kokusaikaikan';
-    data.date = 'Thu, Nov 20';
     data.segments = [
       { type: 'train', line: 'JR Chuo Line Rapid', color: '#f15a22', from: 'Shinjuku', dep: '07:58', to: 'Tokyo', arr: '08:12', platform: 'Track 3', bound: 'Tokyo', fare: 210 },
       { type: 'transfer', walk: 9, note: 'To the Shinkansen gates' },
@@ -224,7 +223,7 @@ var EN_TEMPLATES = [
 ];
 var EN_PROMPT_EXAMPLES = {
   weather: 'Show tomorrow\u2019s weather in London with the miwidgets.com/register.txt weather widget',
-  route: 'Use the miwidgets.com/register.txt transit widget to show a route from Shinjuku to Tokyo Station arriving by 9 AM tomorrow',
+  route: 'Use the miwidgets.com/register.txt transit widget to show a route from Shinjuku to Haneda Airport arriving by 9 AM tomorrow',
   omikuji: 'Draw today\u2019s fortune with the miwidgets.com/register.txt omikuji widget',
   assets: 'Use the miwidgets.com/register.txt stock chart widget to show a week of P/L with sample data',
   quiz: 'Give me a 5-question world geography quiz with the miwidgets.com/register.txt quiz widget',
@@ -376,6 +375,9 @@ function templateHtml(source, t, sc, suffix){
   if (t.id === 'route') {
     if (suffix != null) html = html.split('route-w').join('route-w' + suffix);
     if (sc && sc.now) html = html.replace('now: null', "now: '" + sc.now + "'");
+    // 端末の時計で動かすシナリオでも経路が今日のものになるよう、日付を今日にする
+    var d = new Date(), p2 = function(n){ return (n < 10 ? '0' : '') + n; };
+    html = html.replace(/(\nvar data = \{[\s\S]*?\n\};)/, function(m){ return m + "\ndata.date = '" + d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + "';"; });
   }
   if (SAMPLE_IMAGES[t.id]) {
     var full = {};

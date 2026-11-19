@@ -54,7 +54,7 @@ var data = {
   currency: 'JPY',                   // string: 運賃の通貨(ISO 4217。'JPY' / 'USD' / 'EUR' など)
   now: null,                         // string | null: 現在時刻を固定する(例 '08:20')。null なら端末の現在時刻。プレビュー用
   title: '新宿 → 国際会館',          // string: 見出し
-  date: '11/20(木)',                  // string: 日付の表示
+  date: '2026-11-21',                 // string: 経路の日付('YYYY-MM-DD')。表示は lang に合わせて '11/21(土)' / 'Sat, Nov 21' になる
   /* 経路。上から順に並べる。型:
    *   乗車: { type: 'train', line: string(路線・列車名), color: string(路線色), from: string, dep: 'HH:MM', to: string, arr: 'HH:MM', platform: string(番線。例 '3番線' / 'Track 3'), bound?: string(行先。省略時は to), note?: string, fare: number(currency の金額) }
    *   乗換: { type: 'transfer', walk: number(徒歩の分), note?: string }   ← 前後の乗車の間に1つ置く
@@ -69,7 +69,6 @@ var data = {
 };
 
 function tm(s){ var a = s.split(':'); return +a[0] * 60 + +a[1]; }
-function dur(a, b){ var d = tm(b) - tm(a); return d < 0 ? d + 1440 : d; }
 var EN = data.lang === 'en';
 /* 画面の文言。経路の中身(駅名・路線名など)は data に書く */
 var UI = EN ? {
@@ -122,17 +121,28 @@ function yen(n){
 function p2(n){ return (n < 10 ? '0' : '') + n; }
 var S = data.segments, trains = S.filter(function(s){ return s.type === 'train'; });
 var first = trains[0], last = trains[trains.length - 1];
-var total = dur(first.dep, last.arr), transfers = trains.length - 1;
+/* 時刻を、経路の日付の 0:00 からの分にする。前の時刻より小さければ日付をまたいだとみなす */
+var dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(data.date));
+var day0 = dm && new Date(+dm[1], +dm[2] - 1, +dm[3]);
+if (!day0 || day0.getDate() !== +dm[3]) throw new Error(EN ? "date must be a date like '2026-11-21'" : "date は '2026-11-21' のような日付で書いてください");
+var prev = 0;
+function abs(t){ var n = tm(t); while (n < prev) n += 1440; prev = n; return n; }
+trains.forEach(function(s){ s.d = abs(s.dep); s.a = abs(s.arr); });
+var total = last.a - first.d, transfers = trains.length - 1;
 var fare = trains.reduce(function(a, s){ return a + s.fare; }, 0);
 /* 各区間の所要分(乗車=乗車時間、乗換=前の到着から次の出発まで)と、乗換の待ち時間 */
 S.forEach(function(s, i){
-  if (s.type === 'train') s.min = dur(s.dep, s.arr);
-  else { s.min = dur(S[i - 1].arr, S[i + 1].dep); s.wait = Math.max(0, s.min - s.walk); }
+  if (s.type === 'train') s.min = s.a - s.d;
+  else { s.min = S[i + 1].d - S[i - 1].a; s.wait = Math.max(0, s.min - s.walk); }
 });
 function bound(s){ return s.bound || s.to; }
 
-/* 現在時刻(分)。始発より前は出発前、最終の到着後は到着済みとして扱う */
-function nowMin(){ if (data.now) return tm(data.now); var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+/* 現在時刻(経路の日付の 0:00 からの分)。前日以前は出発前、翌日以降は到着済みになる */
+function nowMin(){ if (data.now) return tm(data.now); return Math.floor((Date.now() - day0.getTime()) / 60000); }
+function clock(n){ n = ((n % 1440) + 1440) % 1440; return p2(Math.floor(n / 60)) + ':' + p2(n % 60); }
+/* 日付の表示 */
+var dateLabel = EN ? day0.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  : (day0.getMonth() + 1) + '/' + day0.getDate() + '(' + '日月火水木金土'[day0.getDay()] + ')';
 
 function stn(name, time, cls, color, extra, past){
   return '<div class="rw ' + cls + (past ? ' ps' : '') + '"><div class="tt">' + time + '</div><div class="rl"><i style="background:' + color + '"></i><b style="border-color:' + color + '"></b></div><div class="ct"><span class="sn">' + esc(name) + '</span>' + (extra || '') + '</div></div>';
@@ -142,40 +152,40 @@ function render(){
   /* いまの区間(cur)と、次に乗る列車(nxt) */
   for (i = 0; i < S.length; i++) {
     s = S[i];
-    var a = s.type === 'train' ? tm(s.dep) : tm(S[i - 1].arr), b = s.type === 'train' ? tm(s.arr) : tm(S[i + 1].dep);
+    var a = s.type === 'train' ? s.d : S[i - 1].a, b = s.type === 'train' ? s.a : S[i + 1].d;
     if (now >= a && now < b) cur = i;
-    if (s.type === 'train' && tm(s.dep) > now && nxt < 0) nxt = i;
+    if (s.type === 'train' && s.d > now && nxt < 0) nxt = i;
   }
   /* いちばん上の「次にすること」 */
   var bt, bm, bs, bc;
-  if (now < tm(first.dep)) { s = first; bt = UI.before; bm = UI.boardNext(esc(s.platform), esc(bound(s))); bs = UI.departIn(s.dep, esc(s.line), hm(tm(s.dep) - now)); bc = s.color; }
-  else if (now >= tm(last.arr)) { bt = UI.arrived; bm = UI.arrivedAt(esc(last.to)); bs = UI.arrivedSub(last.arr); bc = '#12a150'; }
+  if (now < first.d) { s = first; bt = UI.before; bm = UI.boardNext(esc(s.platform), esc(bound(s))); bs = UI.departIn(s.dep, esc(s.line), hm(s.d - now)); bc = s.color; }
+  else if (now >= last.a) { bt = UI.arrived; bm = UI.arrivedAt(esc(last.to)); bs = UI.arrivedSub(last.arr); bc = '#12a150'; }
   else if (cur >= 0 && S[cur].type === 'train') {
-    s = S[cur]; var rest = tm(s.arr) - now;
+    s = S[cur]; var rest = s.a - now;
     bt = UI.riding; bc = s.color;
     bm = rest <= 3 ? UI.getOff(esc(s.to)) : UI.ridingLine(esc(s.line));
     bs = UI.untilStop(esc(s.to), hm(rest)) + (S[cur + 1] && S[cur + 1].type === 'transfer' ? ' · ' + UI.transferAt(esc(s.to)) : '');
   } else {
-    var t = cur >= 0 ? S[cur] : null, nt = S[cur + 1], elapsed = now - tm(S[cur - 1].arr), walking = elapsed < t.walk;
+    var t = cur >= 0 ? S[cur] : null, nt = S[cur + 1], elapsed = now - S[cur - 1].a, walking = elapsed < t.walk;
     bt = UI.transfer; bc = nt.color;
     bm = UI.boardNext(esc(nt.platform), esc(bound(nt)));
-    bs = (walking ? (t.note ? UI.walkNote(esc(t.note), t.walk) : UI.walk(t.walk)) : UI.waiting) + ' · ' + UI.nextDep(nt.dep, hm(tm(nt.dep) - now));
+    bs = (walking ? (t.note ? UI.walkNote(esc(t.note), t.walk) : UI.walk(t.walk)) : UI.waiting) + ' · ' + UI.nextDep(nt.dep, hm(nt.d - now));
   }
-  var h = '<div class="hd"><div class="ti">' + esc(data.title) + '</div><div class="dt">' + esc(data.date) + '</div></div>' +
+  var h = '<div class="hd"><div class="ti">' + esc(data.title) + '</div><div class="dt">' + esc(dateLabel) + '</div></div>' +
     '<div class="sm"><div><small>' + UI.sumRoute + '</small><b>' + first.dep + ' → ' + last.arr + '</b></div><div><small>' + UI.sumTime + '</small><b>' + hm(total) + '</b></div><div><small>' + UI.sumTransfers + '</small><b>' + UI.times(transfers) + '</b></div><div><small>' + UI.sumFare + '</small><b>' + yen(fare) + '</b></div></div>' +
     '<div class="bn" style="--c:' + bc + '"><div class="bt">' + bt + '</div><div class="bm">' + bm + '</div><div class="bs">' + bs + '</div></div><div class="tl">';
   S.forEach(function(s, i){
     var isCur = i === cur, f = 0;
-    if (isCur) { var a = tm(s.type === 'train' ? s.dep : S[i - 1].arr); f = Math.min(1, Math.max(0, (now - a) / (s.min || 1))); }
-    var mark = isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div><div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '';
+    if (isCur) { var a = (s.type === 'train' ? s.d : S[i - 1].a); f = Math.min(1, Math.max(0, (now - a) / (s.min || 1))); }
+    var mark = isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + clock(now) + '</span></div><div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '';
     if (s.type === 'train') {
-      var pastDep = now >= tm(s.dep), pastArr = now >= tm(s.arr);
+      var pastDep = now >= s.d, pastArr = now >= s.a;
       h += stn(s.from, s.dep, 'dep' + (i === S.indexOf(trains[0]) || true ? '' : ''), s.color, '<span class="pf">' + UI.platform(esc(s.platform)) + '</span>' + (i === nxt ? '<span class="nx" style="background:' + s.color + '">' + UI.boardHere + '</span>' : ''), pastDep);
-      h += '<div class="rw ride' + (pastArr ? ' ps' : '') + '"><div class="tt"></div><div class="rl"><i style="background:' + s.color + '"></i>' + (isCur ? '<div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '') + '</div><div class="ct"><span class="ln" style="background:' + s.color + '">' + esc(s.line) + '</span><span class="du">' + hm(s.min) + (s.note ? ' · ' + esc(s.note) : '') + '</span></div>' + (isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div>' : '') + '</div>';
+      h += '<div class="rw ride' + (pastArr ? ' ps' : '') + '"><div class="tt"></div><div class="rl"><i style="background:' + s.color + '"></i>' + (isCur ? '<div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '') + '</div><div class="ct"><span class="ln" style="background:' + s.color + '">' + esc(s.line) + '</span><span class="du">' + hm(s.min) + (s.note ? ' · ' + esc(s.note) : '') + '</span></div>' + (isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + clock(now) + '</span></div>' : '') + '</div>';
       h += stn(s.to, s.arr, 'arr', s.color, '', pastArr);
     } else {
-      var pastTr = now >= tm(S[i + 1].dep);
-      h += '<div class="rw tr' + (pastTr ? ' ps' : '') + '"><div class="tt"></div><div class="rl"><i class="ds"></i>' + (isCur ? '<div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '') + '</div><div class="ct"><span class="tc">' + UI.transferRow(s.walk, s.wait) + (s.note ? ' · ' + esc(s.note) : '') + '</span></div>' + (isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + p2(Math.floor(now / 60)) + ':' + p2(now % 60) + '</span></div>' : '') + '</div>';
+      var pastTr = now >= S[i + 1].d;
+      h += '<div class="rw tr' + (pastTr ? ' ps' : '') + '"><div class="tt"></div><div class="rl"><i class="ds"></i>' + (isCur ? '<div class="nd" style="top:' + (f * 100).toFixed(1) + '%"></div>' : '') + '</div><div class="ct"><span class="tc">' + UI.transferRow(s.walk, s.wait) + (s.note ? ' · ' + esc(s.note) : '') + '</span></div>' + (isCur ? '<div class="nw" style="top:' + (f * 100).toFixed(1) + '%"><span>' + clock(now) + '</span></div>' : '') + '</div>';
     }
   });
   R.innerHTML = h + '</div>';
