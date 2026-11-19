@@ -221,13 +221,13 @@ var EN_PROMPT_EXAMPLES = {
 };
 var UI_TEXT = LANG === 'en' ? {
   copy: 'Copy prompt', copyLabel: function(n){ return 'Copy the ' + n + ' prompt'; },
-  more: 'Read more', less: 'Close', moreLabel: function(n){ return 'Read more of ' + n; }, lessLabel: function(n){ return 'Close ' + n; },
+  more: 'Show more', less: 'Close', moreLabel: function(n){ return 'Show more of ' + n; }, lessLabel: function(n){ return 'Close ' + n; },
   source: 'Source \u2197', avatar: 'Wolly avatar', preview: ' preview', stamp: 'Today 9:41',
   fileError: 'Previews can\u2019t load over file://. Start a local server at the repository root:',
   loadError: function(f, e){ return 'Couldn\u2019t load ' + f + ' (' + e + ').'; }
 } : {
   copy: 'プロンプトをコピー', copyLabel: function(n){ return n + 'のプロンプトをコピー'; },
-  more: '続きを読む', less: '閉じる', moreLabel: function(n){ return n + 'の続きを読む'; }, lessLabel: function(n){ return n + 'を閉じる'; },
+  more: '続きを見る', less: '閉じる', moreLabel: function(n){ return n + 'の続きを見る'; }, lessLabel: function(n){ return n + 'を閉じる'; },
   source: 'ソース \u2197', avatar: 'Wollyのアバター', preview: ' プレビュー', stamp: '今日 9:41',
   fileError: 'file:// では各プレビューを読み込めません。リポジトリのルートでローカルサーバーを立てて開いてください:',
   loadError: function(f, e){ return f + ' を読み込めません(' + e + ')。'; }
@@ -299,7 +299,7 @@ function configurePreviewSize(frame){
     if (mobile.matches) {
       var height = Math.ceil(phone.getBoundingClientRect().height) + 'px';
       if (frame.style.height !== height) frame.style.height = height;
-      // 折りたたみ時の高さを超えるときだけ「続きを読む」を出す。
+      // 折りたたみ時の高さを超えるときだけ「続きを見る」を出す。
       sec.classList.toggle('is-overflowing', box.scrollHeight > COLLAPSED_HEIGHT + 80);
     } else {
       frame.style.removeProperty('height');
