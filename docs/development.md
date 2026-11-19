@@ -120,13 +120,20 @@ const version = (await response.text()).trim();
 
 ## 配信(Cloudflare Workers)
 
-サイトは Cloudflare Workers の静的アセットとして配信します。`main` に push すると、Cloudflare の Workers Builds(ダッシュボードの Workers → `miwidgets` → Settings → Build で GitHub と接続済み)が `npx wrangler deploy` を実行して公開します。手元から公開するときは、リポジトリのルートで `npx wrangler@4 deploy` を実行します。
+サイトは Cloudflare Workers の静的アセットとして配信します。
+
+**`main` に push すると、そのまま本番(`https://miwidgets.com/`)に公開されます。** Cloudflare の Workers Builds が GitHub のリポジトリとつながっていて、push のたびに `npx wrangler deploy` を実行します。公開したくない変更は `main` に push しないでください。
+
+- 公開までは push から1分ほどです。本番の `https://miwidgets.com/version.txt` が新しい番号になれば公開済みです。
+- ビルドの成否とログは、ダッシュボードの Workers & Pages → `miwidgets` → Deployments で確認できます。
+- 手元から公開することもできます。リポジトリのルートで `npx wrangler@4 deploy` を実行します。
 
 - `_headers` で `template/*` を `text/plain` と `nosniff` で返し、エージェントがテンプレートのソースをそのまま取得できるようにします。サイトのプレビューは `fetch` でテンプレートを読むため、この設定の影響を受けません。
 - `wrangler.jsonc` の `html_handling` は `none` です。既定の `auto-trailing-slash` では `/template/weather.html` が `/template/weather` へリダイレクトされるためです。代わりに `_redirects` で `/` と `/ja/` を `index.html` に割り当てます。
 - 配信しないファイル(`docs/`・README・設定ファイルなど)は `.assetsignore` に書きます。
 - ローカルでは `npx wrangler@4 dev` で本番と同じヘッダー・リダイレクトを確認できます。
 - 次の設定は Cloudflare の管理画面にあり、リポジトリには含まれません。
+  - push での公開は、Workers & Pages → `miwidgets` → Settings → Build で GitHub の `Arahabica/miwidgets` と接続して設定しています(ブランチ `main`、ビルドコマンドなし、デプロイコマンド `npx wrangler deploy`、ルートディレクトリ `/`)。wrangler にはこの接続を設定するコマンドがありません。
   - `miwidgets.com` は `wrangler.jsonc` の `routes` で Worker のカスタムドメインにしています。DNS レコードは Cloudflare が管理します。
   - `www.miwidgets.com` は、プロキシを有効にした AAAA `100::` のレコードと、リダイレクトルール「Redirect from WWW to root」(`https://www.*` → `https://${1}`、301、クエリ文字列を保持)で `miwidgets.com` へ転送します。
   - SSL/TLS の「常に HTTPS を使用」をオンにして、http を https へ転送します。
