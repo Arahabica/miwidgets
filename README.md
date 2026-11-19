@@ -10,7 +10,7 @@ Muse に次のように送ります。
 miwidgets.com/register.txt のウィジェットを登録して
 ```
 
-Muse は [register.txt](register.txt) を読み、各テンプレートのソースを GitHub の raw URL から取得して保存します。ウィジェットを作るときは、テンプレートの `data` の値だけを書き換え、HTML・CSS・JavaScript・デザインは変更しません。
+Muse は [register.txt](register.txt) を読み、各テンプレートのソースを miwidgets.com から取得して保存します。ウィジェットを作るときは、テンプレートの `data` の値だけを書き換え、HTML・CSS・JavaScript・デザインは変更しません。
 
 ## テンプレート一覧
 

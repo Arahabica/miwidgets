@@ -2,8 +2,12 @@ miwidgets — HTML widget templates for Muse chat bubbles
 
 ## How to register
 
-Fetch the source of every template below from its URL and save it as is.
-Do not use the pages under miwidgets.com/template/. They are rendered previews, not the source.
+Save every template below as a file, byte for byte. Download each URL directly to disk.
+The URLs return the source as plain text.
+Do not copy the source through the chat or from a rendered page; long lines and
+base64 data will break.
+Record where you saved the templates and the version from version.txt in a note
+that persists across sessions.
 
 ## Rules
 
@@ -15,22 +19,22 @@ Do not use the pages under miwidgets.com/template/. They are rendered previews, 
 ## Templates
 
 Weather — one day of weather, plus the forecast every 6 hours
-https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/weather.html
+https://miwidgets.com/template/weather.html
 
 Transit directions — a route and what to do next, based on the current time
-https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/route.html
+https://miwidgets.com/template/route.html
 
 Omikuji fortune — a Japanese fortune-slip app
-https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/omikuji.html
+https://miwidgets.com/template/omikuji.html
 
 Stock chart — profit and loss over time as a line chart, with a legend per holding
-https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/assets.html
+https://miwidgets.com/template/assets.html
 
 Quiz — a multiple-choice quiz app
-https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/quiz.html
+https://miwidgets.com/template/quiz.html
 
 Analog clock — an analog clock with a second hand
-https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/clock.html
+https://miwidgets.com/template/clock.html
 
 Secret message — a message that opens with a 6-digit passcode
-https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/secret.html
+https://miwidgets.com/template/secret.html

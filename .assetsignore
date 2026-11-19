@@ -1,0 +1,13 @@
+.git
+.gitignore
+.DS_Store
+.wrangler
+node_modules
+wrangler.jsonc
+_headers
+.assetsignore
+docs
+README.md
+CNAME
+b.png
+_redirects

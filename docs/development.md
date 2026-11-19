@@ -3,7 +3,7 @@
 ## ファイル構成
 
 - `template/*.html`: Muse 向けのテンプレート本体
-- `register.txt`: Muse が登録時に読む入口ファイル(`https://miwidgets.com/register.txt`)。ルールとテンプレートの raw URL を記載
+- `register.txt`: Muse が登録時に読む入口ファイル(`https://miwidgets.com/register.txt`)。ルールとテンプレートの URL を記載
 - `index.html`: 英語のランディングページと全テンプレートのサンプル(`https://miwidgets.com/`)
 - `ja/index.html`: 日本語のランディングページ(`https://miwidgets.com/ja/`)
 - `resources/landing.css`・`resources/landing.js`: ランディングページのスタイルとコピー機能
@@ -11,6 +11,7 @@
 - `resources/ogp-<hash>.png`・`resources/ogp-en-<hash>.png`: 日本語・英語のOGP画像（1200 × 630pxのレイアウトを2倍解像度の2400 × 1260pxで書き出し）
 - `docs/ogp/ogp-en.html`・`docs/ogp/ogp-ja.html`: OGP画像の元になるHTML
 - `version.txt`: サイトとテンプレート全体の公開バージョン
+- `wrangler.jsonc`・`_headers`・`_redirects`・`.assetsignore`: Cloudflare Workers での配信設定
 - `docs/inline-widget-spec.md`: 仕様・制約・未確認事項
 
 「inline widget」は本プロジェクト上の便宜的な呼び名です。仕様・制約やテンプレート作成の方針は [仕様メモ](inline-widget-spec.md) を参照してください。
@@ -51,7 +52,7 @@ OGP内の株価チャート画像は `resources/hero-assets-widget.png`（366 ×
 
 天気画像は角丸の外側を透過にします。HTMLから画像を書き出す際は、ページの白い背景を合成せず、透過を保持してください。ヒーロー側でも白い下地や枠線は重ねません。
 
-Muse向けの登録手順はサイトのHTMLには置かず、ルートの `register.txt` にまとめます。HTMLのページをMuseに読ませると描画後の文字だけが要約されて届き、テンプレートのCSS・JavaScript・`data` が失われるためです。`register.txt` には、ルールとテンプレートのraw URL(`https://raw.githubusercontent.com/Arahabica/miwidgets/main/template/*.html`)をプレーンテキストで記載します。URLはMarkdownのリンクにしません。
+Muse向けの登録手順はサイトのHTMLには置かず、ルートの `register.txt` にまとめます。HTMLのページをMuseに読ませると描画後の文字だけが要約されて届き、テンプレートのCSS・JavaScript・`data` が失われるためです。`register.txt` には、ルールとテンプレートのURL(`https://miwidgets.com/template/*.html`)をプレーンテキストで記載します。URLはMarkdownのリンクにしません。テンプレートはユーザーがプロンプトで指定した miwidgets.com から取得させます。github.com など別のドメインにアクセスすると、Muse がアクセス許可のダイアログを出すためです。
 
 OGP画像のサイズは1200 × 630pxとし、主要な内容は中央834 × 630pxに収めます。ロゴ・見出し・ウィジェットの紹介は中央630 × 630pxで切り取っても残るようにします。
 
@@ -89,7 +90,7 @@ SVG のグラデーション（`<linearGradient>`・`<radialGradient>` と `url(
 
 1. `template/` に HTML を追加します。
 2. `resources/widgets.js` の `TEMPLATES` にテンプレートの情報とサンプルの会話を追加します。複数パターンを表示する場合は `scenarios` を設定します。英語ページ用に `EN_TEMPLATES`・`EN_PATCHES`・`EN_PROMPT_EXAMPLES` にも追加します。
-3. `register.txt` のテンプレート一覧に、名前・説明・raw URLを追加します。
+3. `register.txt` のテンプレート一覧に、名前・説明・URL(`https://miwidgets.com/template/<名前>.html`)を追加します。
 4. README のテンプレート一覧にリンクと説明を追加します。
 5. 英語と日本語の両方のプレビューで表示と操作を確認します。
 
@@ -113,3 +114,12 @@ const version = (await response.text()).trim();
 ```
 
 テンプレートを再取得するURLにも `?v=1.0.1` のように取得したバージョンを付けると、以前のキャッシュと区別できます。更新確認は外部アクセス可能なクライアント側で行います。Muse 内のウィジェットから外部通信する実装は追加しません。
+
+## 配信(Cloudflare Workers)
+
+サイトは Cloudflare Workers の静的アセットとして配信します。リポジトリのルートで `npx wrangler@4 deploy` を実行すると公開されます。git に push しただけでは公開されません。
+
+- `_headers` で `template/*` を `text/plain` と `nosniff` で返し、エージェントがテンプレートのソースをそのまま取得できるようにします。サイトのプレビューは `fetch` でテンプレートを読むため、この設定の影響を受けません。
+- `wrangler.jsonc` の `html_handling` は `none` です。既定の `auto-trailing-slash` では `/template/weather.html` が `/template/weather` へリダイレクトされるためです。代わりに `_redirects` で `/` と `/ja/` を `index.html` に割り当てます。
+- 配信しないファイル(`docs/`・README・設定ファイルなど)は `.assetsignore` に書きます。
+- ローカルでは `npx wrangler@4 dev` で本番と同じヘッダー・リダイレクトを確認できます。

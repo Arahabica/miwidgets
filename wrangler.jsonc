@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "miwidgets",
+  "compatibility_date": "2026-11-01",
+  "routes": [{ "pattern": "miwidgets.com", "custom_domain": true }],
+  // リポジトリのルートをそのまま静的サイトとして配信する。除外するファイルは .assetsignore に書く
+  "assets": {
+    "directory": ".",
+    "html_handling": "none"
+  }
+}

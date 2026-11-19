@@ -1,0 +1,14 @@
+# テンプレートはエージェントがソースを読めるよう、HTML として描画させずテキストで返す
+/template/*
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+# LICENSE は拡張子がないので、テキストとして返す
+/LICENSE
+  Content-Type: text/plain; charset=utf-8
+
+# 登録用のテキストは記号(— など)を含むので、文字コードを明示する
+/register.txt
+  Content-Type: text/plain; charset=utf-8
+/version.txt
+  Content-Type: text/plain; charset=utf-8
