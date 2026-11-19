@@ -42,3 +42,6 @@ https://miwidgets.com/template/secret.html
 
 Calendar — one month, with a mark (◯ △ x -) or up to 2 characters on each day
 https://miwidgets.com/template/calendar.html
+
+Time slots — 7 days × times (every 15, 30 or 60 minutes), with a mark (◯ △ x -) or up to 2 characters in each slot
+https://miwidgets.com/template/timetable.html
