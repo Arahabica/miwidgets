@@ -13,6 +13,7 @@
 - `version.txt`: サイトとテンプレート全体の公開バージョン
 - `wrangler.jsonc`・`_headers`・`_redirects`・`.assetsignore`: Cloudflare Workers での配信設定
 - `docs/inline-widget-spec.md`: 仕様・制約・未確認事項
+- `playground/index.html`: テンプレートを1つずつ確認する開発用ページ(配信しない)
 
 「inline widget」は本プロジェクト上の便宜的な呼び名です。仕様・制約やテンプレート作成の方針は [仕様メモ](inline-widget-spec.md) を参照してください。
 
@@ -23,6 +24,8 @@
 ```sh
 python3 -m http.server 8000
 ```
+
+テンプレートを1つずつ確認するときは `http://localhost:8000/playground/` を使います(`.assetsignore` で除外しているので配信しません)。一覧は `register.txt` から読みます。テンプレートを保存すると1秒以内に描き直し、`data` はページ上で書き換えて試せます(ファイルは変わりません)。幅(320・375・430px)、ライト・ダーク、英語(`data.lang = 'en'`)を並べて確認でき、テンプレートのエラーは各画面の下に出ます。
 
 `index.html` は `template/` の HTML を `fetch` で読み込むため、`file://` では表示できません。テンプレートごとに iframe を分け、CSS や JavaScript の干渉を防いでいます。
 

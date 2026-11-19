@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>テンプレート確認</title>
+<!--
+  テンプレートを1つずつ確認するための開発用ページ。配信はしない(.assetsignore で除外)。
+  リポジトリのルートで python3 -m http.server 8000 を起動し、http://localhost:8000/playground/ を開く。
+  - テンプレートの一覧は register.txt から読む
+  - template/*.html を保存すると、1秒以内に自動で描き直す
+  - data をその場で書き換えられる(テンプレートのファイルは変えない)
+  - 複数の幅・ライト/ダーク・英語(data.lang = 'en')で同時に確認できる
+-->
+<style>
+:root{
+  --bg:#eef0f3;--panel:#fff;--text:#1c1c1e;--muted:#6e6e73;--line:#d1d1d6;--accent:#3a5ad1;--err:#d33;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{background:var(--bg);color:var(--text);font:13px/1.5 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;display:grid;grid-template-columns:200px minmax(280px,420px) 1fr;}
+aside,.editor{border-right:1px solid var(--line);background:var(--panel);height:100vh;overflow:auto;}
+aside{padding:14px 12px;}
+aside h1{font-size:14px;margin:0 0 10px;}
+aside h2{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.06em;margin:16px 0 6px;}
+.list button{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 8px;border-radius:6px;font:inherit;color:inherit;cursor:pointer;}
+.list button:hover{background:#f2f2f7;}
+.list button[aria-current="true"]{background:var(--accent);color:#fff;}
+.list small{display:block;font-size:10px;opacity:.7;}
+label.opt{display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;}
+.editor{display:flex;flex-direction:column;}
+.editor .bar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);}
+.editor .bar b{flex:1;font-size:12px;}
+.editor .bar button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;}
+.editor .note{padding:6px 12px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line);}
+.editor .note.edited{color:#b25e00;}
+textarea{flex:1;width:100%;border:0;padding:12px;resize:none;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:2;outline:none;}
+main{height:100vh;overflow:auto;padding:16px;}
+.status{font-size:11px;color:var(--muted);margin-bottom:12px;}
+.frames{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;}
+.phone{border-radius:22px;padding:12px;box-shadow:0 2px 12px #0000001a;}
+.phone.light{background:#fff;--bubble:#f2f2f7;}
+.phone.dark{background:#000;--bubble:#2c2c2e;}
+.phone .cap{font-size:11px;color:#8e8e93;text-align:center;margin:-2px 0 8px;}
+.phone .bubble{background:var(--bubble);border-radius:18px;overflow:hidden;}
+.phone iframe{display:block;width:100%;border:0;height:80px;}
+.phone .errs{margin-top:8px;font:11px/1.4 ui-monospace,Menlo,monospace;color:var(--err);white-space:pre-wrap;}
+.phone .errs:empty{display:none;}
+</style>
+</head>
+<body>
+<aside>
+  <h1>テンプレート確認</h1>
+  <h2>テンプレート</h2>
+  <div class="list" id="list"></div>
+  <h2>幅(スマホの画面幅)</h2>
+  <div id="widths"></div>
+  <h2>表示</h2>
+  <label class="opt"><input type="checkbox" id="light" checked>ライト</label>
+  <label class="opt"><input type="checkbox" id="dark">ダーク</label>
+  <label class="opt"><input type="checkbox" id="en">英語(data.lang = 'en')</label>
+</aside>
+<section class="editor">
+  <div class="bar"><b id="file"></b><button type="button" id="reset">元の data に戻す</button></div>
+  <div class="note" id="note"></div>
+  <textarea id="data" spellcheck="false" wrap="off"></textarea>
+</section>
+<main>
+  <div class="status" id="status"></div>
+  <div class="frames" id="frames"></div>
+</main>
+<script>
+(function(){
+var WIDTHS = [320, 375, 430];
+/* Muse がウィジェットに渡すテーマ変数(推測。resources/widgets.js の PREVIEW_SHELL と同じ値) */
+var THEME = {
+  light: '--hatch-widget-text:#1c1c1e;--hatch-widget-muted:#6e6e73;--hatch-widget-border:#d1d1d6;',
+  dark: '--hatch-widget-text:#f2f2f7;--hatch-widget-muted:#98989f;--hatch-widget-border:#3a3a3c;'
+};
+var DATA_START = /^[ \t]*var data = \{/m;
+
+var $ = function(id){ return document.getElementById(id); };
+var store = {
+  get: function(k, d){ try { var v = localStorage.getItem('playground:' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set: function(k, v){ try { localStorage.setItem('playground:' + k, JSON.stringify(v)); } catch (e) {} }
+};
+var templates = [], current = null, source = '', original = '', edited = {}, timer = 0;
+
+/* テンプレートの data ブロック('var data = {' から、行頭の '};' まで)を取り出す */
+function splitData(src){
+  var m = DATA_START.exec(src);
+  if (!m) return null;
+  var end = src.slice(m.index).search(/^[ \t]*\};[ \t]*$/m);
+  if (end < 0) return null;
+  end = m.index + end;
+  end = src.indexOf('};', end) + 2;
+  return { before: src.slice(0, m.index), data: src.slice(m.index, end), after: src.slice(end) };
+}
+
+function build(theme){
+  var parts = splitData(source);
+  var data = edited[current.file] != null ? edited[current.file] : original;
+  var body = parts ? parts.before + data + ($('en').checked ? "\ndata.lang = 'en';" : '') + parts.after : source;
+  /* テンプレートが投げた例外や構文エラーを親に伝える */
+  var hook = '<script>window.onerror=function(m,s,l,c){parent.postMessage({pg:1,id:frameElement.dataset.id,msg:m+(l?" (line "+l+")":"")},"*");};<\/script>';
+  return '<!doctype html><html lang="' + ($('en').checked ? 'en' : 'ja') + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<style>html,body{margin:0;background:transparent;}:root{' + THEME[theme] + '}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;}</style>' + hook + '</head><body>' + body + '</body></html>';
+}
+
+/* iframe の高さを中身に合わせる */
+function fit(frame){
+  try {
+    var d = frame.contentDocument;
+    if (d && d.body) frame.style.height = Math.max(40, d.documentElement.scrollHeight) + 'px';
+  } catch (e) {}
+}
+
+function render(){
+  if (!current) return;
+  var box = $('frames'), widths = store.get('widths', [375]);
+  var themes = ['light', 'dark'].filter(function(t){ return $(t).checked; });
+  box.innerHTML = '';
+  themes.forEach(function(theme){
+    widths.forEach(function(w){
+      var id = theme + w;
+      var ph = document.createElement('div');
+      ph.className = 'phone ' + theme;
+      ph.style.width = w + 'px';
+      ph.innerHTML = '<div class="cap">' + w + 'px · ' + theme + '</div><div class="bubble"><iframe data-id="' + id + '"></iframe></div><div class="errs" data-errs="' + id + '"></div>';
+      box.appendChild(ph);
+      var fr = ph.querySelector('iframe');
+      fr.addEventListener('load', function(){
+        fit(fr);
+        try { new fr.contentWindow.ResizeObserver(function(){ fit(fr); }).observe(fr.contentDocument.documentElement); } catch (e) {}
+      });
+      fr.srcdoc = build(theme);
+    });
+  });
+  $('status').textContent = current.file + ' · ' + new Date().toLocaleTimeString() + ' に描画';
+}
+
+window.addEventListener('message', function(ev){
+  if (!ev.data || !ev.data.pg) return;
+  var el = document.querySelector('[data-errs="' + ev.data.id + '"]');
+  if (el) el.textContent += ev.data.msg + '\n';
+});
+
+function showEditor(){
+  $('data').value = edited[current.file] != null ? edited[current.file] : original;
+  showNote();
+}
+function showNote(){
+  var e = edited[current.file] != null;
+  $('note').textContent = e ? '書き換えた data で表示中(テンプレートのファイルは変わりません)' : 'テンプレートの data をそのまま表示中。ここで書き換えるとすぐ反映します';
+  $('note').className = 'note' + (e ? ' edited' : '');
+}
+
+async function load(t){
+  current = t;
+  location.hash = t.id;
+  $('file').textContent = t.file;
+  document.querySelectorAll('#list button').forEach(function(b){ b.setAttribute('aria-current', b.dataset.id === t.id); });
+  await refresh(true);
+}
+
+/* テンプレートを読み直す。変わっていれば描き直す */
+async function refresh(force){
+  if (!current) return;
+  var t = current, src;
+  try { src = await (await fetch('/' + t.file, { cache: 'no-store' })).text(); } catch (e) { return; }
+  if (t !== current || (!force && src === source)) return;
+  source = src;
+  var parts = splitData(src);
+  original = parts ? parts.data : '';
+  $('data').disabled = !parts;
+  if (!parts) $('note').textContent = 'data ブロックが見つからないので、テンプレートをそのまま表示しています';
+  else showEditor();
+  render();
+}
+
+$('data').addEventListener('input', function(){
+  edited[current.file] = $('data').value === original ? null : $('data').value;
+  showNote();
+  clearTimeout(timer);
+  timer = setTimeout(render, 300);
+});
+/* Tab キーで字下げを入れる */
+$('data').addEventListener('keydown', function(e){
+  if (e.key !== 'Tab') return;
+  e.preventDefault();
+  document.execCommand('insertText', false, '  ');
+});
+$('reset').addEventListener('click', function(){ edited[current.file] = null; showEditor(); render(); });
+['light', 'dark', 'en'].forEach(function(id){
+  $(id).checked = store.get(id, $(id).checked);
+  $(id).addEventListener('change', function(){ store.set(id, $(id).checked); render(); });
+});
+WIDTHS.forEach(function(w){
+  var l = document.createElement('label');
+  l.className = 'opt';
+  l.innerHTML = '<input type="checkbox" value="' + w + '">' + w + 'px';
+  var cb = l.querySelector('input');
+  cb.checked = store.get('widths', [375]).indexOf(w) >= 0;
+  cb.addEventListener('change', function(){
+    store.set('widths', [].slice.call(document.querySelectorAll('#widths input:checked')).map(function(c){ return +c.value; }));
+    render();
+  });
+  $('widths').appendChild(l);
+});
+
+/* テンプレートの一覧は register.txt から読む('名前 — 説明' の行と、その次の URL の行) */
+(async function(){
+  var txt = await (await fetch('/register.txt', { cache: 'no-store' })).text();
+  var lines = txt.split('\n');
+  lines.forEach(function(line, i){
+    var m = /^https:\/\/miwidgets\.com\/(template\/([\w-]+)\.html)\s*$/.exec(line);
+    if (m) templates.push({ id: m[2], file: m[1], name: (lines[i - 1] || '').split(' — ')[0] || m[2] });
+  });
+  templates.forEach(function(t){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.id = t.id;
+    b.innerHTML = t.name + '<small>' + t.file + '</small>';
+    b.addEventListener('click', function(){ load(t); });
+    $('list').appendChild(b);
+  });
+  var start = templates.filter(function(t){ return t.id === location.hash.slice(1); })[0] || templates[0];
+  if (start) load(start);
+  setInterval(function(){ refresh(false); }, 1000);
+})();
+})();
+</script>
+</body>
+</html>
