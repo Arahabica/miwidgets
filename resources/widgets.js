@@ -86,7 +86,7 @@ var TEMPLATES = [
   { id: 'quiz', name: 'クイズ', file: 'template/quiz.html', user: 'クイズを出して', reply: 'クイズです。答えを選んで「OK」を押してください。' },
   { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
   { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' },
-  { id: 'calendar', name: 'カレンダー', file: 'template/calendar.html', user: '12月の予約の空き状況を見せて', reply: '12月の空き状況です。数字の日は残りの席数です。薄い日は受付していません。' }
+  { id: 'calendar', name: 'カレンダー', file: 'template/calendar.html', user: '11月の予約の空き状況を見せて', reply: '11月の空き状況です。数字の日は残りの席数です。薄い日は受付していません。' }
 ];
 
 var PROMPT_EXAMPLES = {
@@ -214,7 +214,7 @@ var EN_TEMPLATES = [
   { id: 'quiz', name: 'Quiz', user: 'Give me a quiz', reply: 'Here\u2019s a quiz. Pick an answer and tap \u201cCheck\u201d.' },
   { id: 'clock', name: 'Analog Clock', user: 'Show me the time', reply: 'Here\u2019s the current time.' },
   { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'Your secret message is ready. The passcode is 123456.' },
-  { id: 'calendar', name: 'Calendar', user: 'Show me the availability for December', reply: 'Here\u2019s December\u2019s availability. Numbers show how many seats are left. Faded days aren\u2019t taking bookings.' }
+  { id: 'calendar', name: 'Calendar', user: 'Show me the availability for November', reply: 'Here\u2019s November\u2019s availability. Numbers show how many seats are left. Faded days aren\u2019t taking bookings.' }
 ];
 var EN_PROMPT_EXAMPLES = {
   weather: 'Show tomorrow\u2019s weather in London with the miwidgets.com/register.txt weather widget',

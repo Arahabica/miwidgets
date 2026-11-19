@@ -1,4 +1,4 @@
-<!-- カレンダーテンプレート: 白い背景に、細字の大きな月と罫線なしの1か月のカレンダー。各日付のマスに、記号(◯ △ x -)か2文字までの文字を1つ描画する。記号は細い線で描き(○ 〇 × ✕ ー − も記号として扱う)、それ以外は文字で描く。2文字の言葉は小さく描く。過去の日付や非営業日などは disabled で薄く表示できる。使えない値はエラーとして画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると曜日・月・エラーの文言が英語になる。 -->
+<!-- カレンダーテンプレート: 白い背景に、細字の大きな月と罫線なしの1か月のカレンダー。各日付のマスに、記号(◯ △ x -)か2文字までの文字を1つ描画する。記号は細い線で描き(○ 〇 × ✕ ー − も記号として扱う)、それ以外は文字で描く。2文字の言葉は小さく描く。祝日は holidays で指定すると日曜と同じ赤で表示する。過去の日付や非営業日などは disabled で薄く表示できる。カレンダーの端に出る前月・翌月の日も disabled と同じく薄く表示し、'YYYY-MM-DD' で指定すれば記号も入れられる。使えない値はエラーとして画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると曜日・月・エラーの文言が英語になる。 -->
 <div id="calendar-w"></div>
 <style>
 #calendar-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
@@ -12,9 +12,8 @@
 #calendar-w .gr{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}
 #calendar-w .wd{padding:4px 0 6px;font-size:11px;text-align:center;letter-spacing:.1em;color:#8e8e93;}
 #calendar-w .c{position:relative;aspect-ratio:1/1.1;min-height:40px;border-top:1px dashed #e0e0e5;}
-#calendar-w .c.out{border-top-color:transparent;}
-/* disabled の日(過去の日付・非営業日など)は、日付も記号もまとめて薄くする */
-#calendar-w .c.off > *{opacity:.2;}
+/* 前月・翌月の日と disabled の日(過去の日付・非営業日など)は、日付も記号もまとめて薄くする */
+#calendar-w .c.adj > *,#calendar-w .c.off > *{opacity:.2;}
 #calendar-w .dn{position:absolute;top:3px;left:0;right:0;text-align:center;font-size:12px;font-variant-numeric:tabular-nums;}
 #calendar-w .sun .dn,#calendar-w .wd.sun{color:#d64545;}
 #calendar-w .sat .dn,#calendar-w .wd.sat{color:#2f6fd6;}
@@ -35,18 +34,22 @@ try {
 /* ===== data: 表示内容はすべてここで変える ===== */
 var data = {
   lang: 'ja',         // 'ja' | 'en': 曜日・月・エラーの文言の言語
-  month: '2026-12',   // string: 表示する年月('YYYY-MM')
-  /* 日付ごとの値。キーは日付、値は2文字までの文字か数値。記号の無い日は書かない。
+  month: '2026-11',   // string: 表示する年月('YYYY-MM')
+  /* 日付の書き方(days・holidays・disabled で共通): その月の日は数値(例: 3)、
+   * カレンダーの端に出る前月・翌月の日は 'YYYY-MM-DD'(例: '2026-12-01') */
+  /* 日付ごとの値。値は2文字までの文字か数値。記号の無い日は書かない。
    * '◯' '△' 'x' '-' は線で描く記号になる(○ 〇 × ✕ ー − も同じ)。それ以外は文字のまま描き、2文字の言葉は小さく描く */
   days: {
-    3: '△', 4: 'x', 5: '◯',
-    8: '△', 9: '◯', 11: 'x', 12: '◯',
-    15: 12, 16: 2, 17: 0, 18: 1, 19: 5,
-    22: '◯', 23: '-', 24: 'x', 25: 'x', 26: '△',
-    29: '◯', 30: '◯', 31: '-'
+    3: '◯', 4: '△', 5: 'x', 6: '◯', 7: '◯',
+    10: '△', 11: '◯', 12: 'x', 13: '◯', 14: 'x',
+    17: 12, 18: 2, 19: 0, 20: 1, 21: 5,
+    24: '◯', 25: '-', 26: 'x', 27: 'x', 28: '△',
+    '2026-12-01': '◯', '2026-12-02': '△'
   },
-  /* 薄く表示する日付(過去の日付・非営業日など)。型: number[] ・不要なら [] */
-  disabled: [1, 2, 6, 7, 13, 14, 20, 21, 27, 28]
+  /* 祝日。日曜と同じ赤で表示する。型: (number | string)[] ・無ければ [] */
+  holidays: [3, 23],
+  /* 薄く表示する日(過去の日付・非営業日など)。型: (number | string)[] ・不要なら [] */
+  disabled: [1, 2, 8, 9, 15, 16, 22, 23, 29, 30]
 };
 
 var EN = data.lang === 'en';
@@ -57,17 +60,19 @@ var T = EN ? {
   monthLabel: function(mo){ return MONTHS[mo - 1]; },
   badMonth: "month must look like '2026-12'",
   noDay: function(mo, k){ return MONTHS[mo - 1] + ' has no day ' + k; },
-  badType: function(d){ return 'Day ' + d + ': write the value as a string or a number'; },
-  tooLong: function(d, v){ return 'Day ' + d + ': ' + JSON.stringify(v) + ' is too long. Each day fits up to 2 characters'; },
-  badDisabled: 'disabled must be an array of days (e.g. [1, 2, 6])'
+  notShown: function(k){ return k + ' is not shown on this calendar'; },
+  badType: function(d){ return d + ': write the value as a string or a number'; },
+  tooLong: function(d, v){ return d + ': ' + JSON.stringify(v) + ' is too long. Each day fits up to 2 characters'; },
+  badList: function(name){ return name + ' must be an array of days (e.g. [1, 2, 6])'; }
 } : {
   wd: ['日', '月', '火', '水', '木', '金', '土'],
   monthLabel: function(){ return '月'; },
   badMonth: "month は '2026-12' のように書いてください",
   noDay: function(mo, k){ return mo + '月に ' + k + '日はありません'; },
-  badType: function(d){ return d + '日の値は文字か数値で書いてください'; },
-  tooLong: function(d, v){ return d + '日の値 ' + JSON.stringify(v) + ' は長すぎます。1マスに入るのは2文字までです'; },
-  badDisabled: 'disabled は日付の配列で書いてください(例: [1, 2, 6])'
+  notShown: function(k){ return k + ' はこのカレンダーに表示されない日付です'; },
+  badType: function(d){ return d + ' の値は文字か数値で書いてください'; },
+  tooLong: function(d, v){ return d + ' の値 ' + JSON.stringify(v) + ' は長すぎます。1マスに入るのは2文字までです'; },
+  badList: function(name){ return name + ' は日付の配列で書いてください(例: [1, 2, 6])'; }
 };
 /* ◯ △ x - は線で描く記号として特別扱いする。似た文字はこれらに寄せる */
 var SYMBOLS = ['◯', '△', 'x', '-'];
@@ -82,8 +87,23 @@ if (!ym || +ym[2] < 1 || +ym[2] > 12) throw new Error(T.badMonth);
 var y = +ym[1], mo = +ym[2];
 var days = new Date(y, mo, 0).getDate();
 var lead = new Date(y, mo - 1, 1).getDay();
-/* 日付と値を確かめる。使えない値は描かずにエラーにする */
-function day(k){ var d = Number(k); if (!(d >= 1 && d <= days && d % 1 === 0)) throw new Error(T.noDay(mo, k)); return d; }
+var cells = Math.ceil((lead + days) / 7) * 7;
+/* 表示するマス(前月・翌月の日を含む)。日付は 'YYYY-MM-DD' で表す */
+function p2(n){ return (n < 10 ? '0' : '') + n; }
+function iso(dt){ return dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-' + p2(dt.getDate()); }
+var CELLS = [], SHOWN = {};
+for (var c = 0; c < cells; c++) {
+  var dt = new Date(y, mo - 1, 1 - lead + c);
+  CELLS.push({ key: iso(dt), d: dt.getDate(), adj: dt.getMonth() !== mo - 1 });
+  SHOWN[iso(dt)] = true;
+}
+/* 日付と値を確かめる。使えない値は描かずにエラーにする。日付は 'YYYY-MM-DD' にそろえて返す */
+function day(k){
+  if (typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k)) { if (!SHOWN[k]) throw new Error(T.notShown(k)); return k; }
+  var d = Number(k);
+  if (!(d >= 1 && d <= days && d % 1 === 0)) throw new Error(T.noDay(mo, k));
+  return y + '-' + p2(mo) + '-' + p2(d);
+}
 function mark(v, d){
   if (v === '' || v === null || v === undefined) return '';
   if (typeof v === 'number') v = String(v);
@@ -95,9 +115,14 @@ function mark(v, d){
 }
 var marks = {};
 Object.keys(data.days || {}).forEach(function(k){ var d = day(k); marks[d] = mark(data.days[k], d); });
-var off = {};
-if (data.disabled && !Array.isArray(data.disabled)) throw new Error(T.badDisabled);
-(data.disabled || []).forEach(function(k){ off[day(k)] = true; });
+/* 日付の配列(holidays・disabled)を、日付をキーにした表にする */
+function dayset(name){
+  var list = data[name] || [], set = {};
+  if (!Array.isArray(list)) throw new Error(T.badList(name));
+  list.forEach(function(k){ set[day(k)] = true; });
+  return set;
+}
+var hol = dayset('holidays'), off = dayset('disabled');
 
 /* 記号の SVG(viewBox 0 0 24 24、単色)。色は currentColor */
 function markSvg(m){
@@ -111,15 +136,13 @@ function markSvg(m){
 
 var h = '<div class="hd"><span class="mn">' + mo + '</span><span class="yr"><b>' + T.monthLabel(mo) + '</b>' + y + '</span></div><div class="gr">';
 for (var i = 0; i < 7; i++) h += '<div class="wd' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + T.wd[i] + '</div>';
-var cells = Math.ceil((lead + days) / 7) * 7;
-for (var k = 0; k < cells; k++) {
-  var d = k - lead + 1;
-  if (d < 1 || d > days) { h += '<div class="c out"></div>'; continue; }
-  var m = marks[d] || '';
-  var cls = 'c' + (k % 7 === 0 ? ' sun' : k % 7 === 6 ? ' sat' : '') + (off[d] ? ' off' : '');
-  h += '<div class="' + cls + '"' + (off[d] ? ' aria-disabled="true"' : '') + '><span class="dn">' + d + '</span>' +
+CELLS.forEach(function(cell, k){
+  var key = cell.key, m = marks[key] || '';
+  /* 日曜と祝日は赤、土曜は青。土曜の祝日は赤にする。前月・翌月の日は adj(薄く表示) */
+  var cls = 'c' + (k % 7 === 0 || hol[key] ? ' sun' : k % 7 === 6 ? ' sat' : '') + (cell.adj ? ' adj' : '') + (off[key] ? ' off' : '');
+  h += '<div class="' + cls + '"' + (off[key] ? ' aria-disabled="true"' : '') + '><span class="dn">' + cell.d + '</span>' +
     (m ? '<span class="mk ' + (MARK_CLASS[m] || 'm-n') + '" aria-label="' + esc(m) + '">' + markSvg(m) + '</span>' : '') + '</div>';
-}
+});
 h += '</div>';
 R.innerHTML = h;
 
