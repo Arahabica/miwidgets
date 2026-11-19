@@ -39,3 +39,6 @@ https://miwidgets.com/template/clock.html
 
 Secret message — a message that opens with a 6-digit passcode
 https://miwidgets.com/template/secret.html
+
+Calendar — one month, with a mark (◯ △ x -) or up to 2 characters on each day
+https://miwidgets.com/template/calendar.html

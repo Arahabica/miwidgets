@@ -23,6 +23,7 @@ Muse は [register.txt](register.txt) を読み、各テンプレートのソー
 | [秘密のメッセージ](template/secret.html) | 6桁のパスコードで開くメッセージ |
 | [天気](template/weather.html) | 天気と6時間ごとの気温・降水確率を表示 |
 | [乗り換え案内](template/route.html) | 経路と、現在時刻に応じた次の行動を表示 |
+| [カレンダー](template/calendar.html) | 1か月分のカレンダー。各日付に◯△x-の記号か、2文字までの文字を表示 |
 
 ## 使い方
 

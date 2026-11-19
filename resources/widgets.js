@@ -85,7 +85,8 @@ var TEMPLATES = [
   { id: 'assets', name: '株価チャート', file: 'template/assets.html', user: '一週間の資産の推移を見せて', reply: '直近1週間の損益推移です。' },
   { id: 'quiz', name: 'クイズ', file: 'template/quiz.html', user: 'クイズを出して', reply: 'クイズです。答えを選んで「OK」を押してください。' },
   { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
-  { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' }
+  { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' },
+  { id: 'calendar', name: 'カレンダー', file: 'template/calendar.html', user: '12月の予約の空き状況を見せて', reply: '12月の空き状況です。数字の日は残りの席数です。薄い日は受付していません。' }
 ];
 
 var PROMPT_EXAMPLES = {
@@ -95,7 +96,8 @@ var PROMPT_EXAMPLES = {
   assets: 'miwidgets.com/register.txt の株価チャートウィジェットでサンプルデータを使って1週間の損益を表示',
   quiz: 'miwidgets.com/register.txt のクイズウィジェットで日本の地理のクイズを5問出して',
   clock: 'miwidgets.com/register.txt のアナログ時計ウィジェットで現在時刻を表示',
-  secret: 'miwidgets.com/register.txt の秘密のメッセージウィジェットで、パスコード123456で開く「お誕生日おめでとう！」のメッセージを作成'
+  secret: 'miwidgets.com/register.txt の秘密のメッセージウィジェットで、パスコード123456で開く「お誕生日おめでとう！」のメッセージを作成',
+  calendar: 'miwidgets.com/register.txt のカレンダーウィジェットで、12月の予定のある日に◯を付けて表示'
 };
 
 /* ---- 英語ページ(<html lang="en">)用のサンプル。テンプレートの data を上書きする関数を dataPatch に書く ---- */

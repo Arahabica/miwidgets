@@ -1,0 +1,109 @@
+<!-- カレンダーテンプレート: 白い背景に、細字の大きな月と罫線なしの1か月のカレンダー。各日付のマスに、記号(◯ △ x -)か2文字までの文字を1つ描画する。記号は細い線で描き(○ 〇 × ✕ ー − も記号として扱う)、それ以外は文字で描く。2文字の言葉は小さく描く。過去の日付や非営業日などは disabled で薄く表示できる。使えない値はエラーとして画面に出す。表示内容はスクリプト冒頭の data で変更できる。 -->
+<div id="calendar-w"></div>
+<style>
+#calendar-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#calendar-w *{box-sizing:border-box;}
+
+#calendar-w{padding:16px 14px 14px;background:#fff;color:#1c1c1e;border-radius:6px;}
+#calendar-w .hd{display:flex;align-items:flex-end;gap:8px;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid #1c1c1e;}
+#calendar-w .mn{font-size:44px;line-height:.9;font-weight:200;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+#calendar-w .yr{display:flex;flex-direction:column;font-size:12px;line-height:1.4;letter-spacing:.1em;}
+#calendar-w .yr b{font-size:15px;font-weight:500;}
+#calendar-w .gr{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}
+#calendar-w .wd{padding:4px 0 6px;font-size:11px;text-align:center;letter-spacing:.1em;color:#8e8e93;}
+#calendar-w .c{position:relative;aspect-ratio:1/1.1;min-height:40px;border-top:1px dashed #e0e0e5;}
+#calendar-w .c.out{border-top-color:transparent;}
+/* disabled の日(過去の日付・非営業日など)は、日付も記号もまとめて薄くする */
+#calendar-w .c.off > *{opacity:.2;}
+#calendar-w .dn{position:absolute;top:3px;left:0;right:0;text-align:center;font-size:12px;font-variant-numeric:tabular-nums;}
+#calendar-w .sun .dn,#calendar-w .wd.sun{color:#d64545;}
+#calendar-w .sat .dn,#calendar-w .wd.sat{color:#2f6fd6;}
+#calendar-w .mk{position:absolute;left:50%;top:62%;width:50%;max-width:26px;aspect-ratio:1;transform:translate(-50%,-50%);}
+#calendar-w .mk svg{display:block;width:100%;height:100%;overflow:visible;}
+/* マークの色(m-o: ◯, m-t: △, m-x: x, m-h: -, m-n: 記号以外の文字) */
+#calendar-w .m-o{color:#d64545;}
+#calendar-w .m-t{color:#e08a00;}
+#calendar-w .m-x{color:#6e6e73;}
+#calendar-w .m-h{color:#8e8e93;}
+#calendar-w .m-n{color:#2f6fd6;}
+</style>
+<script>
+(function(){
+var R = document.getElementById("calendar-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  month: '2026-12',   // string: 表示する年月('YYYY-MM')
+  /* 日付ごとの値。キーは日付、値は2文字までの文字か数値。記号の無い日は書かない。
+   * '◯' '△' 'x' '-' は線で描く記号になる(○ 〇 × ✕ ー − も同じ)。それ以外は文字のまま描き、2文字の言葉は小さく描く */
+  days: {
+    3: '△', 4: 'x', 5: '◯',
+    8: '△', 9: '◯', 11: 'x', 12: '◯',
+    15: 12, 16: 2, 17: 0, 18: 1, 19: 5,
+    22: '◯', 23: '-', 24: 'x', 25: 'x', 26: '△',
+    29: '◯', 30: '◯', 31: '-'
+  },
+  /* 薄く表示する日付(過去の日付・非営業日など)。型: number[] ・不要なら [] */
+  disabled: [1, 2, 6, 7, 13, 14, 20, 21, 27, 28]
+};
+
+var WD = ['日', '月', '火', '水', '木', '金', '土'];
+/* ◯ △ x - は線で描く記号として特別扱いする。似た文字はこれらに寄せる */
+var SYMBOLS = ['◯', '△', 'x', '-'];
+var ALIAS = { '○': '◯', '〇': '◯', '×': 'x', '✕': 'x', 'ー': '-', '−': '-' };
+var MARK_CLASS = { '◯': 'm-o', '△': 'm-t', 'x': 'm-x', '-': 'm-h' };
+/* 2文字の言葉(漢字・かななど)は字を小さくしてマスに収める。2桁の数字や英字はそのままの大きさ */
+function textSize(m, n){ return Array.from(m).length > 1 && /[^\x00-\x7f]/.test(m) ? Math.round(n * .58) : n; }
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+var ym = /^(\d{4})-(\d{1,2})$/.exec(String(data.month));
+if (!ym || +ym[2] < 1 || +ym[2] > 12) throw new Error('month は \'2026-12\' のように書いてください');
+var y = +ym[1], mo = +ym[2];
+var days = new Date(y, mo, 0).getDate();
+var lead = new Date(y, mo - 1, 1).getDay();
+/* 日付と値を確かめる。使えない値は描かずにエラーにする */
+function day(k){ var d = Number(k); if (!(d >= 1 && d <= days && d % 1 === 0)) throw new Error(mo + '月に ' + k + '日はありません'); return d; }
+function mark(v, d){
+  if (v === '' || v === null || v === undefined) return '';
+  if (typeof v === 'number') v = String(v);
+  if (typeof v !== 'string') throw new Error(d + '日の値は文字か数値で書いてください');
+  v = v.trim();
+  v = ALIAS[v] || v;
+  if (Array.from(v).length > 2) throw new Error(d + '日の値 ' + JSON.stringify(v) + ' は長すぎます。1マスに入るのは2文字までです');
+  return v;
+}
+var marks = {};
+Object.keys(data.days || {}).forEach(function(k){ var d = day(k); marks[d] = mark(data.days[k], d); });
+var off = {};
+if (data.disabled && !Array.isArray(data.disabled)) throw new Error('disabled は日付の配列で書いてください(例: [1, 2, 6])');
+(data.disabled || []).forEach(function(k){ off[day(k)] = true; });
+
+/* 記号の SVG(viewBox 0 0 24 24、単色)。色は currentColor */
+function markSvg(m){
+  var a = '<svg viewBox="0 0 24 24" aria-hidden="true">', z = '</svg>';
+  if (m === '◯') return a + '<circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.6"/>' + z;
+  if (m === '△') return a + '<path d="M12 3.8 21 19.4H3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' + z;
+  if (m === 'x') return a + '<path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' + z;
+  if (m === '-') return a + '<path d="M5.5 12H18.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' + z;
+  return a + '<text x="12" y="12" text-anchor="middle" dominant-baseline="central" font-size="' + textSize(m, 19) + '" font-weight="300" fill="currentColor" style="font-variant-numeric:tabular-nums">' + esc(m) + '</text>' + z;
+}
+
+var h = '<div class="hd"><span class="mn">' + mo + '</span><span class="yr"><b>月</b>' + y + '</span></div><div class="gr">';
+for (var i = 0; i < 7; i++) h += '<div class="wd' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + WD[i] + '</div>';
+var cells = Math.ceil((lead + days) / 7) * 7;
+for (var k = 0; k < cells; k++) {
+  var d = k - lead + 1;
+  if (d < 1 || d > days) { h += '<div class="c out"></div>'; continue; }
+  var m = marks[d] || '';
+  var cls = 'c' + (k % 7 === 0 ? ' sun' : k % 7 === 6 ? ' sat' : '') + (off[d] ? ' off' : '');
+  h += '<div class="' + cls + '"' + (off[d] ? ' aria-disabled="true"' : '') + '><span class="dn">' + d + '</span>' +
+    (m ? '<span class="mk ' + (MARK_CLASS[m] || 'm-n') + '" aria-label="' + esc(m) + '">' + markSvg(m) + '</span>' : '') + '</div>';
+}
+h += '</div>';
+R.innerHTML = h;
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>
