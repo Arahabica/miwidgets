@@ -20,7 +20,6 @@ svg{display:block}
 .site-nav a{text-decoration:none;white-space:nowrap}
 .site-nav a:hover{color:var(--accent-ink)}
 .nav-cta{border:1px solid var(--line);padding:9px 17px;border-radius:999px}
-.lang-switch{color:var(--muted)}
 /* 英語は和文用の詰めた字間を戻し、見出しの1行目も折り返せるようにする */
 :lang(en) h1,:lang(en) .section-title,:lang(en) .install-callout{letter-spacing:-.025em}
 :lang(en) .hero-title-line{white-space:normal}
