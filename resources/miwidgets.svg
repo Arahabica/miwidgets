@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 430">
+  <defs>
+    <linearGradient id="ink" gradientUnits="userSpaceOnUse" x1="16" y1="200" x2="350" y2="293.5">
+      <stop stop-color="#5401e7"/>
+      <stop offset=".1" stop-color="#5501e7"/>
+      <stop offset=".2" stop-color="#5d08ee"/>
+      <stop offset=".3" stop-color="#6c1cf7"/>
+      <stop offset=".4" stop-color="#772afb"/>
+      <stop offset=".5" stop-color="#7b2ffb"/>
+      <stop offset=".6" stop-color="#853bfb"/>
+      <stop offset=".8" stop-color="#a95cfa"/>
+      <stop offset="1" stop-color="#c67cf9"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#ink)" d="
+    M13 203 C25 189 37 176 47 167
+    C61 155 77 161 82 176 C86 188 91 222 96 253
+    L102 291 C104 304 105 310 112 297
+    C134.5 259 168.5 203 193.5 164 C204 148 215 141 226.5 144
+    C245 147 249 165 252 187 L267 284
+    C269 297 269 305 275 292 C295 247 352 154 387 96
+    C391 87 402 84 411 89 C421 94 424 104 417 116
+    C381 176 338 246 311 301 C296 331 285 347 268 347
+    C247 348 237 322 231 295 L215 197
+    C210 198 206 207 200 218 C183 246 159 286 145 312
+    C131 337 119 350 104 350 C83 350 72 327 67 296
+    L53 207 L37 225 C31 232 21 233 14 227
+    C8 222 7 212 13 203 Z"/>
+</svg>

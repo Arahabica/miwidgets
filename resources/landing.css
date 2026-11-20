@@ -88,7 +88,7 @@ section.hero{display:grid;grid-template-columns:1.04fr .96fr;align-items:center;
 /* 拡大したロゴ(.hero-visual::before)がコピー側まで広がるので、コピーを前面に置く */
 .hero-copy{position:relative;z-index:1}
 .hero-visual{position:relative;isolation:isolate;min-width:0;height:760px}
-.hero-visual::before{content:"";position:absolute;width:min(500px,100%);height:500px;left:50%;top:50%;transform:translate(-50%,-50%) scale(1.6);background:url("miwidgets.png") center/contain no-repeat;opacity:var(--logo-opacity);z-index:-1}
+.hero-visual::before{content:"";position:absolute;width:min(500px,100%);height:500px;left:50%;top:50%;transform:translate(-50%,-50%) scale(1.6);background:url("miwidgets.svg") center/contain no-repeat;opacity:var(--logo-opacity);z-index:-1}
 .hero-weather-shot{position:absolute;top:20px;left:0;width:290px;margin:0;transform:rotate(-4deg);z-index:3}
 .hero-assets-shot{position:absolute;bottom:90px;left:75px;width:172px;margin:0;transform:rotate(-5deg);z-index:1}
 .hero-clock-shot{position:absolute;top:65px;right:25px;width:130px;margin:0;transform:rotate(6deg);z-index:0}
