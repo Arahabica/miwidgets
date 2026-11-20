@@ -269,13 +269,13 @@ var EN_PROMPT_EXAMPLES = {
   line: 'Use the miwidgets.com/register.txt line chart widget to show how the US population changed over the last 10 years'
 };
 var UI_TEXT = LANG === 'en' ? {
-  copy: 'Copy prompt', copyLabel: function(n){ return 'Copy the ' + n + ' prompt'; },
+  copy: 'Copy prompt', copyContext: function(n){ return ' for ' + n; },
   more: 'Show more', less: 'Close', moreLabel: function(n){ return 'Show more of ' + n; }, lessLabel: function(n){ return 'Close ' + n; },
   source: 'Source \u2197', avatar: 'Wolly avatar', preview: ' preview', stamp: 'Today 9:41',
   fileError: 'Previews can\u2019t load over file://. Start a local server at the repository root:',
   loadError: function(f, e){ return 'Couldn\u2019t load ' + f + ' (' + e + ').'; }
 } : {
-  copy: 'プロンプトをコピー', copyLabel: function(n){ return n + 'のプロンプトをコピー'; },
+  copy: 'プロンプトをコピー', copyContext: function(n){ return '（' + n + '）'; },
   more: '続きを見る', less: '閉じる', moreLabel: function(n){ return n + 'の続きを見る'; }, lessLabel: function(n){ return n + 'を閉じる'; },
   source: 'ソース \u2197', avatar: 'Wollyのアバター', preview: ' プレビュー', stamp: '今日 9:41',
   fileError: 'file:// では各プレビューを読み込めません。リポジトリのルートでローカルサーバーを立てて開いてください:',
@@ -319,11 +319,11 @@ if (location.protocol === 'file:') {
     prompts.className = 'widget-prompts';
     var row = document.createElement('div');
     row.className = 'prompt-example';
-    row.innerHTML = '<p></p><button type="button" class="copy-button prompt-copy" data-copy="' + t.id + '-prompt"><svg class="copy-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>' + UI_TEXT.copy + '</button>';
+    row.innerHTML = '<p></p><button type="button" class="copy-button prompt-copy" data-copy="' + t.id + '-prompt"><svg class="copy-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>' + UI_TEXT.copy + '<span class="sr-only"></span></button>';
     var text = row.querySelector('p');
     text.id = t.id + '-prompt';
     text.textContent = PROMPT_EXAMPLES[t.id];
-    row.querySelector('button').setAttribute('aria-label', UI_TEXT.copyLabel(t.name));
+    row.querySelector('button .sr-only').textContent = UI_TEXT.copyContext(t.name);
     prompts.appendChild(row);
     sec.appendChild(prompts);
     var link = sec.querySelector('footer a');
@@ -336,7 +336,9 @@ if (location.protocol === 'file:') {
       '<div class="preview-chat"><div class="preview-stamp"></div><div class="preview-user"></div><div class="preview-reply"></div></div>';
     var avatar = scroll.querySelector('.widget-avatar img');
     avatar.alt = UI_TEXT.avatar;
-    avatar.src = SITE_ROOT + 'resources/wolly.webp';
+    avatar.srcset = SITE_ROOT + 'resources/wolly-120.webp 2x, ' +
+      SITE_ROOT + 'resources/wolly-180.webp 3x, ' + SITE_ROOT + 'resources/wolly.webp 4x';
+    avatar.src = SITE_ROOT + 'resources/wolly-60.webp';
     scroll.querySelector('.preview-stamp').textContent = UI_TEXT.stamp;
     scroll.querySelector('.preview-user').textContent = t.user;
     scroll.querySelector('.preview-reply').textContent = t.reply;

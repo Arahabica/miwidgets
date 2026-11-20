@@ -43,7 +43,7 @@
 <body>
 <a class="skip-link" href="#page-main">Skip to content</a>
 <header class="site-header wrap">
-  <a class="brand" href="./" aria-label="miwidgets home"><img src="resources/miwidgets.svg" width="36" height="36" alt="">miwidgets<span class="domain">.com</span></a>
+  <a class="brand" href="./"><img src="resources/miwidgets.svg" width="36" height="36" alt="">miwidgets<span class="domain">.com</span><span class="sr-only"> home</span></a>
   <nav class="site-nav" aria-label="Main navigation"><a class="nav-cta" href="#widgets">Browse widgets <span aria-hidden="true">↓</span></a></nav>
 </header>
 <main id="page-main">
@@ -116,7 +116,9 @@
       </div>
     </div>
   </figure>
-  <figure class="hero-assets-shot"><img src="resources/hero-assets-widget-en.webp" width="732" height="994" alt="Stock chart example: a line chart with profit and loss per holding" fetchpriority="high"></figure>
+  <figure class="hero-assets-shot"><img src="resources/hero-assets-widget-en.webp"
+    srcset="resources/hero-assets-widget-en-172.webp 172w, resources/hero-assets-widget-en-300.webp 300w, resources/hero-assets-widget-en-344.webp 344w, resources/hero-assets-widget-en-516.webp 516w, resources/hero-assets-widget-en.webp 732w"
+    sizes="(max-width: 370px) calc((100vw - 32px) * .4), (max-width: 768px) min(150px, calc((100vw - 40px) * .4)), (max-width: 1050px) 144px, 172px" width="732" height="994" alt="Stock chart example: a line chart with profit and loss per holding" fetchpriority="high"></figure>
   <figure class="hero-clock-shot" role="img" aria-label="Analog clock widget with a second hand">
     <svg viewBox="0 0 366 370" text-anchor="middle">
       <text x="183" y="29" class="clock-city">TOKYO</text>
@@ -138,7 +140,9 @@
       <text class="clock-date" x="183" y="349">Tue, Nov 17, 2026</text>
     </svg>
   </figure>
-  <figure class="hero-route-shot"><img src="resources/hero-route-widget-en.webp" width="732" height="792" alt="Transit timeline from Shinjuku, Track 3 at 07:58, to Kokusaikaikan with transfers and times" fetchpriority="high"></figure></div></section>
+  <figure class="hero-route-shot"><img src="resources/hero-route-widget-en.webp"
+    srcset="resources/hero-route-widget-en-300.webp 300w, resources/hero-route-widget-en-520.webp 520w, resources/hero-route-widget-en-600.webp 600w, resources/hero-route-widget-en.webp 732w"
+    sizes="(max-width: 370px) calc((100vw - 32px) * .72), (max-width: 768px) min(260px, calc((100vw - 40px) * .72)), (max-width: 1050px) 260px, 300px" width="732" height="792" alt="Transit timeline from Shinjuku, Track 3 at 07:58, to Kokusaikaikan with transfers and times" fetchpriority="high"></figure></div></section>
 
 <section class="widgets-section" id="widgets" aria-labelledby="widgets-title">
   <div class="widget-heading wrap"><div><h2 class="section-title" id="widgets-title">What will you add?</h2></div></div>
