@@ -1,7 +1,7 @@
 <!-- 天気テンプレート: 1日の天気と、6時間ごとの天気・気温を表示。表示内容は data で変更できる。 -->
 <div id="wx1b" style="min-height:330px;"></div>
 <style>
-#wx1b{position:relative;box-sizing:border-box;width:100%;padding:16px 16px 14px;border-radius:18px;overflow:hidden;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;}
+#wx1b{position:relative;box-sizing:border-box;width:100%;padding:16px 16px 14px;overflow:hidden;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;}
 #wx1b::before{content:"";position:absolute;right:-70px;top:-80px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,var(--ac) 0%,transparent 66%);opacity:.5;filter:blur(8px);}
 #wx1b::after{content:"";position:absolute;left:-90px;bottom:-110px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.28) 0%,transparent 65%);}
 #wx1b > *{position:relative;z-index:1;}
