@@ -25,9 +25,6 @@ https://miwidgets.com/template/weather.html
 Transit directions — a route and what to do next, based on the current time
 https://miwidgets.com/template/route.html
 
-Omikuji fortune — a Japanese fortune-slip app
-https://miwidgets.com/template/omikuji.html
-
 Stock chart — profit and loss over time as a line chart, with a legend per holding
 https://miwidgets.com/template/assets.html
 
@@ -36,9 +33,6 @@ https://miwidgets.com/template/quiz.html
 
 Analog clock — an analog clock with a second hand
 https://miwidgets.com/template/clock.html
-
-Secret message — a message that opens with a 6-digit passcode
-https://miwidgets.com/template/secret.html
 
 Calendar — one month, with a mark (◯ △ x -) or up to 2 characters on each day
 https://miwidgets.com/template/calendar.html
@@ -51,3 +45,9 @@ https://miwidgets.com/template/bar.html
 
 Line chart — a title and values over time as lines, up to 5 series; tap a point to see its values
 https://miwidgets.com/template/line.html
+
+Omikuji fortune — a Japanese fortune-slip app
+https://miwidgets.com/template/omikuji.html
+
+Secret message — a message that opens with a 6-digit passcode
+https://miwidgets.com/template/secret.html

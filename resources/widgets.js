@@ -81,15 +81,15 @@ var ROUTE_SCENARIOS = [
 var TEMPLATES = [
   { id: 'weather', name: '天気', file: 'template/weather.html', user: '各地の天気をおしえて', reply: '各地の今日の天気です。', scenarios: WEATHER_SCENARIOS },
   { id: 'route', name: '乗り換え案内', file: 'template/route.html', user: '明日の朝、新宿から国際会館までの行き方を教えて', reply: '新宿から国際会館までの経路です。現在時刻に合わせて、次にすることを表示します。', scenarios: ROUTE_SCENARIOS },
-  { id: 'omikuji', name: 'おみくじ', file: 'template/omikuji.html', user: 'おみくじを引きたい', reply: 'おみくじを用意しました。箱をタップして引いてください。' },
   { id: 'assets', name: '株価チャート', file: 'template/assets.html', user: '一週間の資産の推移を見せて', reply: '直近1週間の損益推移です。' },
   { id: 'quiz', name: 'クイズ', file: 'template/quiz.html', user: 'クイズを出して', reply: 'クイズです。答えを選んで「OK」を押してください。' },
   { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
-  { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' },
   { id: 'calendar', name: 'カレンダー', file: 'template/calendar.html', user: '11月の予約の空き状況を見せて', reply: '11月の空き状況です。数字の日は残りの席数です。薄い日は受付していません。' },
   { id: 'timetable', name: '予約枠', file: 'template/timetable.html', user: '来週の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。数字の枠は残りの席数です。' },
   { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '6月から11月までの売上を、去年と並べました。月をタップすると値が出ます。' },
-  { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '今日の3時間ごとの気温です。時刻をタップすると値が出ます。' }
+  { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '今日の3時間ごとの気温です。時刻をタップすると値が出ます。' },
+  { id: 'omikuji', name: 'おみくじ', file: 'template/omikuji.html', user: 'おみくじを引きたい', reply: 'おみくじを用意しました。箱をタップして引いてください。' },
+  { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' }
 ];
 
 var PROMPT_EXAMPLES = {
@@ -233,15 +233,15 @@ var EN_PATCHES = {
 var EN_TEMPLATES = [
   { id: 'weather', name: 'Weather', user: 'What\u2019s the weather like around Japan?', reply: 'Here\u2019s today\u2019s weather in each city.', scenarios: EN_WEATHER_SCENARIOS },
   { id: 'route', name: 'Transit Directions', user: 'How do I get from Shinjuku to Kokusaikaikan tomorrow morning?', reply: 'Here\u2019s your route from Shinjuku to Kokusaikaikan. It shows what to do next based on the current time.', scenarios: ROUTE_SCENARIOS },
-  { id: 'omikuji', name: 'Omikuji Fortune', user: 'I want to draw an omikuji fortune', reply: 'Your omikuji is ready. Tap the box to draw it.' },
   { id: 'assets', name: 'Stock Chart', user: 'Show me how my portfolio did this week', reply: 'Here\u2019s your profit and loss over the past week.' },
   { id: 'quiz', name: 'Quiz', user: 'Give me a quiz', reply: 'Here\u2019s a quiz. Pick an answer and tap \u201cCheck\u201d.' },
   { id: 'clock', name: 'Analog Clock', user: 'Show me the time', reply: 'Here\u2019s the current time.' },
-  { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'Your secret message is ready. The passcode is 123456.' },
   { id: 'calendar', name: 'Calendar', user: 'Show me the availability for November', reply: 'Here\u2019s November\u2019s availability. Numbers show how many seats are left. Faded days aren\u2019t taking bookings.' },
   { id: 'timetable', name: 'Time Slots', user: 'Show me the open slots for next week', reply: 'Here are the open slots for the week of November 23. Numbers show how many seats are left.' },
   { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are sales from June to November next to last year\u2019s. Tap a month to see the values.' },
-  { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here\u2019s today\u2019s temperature every 3 hours. Tap a time to see the values.' }
+  { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here\u2019s today\u2019s temperature every 3 hours. Tap a time to see the values.' },
+  { id: 'omikuji', name: 'Omikuji Fortune', user: 'I want to draw an omikuji fortune', reply: 'Your omikuji is ready. Tap the box to draw it.' },
+  { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'Your secret message is ready. The passcode is 123456.' }
 ];
 var EN_PROMPT_EXAMPLES = {
   weather: 'Show tomorrow\u2019s weather in London with the miwidgets.com/register.txt weather widget',

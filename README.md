@@ -18,15 +18,15 @@ Muse は [register.txt](register.txt) を読み、各テンプレートのソー
 |--------------|------|
 | [株価チャート](template/assets.html) | 損益の推移を折れ線チャートと銘柄別の凡例で表示 |
 | [時計](template/clock.html) | 秒針つきのアナログ時計 |
-| [おみくじ](template/omikuji.html) | 箱をタップして引くおみくじ |
 | [クイズ](template/quiz.html) | 選択肢の数を変えられる、解き直し付きのクイズ |
-| [秘密のメッセージ](template/secret.html) | 6桁のパスコードで開くメッセージ |
 | [天気](template/weather.html) | 天気と6時間ごとの気温・降水確率を表示 |
 | [乗り換え案内](template/route.html) | 経路と、現在時刻に応じた次の行動を表示 |
 | [カレンダー](template/calendar.html) | 1か月分のカレンダー。各日付に◯△x-の記号か、2文字までの文字を表示 |
 | [予約枠](template/timetable.html) | 開始日から7日間×時刻(15・30・60分ごと)の表。各枠に◯△x-の記号か、2文字までの文字を表示 |
 | [棒グラフ](template/bar.html) | タイトルつきの棒グラフ。系列は5つまで並べられ、項目をタップすると値を表示 |
 | [線グラフ](template/line.html) | タイトルつきの線グラフ。系列は5つまで重ねられ、項目をタップすると値を表示 |
+| [おみくじ](template/omikuji.html) | 箱をタップして引くおみくじ |
+| [秘密のメッセージ](template/secret.html) | 6桁のパスコードで開くメッセージ |
 
 ## 使い方
 
