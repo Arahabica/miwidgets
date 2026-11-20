@@ -1,130 +1,130 @@
-<!-- データシートテンプレート(案8: タップで並び替え・編集で隠す): 行と項目のデータを、表(1列目を固定して横にスクロールする)か2列(1列目に行の名前、2列目にほかの項目を縦に並べる)で表示する。表では見出しを押すとすぐ並び替わり、もう一度押すと向きが変わり、3回目で元の順に戻る。見出しの右端の歯車を押すと、隠した項目も含めてすべての項目が出て、項目ごとに − で隠す・+ で戻すを選び、「決定」で反映する(「キャンセル」で何も変えない。どちらも左上に出る)。2列では右上の「並び替え」でメニューを開き、項目を選ぶと並び替わる。メニューの「非表示設定」で同じように隠す項目を選ぶ。並び替えると行が元の位置から動いて入れ替わる。表示・並び順・隠した項目は保存する。数値は右寄せ、文字は左寄せ(2列表示では値はすべて右寄せ)。項目の数と行の値の数が違う、値が文字・数値・null でないなどの誤りはエラーとして画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると画面の文言と数値の書式が英語になる。 -->
-<div id="sheet-8-w"></div>
+<!-- データシート: CSV形式のデータを表として表示。行と項目のデータを表か2列で表示する。表示内容は data で変更できる。 -->
+<div id="sheet-w"></div>
 <style>
-#sheet-8-w{--bg:#fff;--fg:#1c1c1e;--mut:#8e8e93;--line:#e9e9ee;--soft:#f2f2f7;--ac:#3a5ad1;--acs:rgba(58,90,209,.09);--sh:rgba(0,0,0,.14);}
-@media (prefers-color-scheme:dark){#sheet-8-w{--bg:#1c1c1e;--fg:#f2f2f7;--mut:#98989f;--line:#38383a;--soft:#2c2c2e;--ac:#8aa4ff;--acs:rgba(138,164,255,.14);--sh:rgba(0,0,0,.5);}}
-#sheet-8-w{position:relative;box-sizing:border-box;width:100%;padding:12px 12px 10px;background:var(--bg);color:var(--fg);border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:13px;line-height:1.45;-webkit-text-size-adjust:100%;}
-#sheet-8-w *{box-sizing:border-box;}
+#sheet-w{--bg:#fff;--fg:#1c1c1e;--mut:#8e8e93;--line:#e9e9ee;--soft:#f2f2f7;--ac:#3a5ad1;--acs:rgba(58,90,209,.09);--sh:rgba(0,0,0,.14);}
+@media (prefers-color-scheme:dark){#sheet-w{--bg:#1c1c1e;--fg:#f2f2f7;--mut:#98989f;--line:#38383a;--soft:#2c2c2e;--ac:#8aa4ff;--acs:rgba(138,164,255,.14);--sh:rgba(0,0,0,.5);}}
+#sheet-w{position:relative;box-sizing:border-box;width:100%;padding:12px 12px 10px;background:var(--bg);color:var(--fg);border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:13px;line-height:1.45;-webkit-text-size-adjust:100%;}
+#sheet-w *{box-sizing:border-box;}
 /* ボタンはタップしても灰色のハイライト・文字の選択・長押しのメニューを出さない */
-#sheet-8-w button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;}
-#sheet-8-w button:focus:not(:focus-visible){outline:none;}
-#sheet-8-w svg{display:block;flex:none;}
-#sheet-8-w .top{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-height:32px;}
-#sheet-8-w .seg{display:inline-flex;flex:none;padding:2px;border-radius:9px;background:var(--soft);}
-#sheet-8-w .seg button{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border-radius:7px;font-size:12px;font-weight:600;color:var(--mut);transition:background .18s,color .18s,box-shadow .18s;}
-#sheet-8-w .seg button[aria-pressed="true"]{background:var(--bg);color:var(--fg);box-shadow:0 1px 3px var(--sh);}
+#sheet-w button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;}
+#sheet-w button:focus:not(:focus-visible){outline:none;}
+#sheet-w svg{display:block;flex:none;}
+#sheet-w .top{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-height:32px;}
+#sheet-w .seg{display:inline-flex;flex:none;padding:2px;border-radius:9px;background:var(--soft);}
+#sheet-w .seg button{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border-radius:7px;font-size:12px;font-weight:600;color:var(--mut);transition:background .18s,color .18s,box-shadow .18s;}
+#sheet-w .seg button[aria-pressed="true"]{background:var(--bg);color:var(--fg);box-shadow:0 1px 3px var(--sh);}
 /* 表: 1列目は固定。横にずらすと影が出て、右に続きがあるときは右端がうすくなる */
-#sheet-8-w .scw{position:relative;}
-#sheet-8-w .scw::after{content:"";position:absolute;top:0;right:0;bottom:0;width:28px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--bg));opacity:0;transition:opacity .2s;}
-#sheet-8-w .scw.r::after{opacity:1;}
-#sheet-8-w .sc{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain;}
-#sheet-8-w .sc::-webkit-scrollbar{display:none;}
-#sheet-8-w table{border-collapse:separate;border-spacing:0;min-width:100%;}
-#sheet-8-w th,#sheet-8-w td{text-align:left;vertical-align:top;}
-#sheet-8-w th{padding:0;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:600;}
-#sheet-8-w td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;}
-#sheet-8-w tr:last-child td{border-bottom:0;}
-#sheet-8-w td.n,#sheet-8-w .v.n{text-align:right;font-variant-numeric:tabular-nums;}
-#sheet-8-w th:first-child,#sheet-8-w td:first-child{position:sticky;left:0;z-index:1;background:var(--bg);min-width:8em;max-width:10.5em;white-space:normal;transition:box-shadow .2s;}
-#sheet-8-w td:first-child{font-weight:600;overflow-wrap:anywhere;}
-#sheet-8-w .sc.l th:first-child,#sheet-8-w .sc.l td:first-child{box-shadow:8px 0 8px -8px var(--sh);}
+#sheet-w .scw{position:relative;}
+#sheet-w .scw::after{content:"";position:absolute;top:0;right:0;bottom:0;width:28px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--bg));opacity:0;transition:opacity .2s;}
+#sheet-w .scw.r::after{opacity:1;}
+#sheet-w .sc{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain;}
+#sheet-w .sc::-webkit-scrollbar{display:none;}
+#sheet-w table{border-collapse:separate;border-spacing:0;min-width:100%;}
+#sheet-w th,#sheet-w td{text-align:left;vertical-align:top;}
+#sheet-w th{padding:0;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:600;}
+#sheet-w td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+#sheet-w tr:last-child td{border-bottom:0;}
+#sheet-w td.n,#sheet-w .v.n{text-align:right;font-variant-numeric:tabular-nums;}
+#sheet-w th:first-child,#sheet-w td:first-child{position:sticky;left:0;z-index:1;background:var(--bg);min-width:8em;max-width:10.5em;white-space:normal;transition:box-shadow .2s;}
+#sheet-w td:first-child{font-weight:600;overflow-wrap:anywhere;}
+#sheet-w .sc.l th:first-child,#sheet-w .sc.l td:first-child{box-shadow:8px 0 8px -8px var(--sh);}
 /* 並べている項目の列はうすく色を付ける */
-#sheet-8-w td.on{background:linear-gradient(var(--acs),var(--acs)),var(--bg);}
-#sheet-8-w .hb{display:flex;align-items:center;gap:3px;width:100%;min-height:36px;padding:0 10px;font-size:11.5px;font-weight:600;color:var(--mut);text-align:left;white-space:nowrap;}
-#sheet-8-w th.n .hb{justify-content:flex-end;}
-#sheet-8-w th.on .hb{color:var(--ac);}
-#sheet-8-w .hb:active{opacity:.6;}
+#sheet-w td.on{background:linear-gradient(var(--acs),var(--acs)),var(--bg);}
+#sheet-w .hb{display:flex;align-items:center;gap:3px;width:100%;min-height:36px;padding:0 10px;font-size:11.5px;font-weight:600;color:var(--mut);text-align:left;white-space:nowrap;}
+#sheet-w th.n .hb{justify-content:flex-end;}
+#sheet-w th.on .hb{color:var(--ac);}
+#sheet-w .hb:active{opacity:.6;}
 /* 2列: 左に行の名前、右にほかの項目を縦に並べる */
-#sheet-8-w .ls .row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
-#sheet-8-w .ls .row:last-child{border-bottom:0;}
-#sheet-8-w .ls .t{flex:0 0 36%;min-width:0;font-weight:600;overflow-wrap:anywhere;}
-#sheet-8-w .ls .at{flex:1;min-width:0;}
-#sheet-8-w .ls .a{display:flex;align-items:baseline;gap:10px;padding:1.5px 0;}
-#sheet-8-w .ls .k{flex:none;max-width:55%;font-size:11.5px;color:var(--mut);overflow-wrap:anywhere;}
-#sheet-8-w .ls .v{flex:1;min-width:0;overflow-wrap:anywhere;text-align:right;}   /* 2列では文字も数値も右寄せ */
-#sheet-8-w .ls .a.on .k,#sheet-8-w .ls .a.on .v{color:var(--ac);font-weight:600;}
-#sheet-8-w .bd{transition:opacity .15s;}
-#sheet-8-w .bd.fd{opacity:0;}
+#sheet-w .ls .row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
+#sheet-w .ls .row:last-child{border-bottom:0;}
+#sheet-w .ls .t{flex:0 0 36%;min-width:0;font-weight:600;overflow-wrap:anywhere;}
+#sheet-w .ls .at{flex:1;min-width:0;}
+#sheet-w .ls .a{display:flex;align-items:baseline;gap:10px;padding:1.5px 0;}
+#sheet-w .ls .k{flex:none;max-width:55%;font-size:11.5px;color:var(--mut);overflow-wrap:anywhere;}
+#sheet-w .ls .v{flex:1;min-width:0;overflow-wrap:anywhere;text-align:right;}   /* 2列では文字も数値も右寄せ */
+#sheet-w .ls .a.on .k,#sheet-w .ls .a.on .v{color:var(--ac);font-weight:600;}
+#sheet-w .bd{transition:opacity .15s;}
+#sheet-w .bd.fd{opacity:0;}
 /* 全体は高さ 550px まで。超えるときは見出し・上の段を残して、データの行だけをスクロールする。少ないときは中身の高さ */
-#sheet-8-w{display:flex;flex-direction:column;max-height:550px;}
-#sheet-8-w .top{flex:none;}
-#sheet-8-w .bd,#sheet-8-w .scw{display:flex;flex-direction:column;min-height:0;}
-#sheet-8-w .sc{min-height:0;overflow-y:auto;}
-#sheet-8-w .ls{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-#sheet-8-w th{position:sticky;top:0;z-index:2;background:var(--bg);}
-#sheet-8-w th:first-child{top:0;z-index:3;}
+#sheet-w{display:flex;flex-direction:column;max-height:550px;}
+#sheet-w .top{flex:none;}
+#sheet-w .bd,#sheet-w .scw{display:flex;flex-direction:column;min-height:0;}
+#sheet-w .sc{min-height:0;overflow-y:auto;}
+#sheet-w .ls{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#sheet-w th{position:sticky;top:0;z-index:2;background:var(--bg);}
+#sheet-w th:first-child{top:0;z-index:3;}
 /* 下に続きがあるときは、データの下端を背景色へうすくして、スクロールできることを示す */
-#sheet-8-w .bd{position:relative;}
-#sheet-8-w .bd::after{content:"";position:absolute;left:0;right:0;bottom:0;z-index:4;height:60px;pointer-events:none;background:linear-gradient(180deg,transparent,var(--bg));opacity:0;transition:opacity .2s;}
-#sheet-8-w .bd.b::after{opacity:1;}
-@media (prefers-reduced-motion:reduce){#sheet-8-w *{transition:none !important;animation:none !important;}}
+#sheet-w .bd{position:relative;}
+#sheet-w .bd::after{content:"";position:absolute;left:0;right:0;bottom:0;z-index:4;height:60px;pointer-events:none;background:linear-gradient(180deg,transparent,var(--bg));opacity:0;transition:opacity .2s;}
+#sheet-w .bd.b::after{opacity:1;}
+@media (prefers-reduced-motion:reduce){#sheet-w *{transition:none !important;animation:none !important;}}
 
-#sheet-8-w .top{gap:6px;}
-#sheet-8-w .stat{flex:1;min-width:0;display:flex;}
+#sheet-w .top{gap:6px;}
+#sheet-w .stat{flex:1;min-width:0;display:flex;}
 /* 歯車: 表では見出しの行の一番右(横にスクロールしきると見える) */
-#sheet-8-w th.g{width:1%;padding:0;}
-#sheet-8-w td.g{padding:0;}
-#sheet-8-w .gr{display:flex;align-items:center;justify-content:center;width:34px;height:36px;color:var(--mut);}
-#sheet-8-w .gr:active{opacity:.5;}
+#sheet-w th.g{width:1%;padding:0;}
+#sheet-w td.g{padding:0;}
+#sheet-w .gr{display:flex;align-items:center;justify-content:center;width:34px;height:36px;color:var(--mut);}
+#sheet-w .gr:active{opacity:.5;}
 /* 項目を選ぶあいだ: すべての項目を出し、名前の左に × か + を付ける。隠す項目と、データの部分は薄くする */
-#sheet-8-w .hb .mk{display:none;}
-#sheet-8-w.edit .hb .mk{display:flex;}
-#sheet-8-w.edit .hb .mk{color:var(--mut);}
-#sheet-8-w.edit .hb{color:var(--fg);}
-#sheet-8-w.edit .hb .ar{display:none;}
-#sheet-8-w.edit .hb.lock{cursor:default;}
-#sheet-8-w.edit .hd .hb,#sheet-8-w.edit .hb.hd{opacity:.42;}
-#sheet-8-w.edit th.on .hb{color:var(--fg);}
-#sheet-8-w.edit td.on{background:var(--bg);}
-#sheet-8-w.edit .ls .a.on .k,#sheet-8-w.edit .ls .a.on .v{color:var(--mut);font-weight:inherit;}
-#sheet-8-w.edit td,#sheet-8-w.edit .ls .t,#sheet-8-w.edit .ls .v{color:var(--mut);}
-#sheet-8-w.edit th.hd,#sheet-8-w.edit td.hd{background:var(--soft);}
-#sheet-8-w.edit td.hd,#sheet-8-w.edit .ls .a.hd .k,#sheet-8-w.edit .ls .a.hd .v{color:color-mix(in srgb,var(--mut) 55%,var(--bg));}
-#sheet-8-w.edit .ls .a.hd{background:var(--soft);border-radius:4px;margin:0 -6px;padding-left:6px;padding-right:6px;}
-#sheet-8-w.edit .seg{opacity:.4;pointer-events:none;}
+#sheet-w .hb .mk{display:none;}
+#sheet-w.edit .hb .mk{display:flex;}
+#sheet-w.edit .hb .mk{color:var(--mut);}
+#sheet-w.edit .hb{color:var(--fg);}
+#sheet-w.edit .hb .ar{display:none;}
+#sheet-w.edit .hb.lock{cursor:default;}
+#sheet-w.edit .hd .hb,#sheet-w.edit .hb.hd{opacity:.42;}
+#sheet-w.edit th.on .hb{color:var(--fg);}
+#sheet-w.edit td.on{background:var(--bg);}
+#sheet-w.edit .ls .a.on .k,#sheet-w.edit .ls .a.on .v{color:var(--mut);font-weight:inherit;}
+#sheet-w.edit td,#sheet-w.edit .ls .t,#sheet-w.edit .ls .v{color:var(--mut);}
+#sheet-w.edit th.hd,#sheet-w.edit td.hd{background:var(--soft);}
+#sheet-w.edit td.hd,#sheet-w.edit .ls .a.hd .k,#sheet-w.edit .ls .a.hd .v{color:color-mix(in srgb,var(--mut) 55%,var(--bg));}
+#sheet-w.edit .ls .a.hd{background:var(--soft);border-radius:4px;margin:0 -6px;padding-left:6px;padding-right:6px;}
+#sheet-w.edit .seg{opacity:.4;pointer-events:none;}
 /* 「キャンセル」「決定」は、項目を選んでいるあいだだけ左上に出す */
-#sheet-8-w .stat{gap:6px;}
-#sheet-8-w .cnt{font-size:12px;color:var(--mut);white-space:nowrap;}
-#sheet-8-w.vt .cnt{padding-left:10px;}   /* 表では「名前」の見出しと左端をそろえる */
-#sheet-8-w .stat{align-items:center;}
-#sheet-8-w .stat>button,#sheet-8-w .mf button{height:30px;padding:0 14px;border-radius:9px;font-size:13px;font-weight:600;}
-#sheet-8-w .cc{color:var(--fg);background:var(--soft);}
-#sheet-8-w .ok{color:#fff;background:var(--ac);}
-#sheet-8-w .stat>button:active,#sheet-8-w .mf button:active{opacity:.7;}
-#sheet-8-w .ok:disabled{opacity:.35;cursor:default;}
+#sheet-w .stat{gap:6px;}
+#sheet-w .cnt{font-size:12px;color:var(--mut);white-space:nowrap;}
+#sheet-w.vt .cnt{padding-left:10px;}   /* 表では「名前」の見出しと左端をそろえる */
+#sheet-w .stat{align-items:center;}
+#sheet-w .stat>button,#sheet-w .mf button{height:30px;padding:0 14px;border-radius:9px;font-size:13px;font-weight:600;}
+#sheet-w .cc{color:var(--fg);background:var(--soft);}
+#sheet-w .ok{color:#fff;background:var(--ac);}
+#sheet-w .stat>button:active,#sheet-w .mf button:active{opacity:.7;}
+#sheet-w .ok:disabled{opacity:.35;cursor:default;}
 /* 2列: 右上(表・2列の切り替えの左)の「並び替え」から開くメニュー。項目を押すと並び替え、「非表示設定」で隠す項目を選ぶ */
-#sheet-8-w .dd{position:relative;flex:none;margin-left:auto;}   /* 表・2列の切り替えのすぐ左 */
+#sheet-w .dd{position:relative;flex:none;margin-left:auto;}   /* 表・2列の切り替えのすぐ左 */
 /* ふだんは背景なし。メニューを開いているあいだだけ色を付ける。並べているときは「人口(万人) ↓」のように出し、120px を超える名前は … で切る */
-#sheet-8-w .sb{display:inline-flex;align-items:center;gap:5px;max-width:120px;height:30px;padding:0 8px;border-radius:9px;font-size:13px;font-weight:500;color:var(--mut);transition:background .15s,color .15s;}
-#sheet-8-w .dd.open .sb{background:var(--soft);color:var(--fg);}
-#sheet-8-w .sb.on{font-weight:600;color:var(--ac);}   /* 並べているときは太い青字 */
-#sheet-8-w .sb .sl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-#sheet-8-w .sb .cv{transition:transform .18s;}
-#sheet-8-w .dd.open .sb .cv{transform:rotate(180deg);}
-#sheet-8-w .sb:active{opacity:.7;}
-#sheet-8-w .mn{position:absolute;top:calc(100% + 6px);right:0;z-index:10;width:max-content;min-width:200px;max-width:min(280px,calc(100vw - 40px));padding:6px;border-radius:13px;background:var(--bg);box-shadow:0 10px 30px var(--sh),0 0 0 1px var(--line);visibility:hidden;opacity:0;transform:translateY(-4px) scale(.98);transform-origin:top right;transition:opacity .15s,transform .18s cubic-bezier(.2,.8,.2,1),visibility 0s .18s;}
-#sheet-8-w .dd.open .mn{visibility:visible;opacity:1;transform:none;transition:opacity .15s,transform .18s cubic-bezier(.2,.8,.2,1);}
-#sheet-8-w .mi{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:0 10px;border-radius:8px;font-size:14px;text-align:left;}
-#sheet-8-w button.mi:active{background:var(--soft);}
-#sheet-8-w .mi.on{color:var(--ac);font-weight:600;}
-#sheet-8-w .mi .ar{margin-left:auto;}
-#sheet-8-w .mi.g{color:var(--mut);}
-#sheet-8-w .mi.g svg{width:16px;height:16px;}   /* 「リセット」と「非表示設定」のアイコンの大きさをそろえる */
-#sheet-8-w .sep{height:1px;margin:5px 6px;background:var(--line);}
-#sheet-8-w .mi .mm{display:flex;width:15px;color:var(--mut);}
-#sheet-8-w .mi.hd{background:var(--soft);color:var(--mut);border-radius:0;}
-#sheet-8-w .mi.lock{color:var(--mut);}
+#sheet-w .sb{display:inline-flex;align-items:center;gap:5px;max-width:120px;height:30px;padding:0 8px;border-radius:9px;font-size:13px;font-weight:500;color:var(--mut);transition:background .15s,color .15s;}
+#sheet-w .dd.open .sb{background:var(--soft);color:var(--fg);}
+#sheet-w .sb.on{font-weight:600;color:var(--ac);}   /* 並べているときは太い青字 */
+#sheet-w .sb .sl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#sheet-w .sb .cv{transition:transform .18s;}
+#sheet-w .dd.open .sb .cv{transform:rotate(180deg);}
+#sheet-w .sb:active{opacity:.7;}
+#sheet-w .mn{position:absolute;top:calc(100% + 6px);right:0;z-index:10;width:max-content;min-width:200px;max-width:min(280px,calc(100vw - 40px));padding:6px;border-radius:13px;background:var(--bg);box-shadow:0 10px 30px var(--sh),0 0 0 1px var(--line);visibility:hidden;opacity:0;transform:translateY(-4px) scale(.98);transform-origin:top right;transition:opacity .15s,transform .18s cubic-bezier(.2,.8,.2,1),visibility 0s .18s;}
+#sheet-w .dd.open .mn{visibility:visible;opacity:1;transform:none;transition:opacity .15s,transform .18s cubic-bezier(.2,.8,.2,1);}
+#sheet-w .mi{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:0 10px;border-radius:8px;font-size:14px;text-align:left;}
+#sheet-w button.mi:active{background:var(--soft);}
+#sheet-w .mi.on{color:var(--ac);font-weight:600;}
+#sheet-w .mi .ar{margin-left:auto;}
+#sheet-w .mi.g{color:var(--mut);}
+#sheet-w .mi.g svg{width:16px;height:16px;}   /* 「リセット」と「非表示設定」のアイコンの大きさをそろえる */
+#sheet-w .sep{height:1px;margin:5px 6px;background:var(--line);}
+#sheet-w .mi .mm{display:flex;width:15px;color:var(--mut);}
+#sheet-w .mi.hd{background:var(--soft);color:var(--mut);border-radius:0;}
+#sheet-w .mi.lock{color:var(--mut);}
 /* メニューは全体の高さ(550px)に収まるようにし、項目が多いときは項目の部分だけをスクロールする。非表示設定の「表示列を修正」「キャンセル」は常に見える */
-#sheet-8-w .mn{display:flex;flex-direction:column;max-height:488px;}
-#sheet-8-w .mis{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
-#sheet-8-w .mis.b{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 48px),transparent);}
-#sheet-8-w .mf{flex:none;}
-#sheet-8-w .mf{display:flex;flex-direction:column;gap:6px;padding:8px 2px 2px;}
-#sheet-8-w .mf button{height:38px;}
+#sheet-w .mn{display:flex;flex-direction:column;max-height:488px;}
+#sheet-w .mis{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+#sheet-w .mis.b{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 48px),transparent);}
+#sheet-w .mf{flex:none;}
+#sheet-w .mf{display:flex;flex-direction:column;gap:6px;padding:8px 2px 2px;}
+#sheet-w .mf button{height:38px;}
 </style>
 <script>
 (function(){
-var R = document.getElementById("sheet-8-w");
+var R = document.getElementById("sheet-w");
 try {
 /* Muse 以外のブラウザでも動くよう、hatchWidget が無ければメモリ上の代替を使う */
 var HW = window.hatchWidget || (function(){ var s = null; return { getState: function(d){ return s === null ? d : s; }, setState: function(v){ s = v; } }; })();
@@ -194,8 +194,7 @@ var LOC = EN ? 'en-US' : 'ja-JP';
 var T = EN ? {
   table: 'Table', list: 'List', count: function(n){ return n + (n === 1 ? ' row' : ' rows'); },
   numAsc: 'Low to high', numDesc: 'High to low', txtAsc: 'A to Z', txtDesc: 'Z to A',
-  original: 'Original order', hide: 'Hide this column', hidden: 'Hidden', shown: 'Columns', showAll: 'Show all', sortBy: 'Sort',
-  hidMsg: function(c){ return c + ' hidden'; }, undo: 'Undo', always: 'Always shown',
+  sortBy: 'Sort',
   cols: 'Choose columns', hideSet: 'Hide columns', resetSort: 'Reset', cancel: 'Cancel', ok: 'Update columns', hideCol: function(c){ return 'Hide ' + c; }, showCol: function(c){ return 'Show ' + c; },
   badCols: "columns must be an array of one or more names (e.g. ['Name', 'Price'])",
   dupCol: function(c){ return 'The column name ' + JSON.stringify(c) + ' is used more than once'; },
@@ -208,8 +207,7 @@ var T = EN ? {
 } : {
   table: '表', list: '2列', count: function(n){ return n + '件'; },
   numAsc: '小さい順', numDesc: '大きい順', txtAsc: '昇順', txtDesc: '降順',
-  original: '元の順に戻す', hide: 'この項目を隠す', hidden: '非表示', shown: '表示する項目', showAll: 'すべて表示', sortBy: '並び替え',
-  hidMsg: function(c){ return c + ' を非表示にしました'; }, undo: '元に戻す', always: '常に表示',
+  sortBy: '並び替え',
   cols: '表示する項目を選ぶ', hideSet: '非表示設定', resetSort: 'リセット', cancel: 'キャンセル', ok: '表示列を修正', hideCol: function(c){ return c + ' を隠す'; }, showCol: function(c){ return c + ' を表示する'; },
   badCols: "columns は項目の名前の配列で書いてください(例: ['名前', '価格'])",
   dupCol: function(c){ return '項目の名前 ' + JSON.stringify(c) + ' が重なっています'; },
@@ -296,15 +294,10 @@ var IC = {
   table: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="2" width="11" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 5.5h11M1.5 8.7h11M5.3 2v10" stroke="currentColor" stroke-width="1.3"/></svg>',
   list: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 3h4M1.5 8.5h4M8 3h4.5M8 5.2h4.5M8 8.5h4.5M8 10.7h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
   reset: '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7a4.5 4.5 0 1 0 1.4-3.3M2.5 2v2.5H5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  eyeOff: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 7S3.7 3 7 3s5.5 4 5.5 4-2.2 4-5.5 4S1.5 7 1.5 7z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2 12L12 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
-  eye: '<svg width="15" height="15" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 7S3.7 3 7 3s5.5 4 5.5 4-2.2 4-5.5 4S1.5 7 1.5 7z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
-  plus: '<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1.5v7M1.5 5h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-  sort: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M4.5 11.5v-9M2 5l2.5-2.5L7 5M9.5 2.5v9M7 9l2.5 2.5L12 9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  check: '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
-function segHtml(icons){
+function segHtml(){
   return '<div class="seg" role="group">' + ['table', 'list'].map(function(v){
-    return '<button type="button" data-v="' + v + '" aria-label="' + T[v] + '">' + IC[v] + (icons ? '' : '<span>' + T[v] + '</span>') + '</button>';
+    return '<button type="button" data-v="' + v + '" aria-label="' + T[v] + '">' + IC[v] + '</button>';
   }).join('') + '</div>';
 }
 
@@ -368,7 +361,7 @@ function paint(html, fade){
   });
 }
 
-R.innerHTML = '<div class="top"><div class="stat"></div>' + segHtml(true) + '</div>' +
+R.innerHTML = '<div class="top"><div class="stat"></div>' + segHtml() + '</div>' +
   '<div class="bd"></div>';
 BD = R.querySelector('.bd');
 var STAT = R.querySelector('.stat'), menu = null, misTop = 0;   // menu: 2列のメニュー。null(閉じている)・'sort'・'edit'
@@ -450,7 +443,7 @@ R.addEventListener('click', function(e){
 function closeMenu(){ if (!menu) return; menu = null; draft = null; render(); }
 document.addEventListener('click', function(e){
   if (!menu || !document.contains(e.target)) return;   // 押したボタンが描き替えで外れたとき(メニューの中の操作)は閉じない
-  if (!e.target.closest('#sheet-8-w .dd')) closeMenu();
+  if (!e.target.closest('#sheet-w .dd')) closeMenu();
 });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeMenu(); });
 render();
