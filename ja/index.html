@@ -132,9 +132,27 @@
       <text class="clock-date" x="183" y="349">2026年11月17日(火)</text>
     </svg>
   </figure>
-  <figure class="hero-route-shot"><img src="../resources/hero-route-widget.webp"
-    srcset="../resources/hero-route-widget-300.webp 300w, ../resources/hero-route-widget-520.webp 520w, ../resources/hero-route-widget-600.webp 600w, ../resources/hero-route-widget.webp 732w"
-    sizes="(max-width: 370px) calc((100vw - 32px) * .72), (max-width: 768px) min(260px, calc((100vw - 40px) * .72)), (max-width: 1050px) 260px, 300px" width="732" height="842" alt="乗換案内の行程。07:58 新宿 3番線発から国際会館までの乗換と時刻を表示" fetchpriority="high"></figure></div></section>
+  <figure class="hero-route-shot" role="img" aria-label="乗換案内の行程。07:58 新宿 3番線発から国際会館までの乗換と時刻を表示">
+    <div class="route-timeline">
+      <div class="route-leg route-chuo">
+        <div class="route-stop"><time>07:58</time><div class="route-details"><b>新宿</b><span class="route-platform">3番線発</span><span class="route-badge">次はここから乗車</span></div></div>
+        <div class="route-ride"><span class="route-badge">中央線快速</span><span>14分</span></div>
+        <div class="route-stop"><time>08:12</time><b>東京</b></div>
+      </div>
+      <div class="route-transfer"><span>乗換 徒歩9分 + 待ち9分 · 新幹線乗り場へ</span></div>
+      <div class="route-leg route-shinkansen">
+        <div class="route-stop"><time>08:30</time><div class="route-details"><b>東京</b><span class="route-platform">14番線発</span></div></div>
+        <div class="route-ride"><span class="route-badge">東海道新幹線 のぞみ201号</span><span>2時間14分 · 指定席 8号車</span></div>
+        <div class="route-stop"><time>10:44</time><b>京都</b></div>
+      </div>
+      <div class="route-transfer"><span>乗換 徒歩7分 + 待ち5分 · 地下鉄乗り場へ</span></div>
+      <div class="route-leg route-karasuma">
+        <div class="route-stop"><time>10:56</time><div class="route-details"><b>京都</b><span class="route-platform">1番線発</span></div></div>
+        <div class="route-ride"><span class="route-badge">京都市営地下鉄 烏丸線</span><span>23分</span></div>
+        <div class="route-stop"><time>11:19</time><b>国際会館</b></div>
+      </div>
+    </div>
+  </figure></div></section>
 
 <section class="widgets-section" id="widgets" aria-labelledby="widgets-title">
   <div class="widget-heading wrap"><div><h2 class="section-title" id="widgets-title">何を追加しよう？</h2></div></div>

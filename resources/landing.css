@@ -107,7 +107,33 @@ section.hero{display:grid;grid-template-columns:1.04fr .96fr;align-items:center;
 .hero-assets-shot{position:absolute;bottom:90px;left:75px;width:172px;margin:0;transform:rotate(-5deg);z-index:1}
 .hero-clock-shot{position:absolute;top:65px;right:25px;width:130px;margin:0;transform:rotate(6deg);z-index:0}
 .hero-route-shot{position:absolute;top:230px;right:0;width:300px;margin:0;transform:rotate(3deg);z-index:2}
-.hero-route-shot img,.hero-assets-shot img{display:block;width:100%;height:auto;border:1px solid var(--shot-border);border-radius:20px;box-shadow:0 16px 45px #241e361a;background:#fff}
+.hero-assets-shot img{display:block;width:100%;height:auto}
+.hero-route-shot,.hero-assets-shot img{border:1px solid var(--shot-border);border-radius:20px;box-shadow:0 16px 45px #241e361a;background:#fff}
+.hero-route-shot{container-type:inline-size;aspect-ratio:366/421}
+:lang(en).hero-route-shot{aspect-ratio:366/396}
+/* Scale the 366px-wide sample with the card, including its type and track markers. */
+.route-timeline{font-size:4.3716cqi;line-height:1.5;color:#1c1c1e;padding:.875em .75em;min-height:100%;display:flex;flex-direction:column}
+:lang(en).route-timeline{line-height:1.2}
+.route-leg{display:flex;flex-direction:column;flex:auto}
+.route-chuo{--rail:#f15a22;--badge:#b44514}
+.route-shinkansen{--rail:#0a3a8a;--badge:#0a3a8a}
+.route-karasuma{--rail:#2fa84f;--badge:#22773a}
+.route-stop,.route-ride,.route-transfer{position:relative}
+.route-stop{display:grid;grid-template-columns:5em minmax(0,1fr);align-items:center;padding:.1875em 0}
+.route-stop time{font-size:.875em;font-weight:700;font-variant-numeric:tabular-nums}
+.route-stop b{font-size:.9375em}
+.route-ride,.route-details{display:flex;align-items:center;flex-wrap:wrap;gap:.125em .5em}
+.route-ride,.route-transfer{padding:.5625em 0 .5625em 5em;flex:auto}
+.route-transfer{display:flex;align-items:center}
+.route-ride>span:last-child,.route-transfer>span,.route-platform{font-size:.75em;color:#646469}
+.route-platform{font-size:.6875em;padding:0 .45em;border:1px solid #d1d1d6;border-radius:.35em}
+.route-badge{font-size:.6875em;font-weight:700;padding:.1em .75em;background:var(--badge);color:white;border-radius:2em}
+.route-stop::before,.route-ride::before,.route-transfer::before,.route-stop::after{content:"";position:absolute;left:3.875em;transform:translateX(-50%)}
+.route-stop::before,.route-ride::before{width:.375em;inset-block:-1px;background:var(--rail)}
+.route-stop:first-child::before{top:50%}
+.route-stop:last-child::before{bottom:50%}
+.route-stop::after{top:50%;transform:translate(-50%,-50%);width:.875em;height:.875em;box-sizing:border-box;border:.25em solid var(--rail);border-radius:50%;background:white}
+.route-transfer::before{inset-block:0;width:.125em;background:repeating-linear-gradient(#6e6e73 0 .25em,transparent .25em .5em)}
 .hero-weather-shot{container-type:inline-size;filter:drop-shadow(0 16px 22px #241e361a)}
 /* The card scales with its figure. At the template's 366px width, 1em is 16px. */
 #wx1b{font-size:4.3716cqi;line-height:1.5;padding:1em 1em .875em;border-radius:1.125em;color:white;background:radial-gradient(circle at 88% 7%,#ffd16675,transparent 30%),linear-gradient(160deg,#2b7de9,#5db7ff 55%,#ffcf70)}
@@ -220,7 +246,7 @@ section.hero{gap:0}
 .hero-assets-shot{bottom:65px}
 .hero-route-shot{top:220px}}
 @media(prefers-color-scheme:dark){
-.hero-route-shot img,.hero-assets-shot img,.hero-clock-shot{box-shadow:0 16px 45px #0006}
+.hero-route-shot,.hero-assets-shot img,.hero-clock-shot{box-shadow:0 16px 45px #0006}
 .hero-weather-shot{filter:drop-shadow(0 16px 22px #0006)}}
 /* 英語の見出しは語が長いので、和文より一回り小さくする(既存のサイズ指定より後に置く) */
 :lang(en) .hero h1{font-size:clamp(34px,4.1vw,58px)}
