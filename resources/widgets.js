@@ -1,5 +1,17 @@
 /* ウィジェットのサンプルと描画処理。 */
-var PREVIEW_SHELL = "\n<style>\n:root{\n  --page-bg:#ffffff;\n  --bubble-user-bg:#3a5ad1;\n  --bubble-user-text:#ffffff;\n  --bubble-ai-bg:#f2f2f7;\n  --bubble-ai-text:#1c1c1e;\n  --meta-text:#8e8e93;\n  /* Muse がウィジェットに渡すテーマ変数(推測) */\n  --hatch-widget-text:#1c1c1e;\n  --hatch-widget-muted:#6e6e73;\n  --hatch-widget-border:#d1d1d6;\n}\n@media (prefers-color-scheme: dark){\n  :root{\n    --page-bg:#000000;\n    --bubble-ai-bg:#2c2c2e;\n    --bubble-ai-text:#f2f2f7;\n    --meta-text:#8e8e93;\n    --hatch-widget-text:#f2f2f7;\n    --hatch-widget-muted:#98989f;\n    --hatch-widget-border:#3a3a3c;\n  }\n}\n*{box-sizing:border-box;}\nhtml,body{margin:0;}\nbody{\n  background:transparent;\n  font-family:-apple-system,BlinkMacSystemFont,\"Hiragino Sans\",\"Noto Sans JP\",sans-serif;\n  -webkit-text-size-adjust:100%;\n}\n/* 枠内の残りの高さに合わせ、収まらない会話はスクロールする */\n.phone{\n  display:flex;flex-direction:column;\n  width:100%;height:100vh;overflow-y:auto;\n  background:var(--page-bg);\n  position:relative;\n}\n\n.chat{flex:1 0 auto;padding:12px 12px 24px;display:flex;flex-direction:column;gap:10px;}\n.stamp{align-self:center;font-size:11px;color:var(--meta-text);margin:2px 0;}\n\n.msg{max-width:88%;}\n.msg.user{align-self:flex-end;}\n.msg.ai{align-self:flex-start;width:100%;max-width:100%;}\n.bubble{border-radius:18px;font-size:14px;line-height:1.55;padding:9px 13px;overflow-wrap:anywhere;}\n.msg.user .bubble{background:var(--bubble-user-bg);color:var(--bubble-user-text);border-bottom-right-radius:6px;}\n.msg.ai .bubble{background:var(--bubble-ai-bg);color:var(--bubble-ai-text);border-bottom-left-radius:6px;}\n/* ウィジェット入りの吹き出し: 余白をなくし、中身を角丸の内側に収める */\n.msg.ai .bubble.widget{padding:0;overflow:hidden;}\n\n\n.widget-identity{flex:none;display:flex;align-items:center;flex-direction:column;margin:0 auto 16px;}\n.widget-avatar{flex:none;width:60px;height:60px;border-radius:50%;overflow:hidden;background:var(--page-bg);border:1px solid var(--hatch-widget-border);}\n.widget-avatar img{display:block;width:100%;height:100%;object-fit:contain;transform:scale(1.12) translateY(4px);}\n.widget-badge{position:relative;z-index:1;display:block;margin-top:-7px;padding:3px 14px;border-radius:999px;background:var(--page-bg);color:var(--bubble-ai-text);box-shadow:0 3px 12px #0000000d;font-size:11px;font-weight:700;line-height:1.5;letter-spacing:.015em;}\n\nhtml.expanded-preview,html.expanded-preview body{height:auto;overflow:visible;}\n.expanded-preview .phone{height:auto;overflow:visible;}\n</style>\n<div class=\"phone\"><div class=\"widget-identity\"><div class=\"widget-avatar\"><img src=\"resources/wolly.webp\" width=\"60\" height=\"60\" alt=\"Wollyのアバター\" loading=\"lazy\"></div><span class=\"widget-badge\">miwidgets</span></div><div class=\"chat\" id=\"chat\"><div class=\"stamp\">今日 9:41</div></div></div>\n";
+/* iframe はテンプレート固有のスタイルとスクリプトだけを分離する。 */
+var PREVIEW_SHELL = `<style>
+  :root{--hatch-widget-text:#1c1c1e;--hatch-widget-muted:#6e6e73;--hatch-widget-border:#d1d1d6;--bubble-ai-bg:#f2f2f7}
+  @media(prefers-color-scheme:dark){
+    :root{--hatch-widget-text:#f2f2f7;--hatch-widget-muted:#98989f;--hatch-widget-border:#3a3a3c;--bubble-ai-bg:#2c2c2e}
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%}
+  #widgets{display:flex;flex-direction:column;gap:10px}
+  .bubble.widget{overflow:hidden;border-radius:18px 18px 18px 6px;background:var(--bubble-ai-bg);color:var(--hatch-widget-text);font-size:14px;line-height:1.55;overflow-wrap:anywhere}
+</style><div id="widgets"></div>`;
+
 
 /* ページの言語(<html lang>)と、サイトのルート URL。/ja/ からでも template/ と resources/ を正しく参照する */
 var LANG = /^en/.test(document.documentElement.lang) ? 'en' : 'ja';
@@ -274,27 +286,24 @@ if (LANG === 'en') {
   PROMPT_EXAMPLES = EN_PROMPT_EXAMPLES;
 }
 
-/* srcdoc の iframe は親ページの URL を基準にするため、アバター画像はサイトのルートから参照する */
-PREVIEW_SHELL = PREVIEW_SHELL.replace('src="resources/wolly.webp"', 'src="' + SITE_ROOT + 'resources/wolly.webp"').replace('alt="Wollyのアバター"', 'alt="' + UI_TEXT.avatar + '"').replace('>今日 9:41<', '>' + UI_TEXT.stamp + '<');
-
 var main = document.getElementById('main');
 
 if (location.protocol === 'file:') {
   main.innerHTML = '<div class="err">' + UI_TEXT.fileError + '<br><code>python3 -m http.server 8000</code> → <code>http://localhost:8000/</code></div>';
 } else {
-  /* 先頭の2件はすぐに読み込み、残りは画面に入ったときに読み込む。 */
-  var lazyFrames = window.IntersectionObserver ? new IntersectionObserver(function(entries){
+  /* プレビュー枠が画面に近づいたら iframe を作って読み込む。 */
+  var previewObserver = window.IntersectionObserver ? new IntersectionObserver(function(entries){
     entries.forEach(function(e){
       if (!e.isIntersecting) return;
-      lazyFrames.unobserve(e.target);
+      previewObserver.unobserve(e.target);
       e.target.loadPreview();
     });
-  }, {rootMargin: '0px 0px -20% 0px'}) : null;
-  TEMPLATES.forEach(function(t, index){
+  }, {rootMargin: '200px 0px'}) : null;
+  TEMPLATES.forEach(function(t){
     var sec = document.createElement('section');
     sec.id = t.id;
     sec.className = 'widget-preview is-collapsed';
-    sec.innerHTML = '<div class="phone-box"><h2></h2><iframe></iframe><button type="button" class="expand-button" aria-expanded="false">' + UI_TEXT.more + '</button></div><footer class="widget-source"><a target="_blank" rel="noopener"></a></footer>';
+    sec.innerHTML = '<div class="phone-box"><h2></h2><button type="button" class="expand-button" aria-expanded="false">' + UI_TEXT.more + '</button></div><footer class="widget-source"><a target="_blank" rel="noopener"></a></footer>';
     var expand = sec.querySelector('.expand-button');
     expand.setAttribute('aria-label', UI_TEXT.moreLabel(t.name));
     expand.addEventListener('click', function(){
@@ -320,48 +329,53 @@ if (location.protocol === 'file:') {
     var link = sec.querySelector('footer a');
     link.href = SITE_ROOT + t.file; // template/ はテキストで配信される(_headers)
     link.textContent = UI_TEXT.source;
-    var frame = sec.querySelector('iframe');
-    frame.title = t.name;
-    var deferred = index >= 2 && lazyFrames !== null;
-    var box = frame.closest('.phone-box');
-    if (deferred) box.classList.add('lazy-preview');
-    frame.loadPreview = function(){
-      // 空の iframe はページに入れた時点で空白ページの load が来ることがあるので、srcdoc の中身が出てから描く
-      frame.addEventListener('load', async function onload(){
-        if (!frame.contentDocument.getElementById('chat')) return;
-        frame.removeEventListener('load', onload);
+    var box = sec.querySelector('.phone-box');
+    var scroll = document.createElement('div');
+    scroll.className = 'preview-scroll';
+    scroll.innerHTML = '<div class="widget-identity"><div class="widget-avatar"><img width="60" height="60"></div><span class="widget-badge">miwidgets</span></div>' +
+      '<div class="preview-chat"><div class="preview-stamp"></div><div class="preview-user"></div><div class="preview-reply"></div></div>';
+    var avatar = scroll.querySelector('.widget-avatar img');
+    avatar.alt = UI_TEXT.avatar;
+    avatar.src = SITE_ROOT + 'resources/wolly.webp';
+    scroll.querySelector('.preview-stamp').textContent = UI_TEXT.stamp;
+    scroll.querySelector('.preview-user').textContent = t.user;
+    scroll.querySelector('.preview-reply').textContent = t.reply;
+    box.insertBefore(scroll, expand);
+    box.loadPreview = function(){
+      var frame = document.createElement('iframe');
+      frame.title = t.name + UI_TEXT.preview;
+      if (previewObserver) frame.classList.add('lazy-preview');
+      frame.addEventListener('load', async function(){
         await renderPreview(frame, t);
         configurePreviewSize(frame);
-        if (deferred) box.classList.add('is-ready');
-      });
+        if (previewObserver) frame.classList.add('is-ready');
+      }, {once: true});
       frame.srcdoc = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + t.name + UI_TEXT.preview + '</title></head><body>' + PREVIEW_SHELL + '</body></html>';
+      scroll.appendChild(frame);
     };
     main.appendChild(sec);
-    if (deferred) lazyFrames.observe(frame); else frame.loadPreview();
+    if (previewObserver) previewObserver.observe(box); else box.loadPreview();
   });
 }
 
 /* スマホ表示では内容に合わせて伸ばし、ページ全体でスクロールする。長いものは折りたたむ。 */
 function configurePreviewSize(frame){
   var doc = frame.contentDocument;
-  var phone = doc.querySelector('.phone');
+  var widgets = doc.getElementById('widgets');
   var mobile = window.matchMedia('(max-width: 768px)');
   var sec = frame.closest('.widget-preview');
   var box = frame.closest('.phone-box');
+  var scroll = frame.parentElement;
   var title = box.querySelector('h2');
   function resize(){
-    doc.documentElement.classList.toggle('expanded-preview', mobile.matches);
+    var height = Math.ceil(widgets.getBoundingClientRect().height) + 'px';
+    if (frame.style.height !== height) frame.style.height = height;
     if (mobile.matches) {
-      var height = Math.ceil(phone.getBoundingClientRect().height) + 'px';
-      if (frame.style.height !== height) frame.style.height = height;
-      // ボタンや下余白は除き、タイトルと会話が枠に収まるかを判定する。
       var collapsedHeight = parseFloat(getComputedStyle(box).minHeight);
-      sec.classList.toggle('is-overflowing', title.offsetHeight + frame.offsetHeight > collapsedHeight);
-    } else {
-      frame.style.removeProperty('height');
+      sec.classList.toggle('is-overflowing', title.offsetHeight + scroll.scrollHeight > collapsedHeight);
     }
   }
-  new ResizeObserver(resize).observe(phone);
+  new ResizeObserver(resize).observe(widgets);
   mobile.addEventListener('change', resize);
   resize();
 }
@@ -369,26 +383,15 @@ function configurePreviewSize(frame){
 /* テンプレートごとに iframe を分け、CSS と状態を独立させる。 */
 async function renderPreview(frame, t){
   var doc = frame.contentDocument;
-  var chat = doc.getElementById('chat');
-  function message(kind, text){
-    var msg = doc.createElement('div');
-    msg.className = 'msg ' + kind;
-    var bubble = doc.createElement('div');
-    bubble.className = 'bubble';
-    bubble.textContent = text;
-    msg.appendChild(bubble);
-    chat.appendChild(msg);
-    return bubble;
-  }
-  message('user', t.user);
-  message('ai', t.reply);
+  var widgets = doc.getElementById('widgets');
   try {
     var response = await fetch(SITE_ROOT + t.file, {cache: 'no-store'});
     if (!response.ok) throw new Error('HTTP ' + response.status);
     var source = await response.text();
     (t.scenarios || [{}]).forEach(function(sc, i){
-      var mount = message('ai', '');
-      mount.classList.add('widget');
+      var mount = doc.createElement('div');
+      mount.className = 'bubble widget';
+      widgets.appendChild(mount);
       mount.innerHTML = templateHtml(source, t, sc, i);
       runScripts(mount, doc);
     });
@@ -396,7 +399,7 @@ async function renderPreview(frame, t){
     var error = doc.createElement('div');
     error.style.cssText = 'padding:12px;font-size:12px;color:#d33;';
     error.textContent = UI_TEXT.loadError(t.file, String(err));
-    chat.appendChild(error);
+    widgets.appendChild(error);
   }
 }
 
