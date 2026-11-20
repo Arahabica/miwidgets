@@ -1,7 +1,7 @@
 <!-- データシート: CSV形式のデータを表として表示。行と項目のデータを表か2列で表示する。表示内容は data で変更できる。 -->
 <div id="sheet-w"></div>
 <style>
-#sheet-w{--bg:#fff;--fg:#1c1c1e;--mut:#8e8e93;--line:#e9e9ee;--soft:#f2f2f7;--ac:#3a5ad1;--acs:rgba(58,90,209,.09);--sh:rgba(0,0,0,.14);position:relative;display:flex;flex-direction:column;box-sizing:border-box;width:100%;max-height:550px;padding:12px 12px 10px;background:var(--bg);color:var(--fg);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#sheet-w{--bg:#fff;--fg:#1c1c1e;--mut:#8e8e93;--line:#e9e9ee;--soft:#f2f2f7;--ac:#3a5ad1;--acs:rgba(58,90,209,.09);--sh:rgba(0,0,0,.14);position:relative;display:flex;flex-direction:column;box-sizing:border-box;width:100%;max-height:470px;padding:12px 12px 10px;background:var(--bg);color:var(--fg);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
 @media (prefers-color-scheme:dark){#sheet-w{--bg:#1c1c1e;--fg:#f2f2f7;--mut:#98989f;--line:#38383a;--soft:#2c2c2e;--ac:#8aa4ff;--acs:rgba(138,164,255,.14);--sh:rgba(0,0,0,.5);}}
 #sheet-w *{box-sizing:border-box;}
 /* タップ時のハイライト・選択・長押しメニューを出さない */
@@ -23,7 +23,7 @@
 #sheet-w .cc{background:var(--soft);}
 #sheet-w .ok{color:#fff;background:var(--ac);}
 #sheet-w .ok:disabled{opacity:.35;}
-/* データ: 550px を超えるとデータだけスクロール。続きがある端はうすくする */
+/* データ: 470px を超えるとデータだけスクロール。続きがある端はうすくする */
 #sheet-w .bd,#sheet-w .scw{position:relative;display:flex;flex-direction:column;min-height:0;}
 #sheet-w .bd{transition:opacity .15s;}
 #sheet-w .bd.fd{opacity:0;}
@@ -74,7 +74,7 @@
 #sheet-w .sl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #sheet-w .cv{transition:transform .18s;}
 #sheet-w .open .cv{transform:rotate(180deg);}
-#sheet-w .mn{position:absolute;top:calc(100% + 6px);right:0;z-index:10;display:flex;flex-direction:column;width:max-content;min-width:200px;max-width:min(280px,calc(100vw - 40px));max-height:488px;padding:6px;border-radius:13px;background:var(--bg);box-shadow:0 10px 30px var(--sh),0 0 0 1px var(--line);visibility:hidden;opacity:0;transform:translateY(-4px) scale(.98);transform-origin:top right;transition:opacity .15s,transform .18s cubic-bezier(.2,.8,.2,1),visibility 0s .18s;}
+#sheet-w .mn{position:absolute;top:calc(100% + 6px);right:0;z-index:10;display:flex;flex-direction:column;width:max-content;min-width:200px;max-width:min(280px,calc(100vw - 40px));max-height:408px;padding:6px;border-radius:13px;background:var(--bg);box-shadow:0 10px 30px var(--sh),0 0 0 1px var(--line);visibility:hidden;opacity:0;transform:translateY(-4px) scale(.98);transform-origin:top right;transition:opacity .15s,transform .18s cubic-bezier(.2,.8,.2,1),visibility 0s .18s;}
 #sheet-w .open .mn{visibility:visible;opacity:1;transform:none;transition-delay:0s;}
 #sheet-w .mis{min-height:0;overflow-y:auto;overscroll-behavior:contain;}
 #sheet-w .mis.b{-webkit-mask-image:linear-gradient(#000 calc(100% - 48px),transparent);}
