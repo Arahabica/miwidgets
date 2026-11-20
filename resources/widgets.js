@@ -87,7 +87,9 @@ var TEMPLATES = [
   { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
   { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' },
   { id: 'calendar', name: 'カレンダー', file: 'template/calendar.html', user: '11月の予約の空き状況を見せて', reply: '11月の空き状況です。数字の日は残りの席数です。薄い日は受付していません。' },
-  { id: 'timetable', name: '予約枠', file: 'template/timetable.html', user: '来週の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。数字の枠は残りの席数です。' }
+  { id: 'timetable', name: '予約枠', file: 'template/timetable.html', user: '来週の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。数字の枠は残りの席数です。' },
+  { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '6月から11月までの売上を、去年と並べました。月をタップすると値が出ます。' },
+  { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '今日の3時間ごとの気温です。時刻をタップすると値が出ます。' }
 ];
 
 var PROMPT_EXAMPLES = {
@@ -99,7 +101,9 @@ var PROMPT_EXAMPLES = {
   clock: 'miwidgets.com/register.txt のアナログ時計ウィジェットで現在時刻を表示',
   secret: 'miwidgets.com/register.txt の秘密のメッセージウィジェットで、パスコード123456で開く「お誕生日おめでとう！」のメッセージを作成',
   calendar: 'miwidgets.com/register.txt のカレンダーウィジェットで、12月の予定のある日に◯を付けて表示',
-  timetable: 'miwidgets.com/register.txt の予約枠ウィジェットで、来週の10時〜18時の空き枠を1時間ごとに表示'
+  timetable: 'miwidgets.com/register.txt の予約枠ウィジェットで、来週の10時〜18時の空き枠を1時間ごとに表示',
+  bar: 'miwidgets.com/register.txt の棒グラフウィジェットで、都道府県の人口の上位5つを表示',
+  line: 'miwidgets.com/register.txt の線グラフウィジェットで、この10年の日本の人口の移り変わりを表示'
 };
 
 /* ---- 英語ページ(<html lang="en">)用のサンプル。テンプレートの data を上書きする関数を dataPatch に書く ---- */
@@ -208,6 +212,22 @@ var EN_PATCHES = {
   },
   timetable: function(data){
     data.lang = 'en';
+  },
+  bar: function(data){
+    data.lang = 'en';
+    data.title = 'Monthly Sales';
+    data.unit = 'K';
+    data.labels = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
+    data.series[0].name = '2026';
+    data.series[1].name = '2025';
+  },
+  line: function(data){
+    data.lang = 'en';
+    data.title = 'Today\u2019s Temperature';
+    data.unit = '\u00b0C';
+    data.labels = ['12 AM', '3 AM', '6 AM', '9 AM', '12 PM', '3 PM', '6 PM', '9 PM'];
+    data.series[0].name = 'Tokyo';
+    data.series[1].name = 'Osaka';
   }
 };
 var EN_TEMPLATES = [
@@ -219,7 +239,9 @@ var EN_TEMPLATES = [
   { id: 'clock', name: 'Analog Clock', user: 'Show me the time', reply: 'Here\u2019s the current time.' },
   { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'Your secret message is ready. The passcode is 123456.' },
   { id: 'calendar', name: 'Calendar', user: 'Show me the availability for November', reply: 'Here\u2019s November\u2019s availability. Numbers show how many seats are left. Faded days aren\u2019t taking bookings.' },
-  { id: 'timetable', name: 'Time Slots', user: 'Show me the open slots for next week', reply: 'Here are the open slots for the week of November 23. Numbers show how many seats are left.' }
+  { id: 'timetable', name: 'Time Slots', user: 'Show me the open slots for next week', reply: 'Here are the open slots for the week of November 23. Numbers show how many seats are left.' },
+  { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are sales from June to November next to last year\u2019s. Tap a month to see the values.' },
+  { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here\u2019s today\u2019s temperature every 3 hours. Tap a time to see the values.' }
 ];
 var EN_PROMPT_EXAMPLES = {
   weather: 'Show tomorrow\u2019s weather in London with the miwidgets.com/register.txt weather widget',
@@ -230,7 +252,9 @@ var EN_PROMPT_EXAMPLES = {
   clock: 'Show the current time with the miwidgets.com/register.txt analog clock widget',
   secret: 'Use the miwidgets.com/register.txt secret message widget to make a \u201cHappy Birthday!\u201d message that opens with passcode 123456',
   calendar: 'Use the miwidgets.com/register.txt calendar widget to show December with a \u25ef on the days I have plans',
-  timetable: 'Use the miwidgets.com/register.txt time slots widget to show next week\u2019s open slots from 10 AM to 6 PM, hourly'
+  timetable: 'Use the miwidgets.com/register.txt time slots widget to show next week\u2019s open slots from 10 AM to 6 PM, hourly',
+  bar: 'Use the miwidgets.com/register.txt bar chart widget to show the 5 most populous US states',
+  line: 'Use the miwidgets.com/register.txt line chart widget to show how the US population changed over the last 10 years'
 };
 var UI_TEXT = LANG === 'en' ? {
   copy: 'Copy prompt', copyLabel: function(n){ return 'Copy the ' + n + ' prompt'; },

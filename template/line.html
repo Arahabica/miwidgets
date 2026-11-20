@@ -1,0 +1,200 @@
+<!-- 線グラフテンプレート: 値の移り変わりを線で表す。Muse のテーマに追従する背景なしのデザイン。線の右端に最新の値を出す。系列は5つまで重ねられ、2つ以上で凡例を出す。項目をタップすると、縦の線と点を出し、その項目の値を吹き出しで出す(もう一度タップか外側のタップで閉じる)。表示時に線が左から描かれる。values の数が labels と違う、値が数値でないなどの誤りはエラーとして画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にするとエラーの文言と数値の書式が英語になる。 -->
+<div id="line-w"></div>
+<style>
+#line-w{box-sizing:border-box;width:100%;padding:14px 12px 12px;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#line-w *{box-sizing:border-box;}
+#line-w .hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 10px;}
+#line-w .ti{min-width:0;overflow-wrap:anywhere;font-size:17px;font-weight:800;}
+#line-w .un{flex:none;font-size:11px;color:var(--hatch-widget-muted,#6e6e73);}
+#line-w .cv{position:relative;-webkit-tap-highlight-color:transparent;}
+#line-w svg{display:block;overflow:visible;}
+#line-w .gl{stroke:var(--hatch-widget-border,#d1d1d6);stroke-width:1;opacity:.6;}
+#line-w .gl.z{opacity:1;}
+#line-w .tk,#line-w .xl,#line-w .el{font-size:10px;font-variant-numeric:tabular-nums;}
+#line-w .tk,#line-w .xl{fill:var(--hatch-widget-muted,#6e6e73);}
+#line-w .el{font-weight:700;}
+#line-w .hit{cursor:pointer;}
+#line-w .gd{display:none;stroke:var(--hatch-widget-muted,#6e6e73);stroke-width:1;opacity:.5;}
+#line-w .lg{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 2px 0;font-size:11px;font-weight:600;color:var(--hatch-widget-muted,#6e6e73);}
+#line-w .lg span{display:inline-flex;align-items:center;gap:5px;}
+#line-w .sw{display:inline-block;flex:none;width:9px;height:9px;border-radius:3px;}
+#line-w .tip{position:absolute;z-index:2;pointer-events:none;white-space:nowrap;font-size:11px;line-height:1.5;background:#1c1c1e;color:#fff;border-radius:10px;padding:7px 10px;box-shadow:0 6px 18px rgba(0,0,0,.25);}
+#line-w .tip b{display:block;color:rgba(255,255,255,.7);font-weight:500;}
+#line-w .tip .tr{display:flex;align-items:center;gap:6px;}
+#line-w .tip .tv{margin-left:auto;padding-left:8px;font-weight:600;font-variant-numeric:tabular-nums;}
+#line-w .tip .tv.one{margin:0;padding:0;font-size:15px;}
+/* アニメーション: 線は左から描き、点と右端の値はあとから出る */
+#line-w .ln{stroke-dasharray:1;animation:line-w-draw 1.1s cubic-bezier(.4,0,.2,1) both;}
+#line-w .dt,#line-w .el{animation:line-w-fade .4s ease-out both;}
+@keyframes line-w-draw{from{stroke-dashoffset:1;}to{stroke-dashoffset:0;}}
+@keyframes line-w-fade{from{opacity:0;}to{opacity:1;}}
+#line-w .still *{animation:none !important;}
+@media (prefers-reduced-motion:reduce){#line-w svg *{animation:none !important;}}
+</style>
+<script>
+(function(){
+var R = document.getElementById("line-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',            // 'ja' | 'en': エラーの文言と数値の書式の言語
+  title: '今日の気温',   // string: グラフのタイトル
+  unit: '℃',            // string: 値の単位。値の後ろに付けて表示する。無ければ ''
+  labels: ['0時', '3時', '6時', '9時', '12時', '15時', '18時', '21時'],   // 横軸の項目
+  /* 系列。2つ以上あると線を重ねて、凡例を出す。values は labels と同じ数の数値。
+   * name は凡例とタップ時の表示に使う(系列が1つなら省略できる) */
+  series: [
+    { name: '東京', values: [12, 11, 10, 14, 19, 20, 17, 14] },
+    { name: '大阪', values: [13, 12, 12, 15, 21, 22, 18, 15] }
+  ]
+};
+
+/* 系列の色(この順に使う。系列はこの数まで) */
+var PALETTE = ['#3a5ad1', '#f0883e', '#20a46b', '#e5484d', '#9b6dff'];
+var EN = data.lang === 'en';
+/* エラーの文言 */
+var T = EN ? {
+  badLabels: "labels must be an array of the x-axis items (e.g. ['Jan', 'Feb'])",
+  badSeries: 'series must be an array of one or more series',
+  tooMany: function(n){ return 'Up to ' + n + ' series can be shown'; },
+  badLen: function(s, m, n){ return s + ': values has ' + m + ' items but labels has ' + n + '. Make them the same length'; },
+  badVal: function(s, l, v){ return s + ', ' + l + ': ' + JSON.stringify(v) + ' is not a number'; },
+  series: 'Series '
+} : {
+  badLabels: "labels は横軸の項目の配列で書いてください(例: ['1月', '2月'])",
+  badSeries: 'series は1つ以上の系列の配列で書いてください',
+  tooMany: function(n){ return '系列は' + n + 'つまでです'; },
+  badLen: function(s, m, n){ return s + ' の values は' + m + '個ありますが、labels は' + n + '個です。同じ数にしてください'; },
+  badVal: function(s, l, v){ return s + ' の ' + l + ' の値 ' + JSON.stringify(v) + ' は数値で書いてください'; },
+  series: '系列'
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ---- data を確かめる ---- */
+var labels = data.labels, series = data.series;
+if (!Array.isArray(labels) || !labels.length) throw new Error(T.badLabels);
+if (!Array.isArray(series) || !series.length) throw new Error(T.badSeries);
+if (series.length > PALETTE.length) throw new Error(T.tooMany(PALETTE.length));
+var NAMES = series.map(function(s, k){ return s && s.name != null ? String(s.name) : T.series + (k + 1); });
+series.forEach(function(s, k){
+  var n = s && Array.isArray(s.values) ? s.values.length : 0;
+  if (n !== labels.length) throw new Error(T.badLen(NAMES[k], n, labels.length));
+  s.values.forEach(function(v, i){ if (typeof v !== 'number' || !isFinite(v)) throw new Error(T.badVal(NAMES[k], labels[i], v)); });
+});
+var N = labels.length, M = series.length;
+var unit = data.unit == null ? '' : String(data.unit);
+var LOC = EN ? 'en-US' : 'ja-JP';
+function num(v){ return v.toLocaleString(LOC, { maximumFractionDigits: 2 }); }
+function fmt(v){ return num(v) + unit; }
+
+/* ---- 縦軸の目盛り(きりのよい値で4区間ほど) ---- */
+var all = [].concat.apply([], series.map(function(s){ return s.values; }));
+var vmin = Math.min.apply(null, all), vmax = Math.max.apply(null, all);
+if (vmin === vmax) { var pad = Math.abs(vmin) * .1 || 1; vmin -= pad; vmax += pad; }
+var raw = (vmax - vmin) / 4, mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), r = raw / mag;
+var step = (r > 7.5 ? 10 : r > 3.5 ? 5 : r > 1.5 ? 2 : 1) * mag;
+var TICKS = [];
+for (var t = Math.floor(vmin / step + 1e-9); t <= Math.ceil(vmax / step - 1e-9); t++) TICKS.push(+(t * step).toPrecision(12));
+var lo = TICKS[0], hi = TICKS[TICKS.length - 1];
+
+/* ---- 見出しと凡例 ---- */
+function swatch(k){ return '<i class="sw" style="background:' + PALETTE[k] + '"></i>'; }
+R.innerHTML = '<div class="hd"><span class="ti">' + esc(data.title || '') + '</span>' + (unit ? '<span class="un">' + esc(unit) + '</span>' : '') + '</div>' +
+  '<div class="cv"></div>' +
+  (M > 1 ? '<div class="lg">' + NAMES.map(function(n, k){ return '<span>' + swatch(k) + esc(n) + '</span>'; }).join('') + '</div>' : '');
+var box = R.querySelector('.cv');
+
+/* 文字の幅の目安(英数字は 0.6em、それ以外は 1em) */
+function textW(s, size){ var w = 0; String(s).split('').forEach(function(c){ w += c.charCodeAt(0) < 128 ? .6 : 1; }); return w * size; }
+function f1(n){ return Math.round(n * 10) / 10; }
+
+var G = null, sel = -1;
+/* グラフを描く。anim が false のとき(幅が変わったときの描き直し)はアニメーションしない */
+function draw(anim){
+  var W = Math.max(220, Math.round(box.clientWidth || 320));
+  var H = Math.round(Math.max(170, Math.min(260, W * .62)));
+  var tick = TICKS.map(num);
+  /* 右端には最新の値を出すので、その幅を空ける */
+  var endW = Math.max.apply(null, series.map(function(s){ return textW(fmt(s.values[N - 1]), 10); })) + 8;
+  var x0 = Math.ceil(Math.max.apply(null, tick.map(function(t){ return textW(t, 10); }))) + 8, x1 = W - 6 - endW;
+  var y0 = 10, y1 = H - 22;
+  function Y(v){ return y1 - (v - lo) / (hi - lo) * (y1 - y0); }
+  var gw = (x1 - x0) / N;
+  function CX(i){ return x0 + gw * (i + .5); }
+  var s = '<svg class="sv' + (anim ? '' : ' still') + '" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">';
+
+  /* 目盛り線と縦軸の値 */
+  TICKS.forEach(function(t, j){
+    var y = f1(Y(t));
+    s += '<line class="gl' + (t === 0 ? ' z' : '') + '" x1="' + x0 + '" x2="' + f1(x1) + '" y1="' + y + '" y2="' + y + '"/>';
+    s += '<text class="tk" x="' + (x0 - 6) + '" y="' + f1(y + 3.5) + '" text-anchor="end">' + tick[j] + '</text>';
+  });
+  /* 横軸の項目。入りきらないときは間引く */
+  var lw = Math.max.apply(null, labels.map(function(l){ return textW(l, 10); })) + 8;
+  var every = Math.max(1, Math.ceil(lw / gw));
+  labels.forEach(function(l, i){
+    if (i % every) return;
+    s += '<text class="xl" x="' + f1(CX(i)) + '" y="' + (H - 6) + '" text-anchor="middle">' + esc(l) + '</text>';
+  });
+
+  /* 線と点と右端の値 */
+  series.forEach(function(se, k){
+    var pts = se.values.map(function(v, i){ return [CX(i), Y(v)]; });
+    var d = pts.map(function(p, i){ return (i ? 'L' : 'M') + f1(p[0]) + ' ' + f1(p[1]); }).join('');
+    s += '<path class="ln" pathLength="1" d="' + d + '" fill="none" stroke="' + PALETTE[k] + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+    /* 点は項目が16個までのときだけ打つ */
+    if (N <= 16) pts.forEach(function(p, i){
+      s += '<circle class="dt" cx="' + f1(p[0]) + '" cy="' + f1(p[1]) + '" r="3" fill="' + PALETTE[k] + '" style="animation-delay:' + (300 + i * 900 / N) + 'ms"/>';
+    });
+    var e = pts[N - 1];
+    s += '<text class="el" x="' + f1(e[0] + 7) + '" y="' + f1(e[1] + 3.5) + '" fill="' + PALETTE[k] + '" style="animation-delay:900ms">' + esc(fmt(se.values[N - 1])) + '</text>';
+  });
+  s += '<line class="gd" y1="' + y0 + '" y2="' + y1 + '" x1="0" x2="0"/><g class="sd"></g>';
+  /* タップの当たり判定(項目ごとの縦長の帯) */
+  labels.forEach(function(l, i){ s += '<rect class="hit" data-i="' + i + '" x="' + f1(x0 + gw * i) + '" y="0" width="' + f1(gw) + '" height="' + H + '" fill="transparent"/>'; });
+  box.innerHTML = s + '</svg><div class="tip" hidden></div>';
+  G = { W: W, Y: Y, CX: CX, y1: y1, gw: gw };
+  if (sel >= 0) select(sel);
+}
+
+/* ---- タップした項目に縦の線と点を出し、値を吹き出しで出す ---- */
+function select(i){
+  sel = i;
+  var sv = box.querySelector('svg'), tip = box.querySelector('.tip');
+  var gd = sv.querySelector('.gd'), sd = sv.querySelector('.sd');
+  if (i < 0) { tip.hidden = true; gd.style.display = 'none'; sd.innerHTML = ''; return; }
+  var x = G.CX(i), ys = series.map(function(se){ return G.Y(se.values[i]); });
+  gd.setAttribute('x1', f1(x)); gd.setAttribute('x2', f1(x)); gd.style.display = 'inline';
+  sd.innerHTML = series.map(function(se, k){ return '<circle cx="' + f1(x) + '" cy="' + f1(ys[k]) + '" r="4.2" fill="' + PALETTE[k] + '" stroke="#fff" stroke-width="2"/>'; }).join('');
+  tip.innerHTML = '<b>' + esc(labels[i]) + '</b>' + series.map(function(se, k){
+    return M > 1 ? '<span class="tr">' + swatch(k) + '<span class="tn">' + esc(NAMES[k]) + '</span><span class="tv">' + esc(fmt(se.values[i])) + '</span></span>'
+      : '<span class="tv one">' + esc(fmt(se.values[i])) + '</span>';
+  }).join('');
+  tip.hidden = false;
+  /* 吹き出しは点の上に出す。上に入らないときは、項目の横(右、入らなければ左)に出す */
+  var tw = tip.offsetWidth, th = tip.offsetHeight, ymin = Math.min.apply(null, ys), top = ymin - th - 10, left;
+  if (top >= 0) left = Math.max(0, Math.min(G.W - tw, x - tw / 2));
+  else {
+    top = Math.max(0, Math.min(G.y1 - th, ymin));
+    left = x + G.gw / 2 + 4;
+    if (left + tw > G.W) left = Math.max(0, x - G.gw / 2 - 4 - tw);
+  }
+  tip.style.left = Math.round(left) + 'px';
+  tip.style.top = Math.round(top) + 'px';
+}
+R.addEventListener('click', function(e){
+  var h = e.target.closest('.hit');
+  if (h) { var i = +h.dataset.i; select(sel === i ? -1 : i); return; }
+  if (!e.target.closest('.tip') && sel >= 0) select(-1);
+});
+
+draw(true);
+/* 幅が変わったら描き直す(アニメーションはしない) */
+var lastW = box.clientWidth;
+if (window.ResizeObserver) new ResizeObserver(function(){ if (box.clientWidth !== lastW) { lastW = box.clientWidth; draw(false); } }).observe(box);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>

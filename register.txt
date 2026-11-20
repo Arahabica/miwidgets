@@ -45,3 +45,9 @@ https://miwidgets.com/template/calendar.html
 
 Time slots — 7 days × times (every 15, 30 or 60 minutes), with a mark (◯ △ x -) or up to 2 characters in each slot
 https://miwidgets.com/template/timetable.html
+
+Bar chart — a title and values per item as bars, up to 5 series side by side; tap an item to see its values
+https://miwidgets.com/template/bar.html
+
+Line chart — a title and values over time as lines, up to 5 series; tap a point to see its values
+https://miwidgets.com/template/line.html
