@@ -27,6 +27,10 @@ python3 -m http.server 8000
 
 テンプレートを1つずつ確認するときは `http://localhost:8000/playground/` を使います(`.assetsignore` で除外しているので配信しません)。一覧は `register.txt` から読みます。テンプレートを保存すると1秒以内に描き直し、`data` はページ上で書き換えて試せます(ファイルは変わりません)。幅(320・375・430px)、ライト・ダーク、英語(`data.lang = 'en'`)を並べて確認でき、テンプレートのエラーは各画面の下に出ます。
 
+テンプレートを1つだけ画面いっぱいに出すときは `http://localhost:8000/playground/view.html?t=<テンプレート名>` を使います(例: `?t=sheet`。`&lang=en` で英語)。`t` を付けなければ一覧が出ます。ライト・ダークは端末の設定に合わせ、保存すると1秒以内に描き直します。playground の「単体ページ」からも開けます。
+
+`python3 -m http.server 8000` は全インターフェースで待ち受けるので、同じ LAN のスマホからは `http://<Mac の IP アドレス>:8000/playground/view.html` で開けます(IP は `ipconfig getifaddr en0` で確認)。`--bind 127.0.0.1` を付けると Mac からしか開けません。
+
 `index.html` は `template/` の HTML を `fetch` で読み込むため、`file://` では表示できません。テンプレートごとに iframe を分け、CSS や JavaScript の干渉を防いでいます。
 
 PC表示ではスマホ風の画面の高さを `min(900px, 88dvh)` にし、内容が収まらない場合は画面内でスクロールします。幅768px以下では高さ制限と枠内のスクロールをなくし、iframeを内容の高さに合わせてページ全体でスクロールします。吹き出しの見た目は推測による再現で、実際の Muse の画面とは異なります。

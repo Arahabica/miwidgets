@@ -31,6 +31,7 @@ label.opt{display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;}
 .editor{display:flex;flex-direction:column;}
 .editor .bar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);}
 .editor .bar b{flex:1;font-size:12px;}
+.editor .bar a{font-size:12px;color:var(--accent);text-decoration:none;}
 .editor .bar button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;}
 .editor .note{padding:6px 12px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line);}
 .editor .note.edited{color:#b25e00;}
@@ -61,7 +62,7 @@ main{height:100vh;overflow:auto;padding:16px;}
   <label class="opt"><input type="checkbox" id="en">英語(data.lang = 'en')</label>
 </aside>
 <section class="editor">
-  <div class="bar"><b id="file"></b><button type="button" id="reset">元の data に戻す</button></div>
+  <div class="bar"><b id="file"></b><a id="solo" target="_blank">単体ページ</a><button type="button" id="reset">元の data に戻す</button></div>
   <div class="note" id="note"></div>
   <textarea id="data" spellcheck="false" wrap="off"></textarea>
 </section>
@@ -159,6 +160,7 @@ async function load(t){
   current = t;
   location.hash = t.id;
   $('file').textContent = t.file;
+  $('solo').href = 'view.html?t=' + encodeURIComponent(t.id);
   document.querySelectorAll('#list button').forEach(function(b){ b.setAttribute('aria-current', b.dataset.id === t.id); });
   await refresh(true);
 }

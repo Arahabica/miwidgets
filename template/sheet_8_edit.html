@@ -1,0 +1,363 @@
+<!-- データシートテンプレート(案8: タップで並び替え・編集で隠す): 行と項目のデータを、表(1列目を固定して横にスクロールする)か2列(1列目に行の名前、2列目にほかの項目を縦に並べる)で表示する。見出し(2列では上の項目の帯)を押すとすぐ並び替わり、もう一度押すと向きが変わり、3回目で元の順に戻る。見出しの右端の歯車を押すと、隠した項目も含めてすべての項目が出て、項目ごとに − で隠す・+ で戻すを選び、「決定」で反映する(「キャンセル」で何も変えない。どちらも左上に出る)。並び替えると行が元の位置から動いて入れ替わる。表示・並び順・隠した項目は保存する。数値は右寄せ、文字は左寄せ。項目の数と行の値の数が違う、値が文字・数値・null でないなどの誤りはエラーとして画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると画面の文言と数値の書式が英語になる。 -->
+<div id="sheet-8-w"></div>
+<style>
+#sheet-8-w{--bg:#fff;--fg:#1c1c1e;--mut:#8e8e93;--line:#e9e9ee;--soft:#f2f2f7;--ac:#3a5ad1;--acs:rgba(58,90,209,.09);--sh:rgba(0,0,0,.14);}
+@media (prefers-color-scheme:dark){#sheet-8-w{--bg:#1c1c1e;--fg:#f2f2f7;--mut:#98989f;--line:#38383a;--soft:#2c2c2e;--ac:#8aa4ff;--acs:rgba(138,164,255,.14);--sh:rgba(0,0,0,.5);}}
+#sheet-8-w{position:relative;box-sizing:border-box;width:100%;padding:12px 12px 10px;background:var(--bg);color:var(--fg);border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:13px;line-height:1.45;-webkit-text-size-adjust:100%;}
+#sheet-8-w *{box-sizing:border-box;}
+/* ボタンはタップしても灰色のハイライト・文字の選択・長押しのメニューを出さない */
+#sheet-8-w button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;}
+#sheet-8-w button:focus:not(:focus-visible){outline:none;}
+#sheet-8-w svg{display:block;flex:none;}
+#sheet-8-w .top{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-height:32px;}
+#sheet-8-w .seg{display:inline-flex;flex:none;padding:2px;border-radius:9px;background:var(--soft);}
+#sheet-8-w .seg button{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border-radius:7px;font-size:12px;font-weight:600;color:var(--mut);transition:background .18s,color .18s,box-shadow .18s;}
+#sheet-8-w .seg button[aria-pressed="true"]{background:var(--bg);color:var(--fg);box-shadow:0 1px 3px var(--sh);}
+/* 表: 1列目は固定。横にずらすと影が出て、右に続きがあるときは右端がうすくなる */
+#sheet-8-w .scw{position:relative;}
+#sheet-8-w .scw::after{content:"";position:absolute;top:0;right:0;bottom:0;width:28px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--bg));opacity:0;transition:opacity .2s;}
+#sheet-8-w .scw.r::after{opacity:1;}
+#sheet-8-w .sc{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain;}
+#sheet-8-w .sc::-webkit-scrollbar{display:none;}
+#sheet-8-w table{border-collapse:separate;border-spacing:0;min-width:100%;}
+#sheet-8-w th,#sheet-8-w td{text-align:left;vertical-align:top;}
+#sheet-8-w th{padding:0;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:600;}
+#sheet-8-w td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+#sheet-8-w tr:last-child td{border-bottom:0;}
+#sheet-8-w td.n,#sheet-8-w .v.n{text-align:right;font-variant-numeric:tabular-nums;}
+#sheet-8-w th:first-child,#sheet-8-w td:first-child{position:sticky;left:0;z-index:1;background:var(--bg);min-width:8em;max-width:10.5em;white-space:normal;transition:box-shadow .2s;}
+#sheet-8-w td:first-child{font-weight:600;overflow-wrap:anywhere;}
+#sheet-8-w .sc.l th:first-child,#sheet-8-w .sc.l td:first-child{box-shadow:8px 0 8px -8px var(--sh);}
+/* 並べている項目の列はうすく色を付ける */
+#sheet-8-w td.on{background:linear-gradient(var(--acs),var(--acs)),var(--bg);}
+#sheet-8-w .hb{display:flex;align-items:center;gap:3px;width:100%;min-height:36px;padding:0 10px;font-size:11.5px;font-weight:600;color:var(--mut);text-align:left;white-space:nowrap;}
+#sheet-8-w th.n .hb{justify-content:flex-end;}
+#sheet-8-w th.on .hb{color:var(--ac);}
+#sheet-8-w .hb:active{opacity:.6;}
+/* 2列: 左に行の名前、右にほかの項目を縦に並べる */
+#sheet-8-w .ls .row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
+#sheet-8-w .ls .row:last-child{border-bottom:0;}
+#sheet-8-w .ls .t{flex:0 0 36%;min-width:0;font-weight:600;overflow-wrap:anywhere;}
+#sheet-8-w .ls .at{flex:1;min-width:0;}
+#sheet-8-w .ls .a{display:flex;align-items:baseline;gap:10px;padding:1.5px 0;}
+#sheet-8-w .ls .k{flex:none;max-width:55%;font-size:11.5px;color:var(--mut);overflow-wrap:anywhere;}
+#sheet-8-w .ls .v{flex:1;min-width:0;overflow-wrap:anywhere;}
+#sheet-8-w .ls .a.on .k,#sheet-8-w .ls .a.on .v{color:var(--ac);font-weight:600;}
+#sheet-8-w .bd{transition:opacity .15s;}
+#sheet-8-w .bd.fd{opacity:0;}
+@media (prefers-reduced-motion:reduce){#sheet-8-w *{transition:none !important;animation:none !important;}}
+
+#sheet-8-w .top{gap:6px;}
+#sheet-8-w .stat{flex:1;min-width:0;display:flex;}
+#sheet-8-w .hw{display:flex;align-items:flex-start;gap:2px;}
+#sheet-8-w .hs{flex:1;min-width:0;position:relative;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 6px;padding:0 16px 2px 0;-webkit-mask-image:linear-gradient(90deg,var(--ml,#000),#000 12px,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(90deg,var(--ml,#000),#000 12px,#000 calc(100% - 16px),transparent);}
+#sheet-8-w .hs.sl{--ml:transparent;}
+#sheet-8-w .hs::-webkit-scrollbar{display:none;}
+#sheet-8-w .hs .hb{width:auto;flex:none;min-height:30px;padding:0 10px;border-radius:999px;background:var(--soft);font-size:12px;}
+#sheet-8-w .hs .hb.on{background:var(--acs);color:var(--ac);}
+/* 歯車: 表では見出しの行の一番右(横にスクロールしきると見える)、2列では項目の帯の右に置く */
+#sheet-8-w th.g{width:1%;padding:0;}
+#sheet-8-w td.g{padding:0;}
+#sheet-8-w .gr{display:flex;align-items:center;justify-content:center;width:34px;height:36px;color:var(--mut);}
+#sheet-8-w .hw .gr{flex:none;height:30px;}
+#sheet-8-w .gr:active{opacity:.5;}
+/* 項目を選ぶあいだ: すべての項目を出し、名前の左に × か + を付ける。隠す項目と、データの部分は薄くする */
+#sheet-8-w .hb .mk{display:none;}
+#sheet-8-w.edit .hb .mk{display:flex;}
+#sheet-8-w.edit .hb .mk{color:var(--mut);}
+#sheet-8-w.edit .hb{color:var(--fg);}
+#sheet-8-w.edit .hb .ar{display:none;}
+#sheet-8-w.edit .hb.lock{cursor:default;}
+#sheet-8-w.edit .hd .hb,#sheet-8-w.edit .hb.hd{opacity:.42;}
+#sheet-8-w.edit .hs .hb.on{background:var(--soft);color:var(--fg);}
+#sheet-8-w.edit th.on .hb{color:var(--fg);}
+#sheet-8-w.edit td.on{background:var(--bg);}
+#sheet-8-w.edit td,#sheet-8-w.edit .ls .t,#sheet-8-w.edit .ls .v{color:var(--mut);}
+#sheet-8-w.edit th.hd,#sheet-8-w.edit td.hd{background:var(--soft);}
+#sheet-8-w.edit td.hd,#sheet-8-w.edit .ls .a.hd .k,#sheet-8-w.edit .ls .a.hd .v{color:color-mix(in srgb,var(--mut) 55%,var(--bg));}
+#sheet-8-w.edit .ls .a.hd{background:var(--soft);border-radius:4px;margin:0 -6px;padding-left:6px;padding-right:6px;}
+#sheet-8-w.edit .seg{opacity:.4;pointer-events:none;}
+/* 「キャンセル」「決定」は、項目を選んでいるあいだだけ左上に出す */
+#sheet-8-w .stat{gap:6px;}
+#sheet-8-w .cnt{font-size:12px;color:var(--mut);white-space:nowrap;}
+#sheet-8-w.vt .cnt{padding-left:10px;}   /* 表では「名前」の見出しと左端をそろえる */
+#sheet-8-w .stat button{height:30px;padding:0 14px;border-radius:9px;font-size:13px;font-weight:600;}
+#sheet-8-w .stat .cc{color:var(--fg);background:var(--soft);}
+#sheet-8-w .stat .ok{color:#fff;background:var(--ac);}
+#sheet-8-w .stat button:active{opacity:.7;}
+#sheet-8-w .stat .ok:disabled{opacity:.35;cursor:default;}
+</style>
+<script>
+(function(){
+var R = document.getElementById("sheet-8-w");
+try {
+/* Muse 以外のブラウザでも動くよう、hatchWidget が無ければメモリ上の代替を使う */
+var HW = window.hatchWidget || (function(){ var s = null; return { getState: function(d){ return s === null ? d : s; }, setState: function(v){ s = v; } }; })();
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',          // 'ja' | 'en': 画面の文言と数値の書式の言語
+  view: 'table',       // 'table' | 'list': 最初の表示。table は表、list は2列(1列目に行の名前、2列目にほかの項目を縦に並べる)
+  /* 項目の名前。1つ目は行の名前(2列表示の1列目)になる */
+  columns: ['名前', '産地', '焙煎', '価格(円)', '在庫(袋)', '評価'],
+  /* 行。各行は columns と同じ数の値。数値は右寄せ、文字は左寄せで表示する。値が無いときは null */
+  rows: [
+    ['エチオピア イルガチェフェ', 'エチオピア', '浅煎り', 1680, 12, 4.6],
+    ['グアテマラ アンティグア', 'グアテマラ', '中煎り', 1480, 8, 4.3],
+    ['ブラジル サントス', 'ブラジル', '中深煎り', 1180, 25, 4.0],
+    ['コロンビア スプレモ', 'コロンビア', '中煎り', 1280, 0, 4.2],
+    ['ケニア AA', 'ケニア', '浅煎り', 1880, 5, 4.7],
+    ['マンデリン G1', 'インドネシア', '深煎り', 1580, 14, 4.4],
+    ['ハウスブレンド', null, '深煎り', 980, 40, 3.9]
+  ],
+  sort: null,          // 最初の並び順。{ column: '価格(円)', desc: true } の形で書く。null なら rows の順
+  hidden: []           // 最初に隠す項目の名前。例: ['産地']。1つ目の項目は隠せない
+};
+
+var EN = data.lang === 'en';
+var LOC = EN ? 'en-US' : 'ja-JP';
+var T = EN ? {
+  table: 'Table', list: 'List', count: function(n){ return n + (n === 1 ? ' row' : ' rows'); },
+  numAsc: 'Low to high', numDesc: 'High to low', txtAsc: 'A to Z', txtDesc: 'Z to A',
+  original: 'Original order', hide: 'Hide this column', hidden: 'Hidden', shown: 'Columns', showAll: 'Show all', sortBy: 'Sort',
+  hidMsg: function(c){ return c + ' hidden'; }, undo: 'Undo', always: 'Always shown',
+  cols: 'Choose columns', cancel: 'Cancel', ok: 'Update columns', hideCol: function(c){ return 'Hide ' + c; }, showCol: function(c){ return 'Show ' + c; },
+  badCols: "columns must be an array of one or more names (e.g. ['Name', 'Price'])",
+  dupCol: function(c){ return 'The column name ' + JSON.stringify(c) + ' is used more than once'; },
+  badRows: 'rows must be an array of rows',
+  badRow: function(i, m, n){ return 'Row ' + (i + 1) + ' has ' + m + ' values but columns has ' + n + '. Make them the same length'; },
+  badCell: function(i, c, v){ return 'Row ' + (i + 1) + ', ' + c + ': ' + JSON.stringify(v) + ' must be a string, a number or null'; },
+  badSort: function(c){ return 'sort.column ' + JSON.stringify(c) + ' is not in columns'; },
+  badHidden: function(c){ return 'hidden: ' + JSON.stringify(c) + ' is not in columns'; },
+  badView: "view must be 'table' or 'list'"
+} : {
+  table: '表', list: '2列', count: function(n){ return n + '件'; },
+  numAsc: '小さい順', numDesc: '大きい順', txtAsc: '昇順', txtDesc: '降順',
+  original: '元の順に戻す', hide: 'この項目を隠す', hidden: '非表示', shown: '表示する項目', showAll: 'すべて表示', sortBy: '並び替え',
+  hidMsg: function(c){ return c + ' を非表示にしました'; }, undo: '元に戻す', always: '常に表示',
+  cols: '表示する項目を選ぶ', cancel: 'キャンセル', ok: '表示列を修正', hideCol: function(c){ return c + ' を隠す'; }, showCol: function(c){ return c + ' を表示する'; },
+  badCols: "columns は項目の名前の配列で書いてください(例: ['名前', '価格'])",
+  dupCol: function(c){ return '項目の名前 ' + JSON.stringify(c) + ' が重なっています'; },
+  badRows: 'rows は行の配列で書いてください',
+  badRow: function(i, m, n){ return (i + 1) + '行目の値は' + m + '個ありますが、columns は' + n + '個です。同じ数にしてください'; },
+  badCell: function(i, c, v){ return (i + 1) + '行目の ' + c + ' の値 ' + JSON.stringify(v) + ' は文字・数値・null のどれかで書いてください'; },
+  badSort: function(c){ return 'sort.column の ' + JSON.stringify(c) + ' は columns にありません'; },
+  badHidden: function(c){ return 'hidden の ' + JSON.stringify(c) + ' は columns にありません'; },
+  badView: "view は 'table' か 'list' で書いてください"
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ---- data を確かめる ---- */
+var COLS = data.columns, ROWS = data.rows;
+if (!Array.isArray(COLS) || !COLS.length || COLS.some(function(c){ return typeof c !== 'string' || !c; })) throw new Error(T.badCols);
+COLS.forEach(function(c, j){ if (COLS.indexOf(c) !== j) throw new Error(T.dupCol(c)); });
+if (!Array.isArray(ROWS)) throw new Error(T.badRows);
+ROWS.forEach(function(r, i){
+  var m = Array.isArray(r) ? r.length : 0;
+  if (m !== COLS.length) throw new Error(T.badRow(i, m, COLS.length));
+  r.forEach(function(v, j){
+    if (!(v === null || typeof v === 'string' || (typeof v === 'number' && isFinite(v)))) throw new Error(T.badCell(i, COLS[j], v));
+  });
+});
+if (data.view != null && data.view !== 'table' && data.view !== 'list') throw new Error(T.badView);
+if (data.sort && COLS.indexOf(data.sort.column) < 0) throw new Error(T.badSort(data.sort.column));
+(data.hidden || []).forEach(function(c){ if (COLS.indexOf(c) < 0) throw new Error(T.badHidden(c)); });
+
+/* ---- 表示の状態。見る人の操作は保存し、次に開いたときもそのまま出す ---- */
+var view, sortCol, sortDesc, hidden;
+function setState(s){
+  view = s && s.view === 'list' ? 'list' : 'table';
+  sortCol = s && s.sort ? COLS.indexOf(s.sort.column) : -1;
+  sortDesc = sortCol >= 0 && !!s.sort.desc;
+  hidden = {};
+  ((s && s.hidden) || []).forEach(function(c){ var j = COLS.indexOf(c); if (j > 0) hidden[j] = true; });
+  if (hidden[sortCol]) sortCol = -1;
+}
+var INIT = { view: data.view || 'table', sort: data.sort || null, hidden: data.hidden || [] };
+var saved = null;
+try { saved = HW.getState(null); } catch (e) {}
+setState(saved && typeof saved === 'object' ? saved : INIT);
+function save(){
+  try { HW.setState({ view: view, sort: sortCol < 0 ? null : { column: COLS[sortCol], desc: sortDesc }, hidden: COLS.filter(function(c, j){ return hidden[j]; }) }); } catch (e) {}
+}
+
+/* 項目ごとに、値がすべて数値(と null)なら数値の項目とみなす。見出しの寄せと並び替えの言葉に使う */
+var NUMCOL = COLS.map(function(c, j){
+  var any = false;
+  return ROWS.every(function(r){ if (typeof r[j] === 'number') any = true; return r[j] === null || typeof r[j] === 'number'; }) && any;
+});
+/* 数値の小数の桁は、項目ごとに一番多い桁にそろえる(4.0 と 4.6 が並んだら 4.0 と出す) */
+var DEC = COLS.map(function(c, j){
+  return ROWS.reduce(function(m, r){ var v = r[j]; return typeof v === 'number' ? Math.max(m, (String(v).split('.')[1] || '').length) : m; }, 0);
+});
+function cell(v, j){ return v === null ? '' : typeof v === 'number' ? v.toLocaleString(LOC, { minimumFractionDigits: DEC[j], maximumFractionDigits: DEC[j] }) : String(v); }
+function dirWord(j, desc){ return NUMCOL[j] ? (desc ? T.numDesc : T.numAsc) : (desc ? T.txtDesc : T.txtAsc); }
+function visCols(){ return COLS.map(function(c, j){ return j; }).filter(function(j){ return !hidden[j]; }); }
+/* 項目を選んでいるあいだ(draft があるとき)は、隠す項目も含めてすべて出す */
+var draft = null;
+function shownCols(){ return draft ? COLS.map(function(c, j){ return j; }) : visCols(); }
+function isHd(j){ return !!(draft && draft[j]); }
+/* 下書きが今の表示と違うか。同じなら「表示列を修正」は押せなくする */
+function changed(){ return COLS.some(function(c, j){ return !!draft[j] !== !!hidden[j]; }); }
+
+/* 並び替え。null はいつも最後。数値は数値の順、文字は辞書順(数字は数値として比べる) */
+function sorted(){
+  var idx = ROWS.map(function(r, i){ return i; });
+  if (sortCol < 0) return idx;
+  var j = sortCol, dir = sortDesc ? -1 : 1;
+  return idx.sort(function(a, b){
+    var x = ROWS[a][j], y = ROWS[b][j];
+    if (x === null || y === null) return x === y ? a - b : x === null ? 1 : -1;
+    var c = typeof x === 'number' && typeof y === 'number' ? x - y : typeof x === 'number' ? -1 : typeof y === 'number' ? 1 : x.localeCompare(y, LOC, { numeric: true });
+    return c ? c * dir : a - b;
+  });
+}
+
+/* ---- アイコン ---- */
+var IC = {
+  up: '<svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10V2M2.5 5.5L6 2l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  down: '<svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2.5 6.5L6 10l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  chev: '<svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><path d="M1.5 3L4 5.5 6.5 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  table: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="2" width="11" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 5.5h11M1.5 8.7h11M5.3 2v10" stroke="currentColor" stroke-width="1.3"/></svg>',
+  list: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 3h4M1.5 8.5h4M8 3h4.5M8 5.2h4.5M8 8.5h4.5M8 10.7h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  reset: '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7a4.5 4.5 0 1 0 1.4-3.3M2.5 2v2.5H5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  eyeOff: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 7S3.7 3 7 3s5.5 4 5.5 4-2.2 4-5.5 4S1.5 7 1.5 7z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2 12L12 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  eye: '<svg width="15" height="15" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 7S3.7 3 7 3s5.5 4 5.5 4-2.2 4-5.5 4S1.5 7 1.5 7z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+  plus: '<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1.5v7M1.5 5h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  sort: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M4.5 11.5v-9M2 5l2.5-2.5L7 5M9.5 2.5v9M7 9l2.5 2.5L12 9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  check: '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+function segHtml(icons){
+  return '<div class="seg" role="group">' + ['table', 'list'].map(function(v){
+    return '<button type="button" data-v="' + v + '" aria-label="' + T[v] + '">' + IC[v] + (icons ? '' : '<span>' + T[v] + '</span>') + '</button>';
+  }).join('') + '</div>';
+}
+
+/* ---- 表と2列の HTML。見出し・項目名の中身は案ごとに渡す ---- */
+function tableHtml(head, gear){
+  var vis = shownCols();
+  return '<div class="scw"><div class="sc"><table><thead><tr>' + vis.map(function(j){
+    return '<th class="' + (NUMCOL[j] ? 'n' : '') + (j === sortCol ? ' on' : '') + (isHd(j) ? ' hd' : '') + '">' + head(j) + '</th>';
+  }).join('') + '<th class="g">' + gear + '</th></tr></thead><tbody>' + sorted().map(function(i){
+    return '<tr>' + vis.map(function(j, c){
+      var v = ROWS[i][j];
+      return '<td data-r="' + i + '" data-c="' + j + '" class="' + (typeof v === 'number' ? 'n' : '') + (j === sortCol ? ' on' : '') + (isHd(j) ? ' hd' : '') + '">' + esc(cell(v, j)) + '</td>';
+    }).join('') + '<td class="g"></td></tr>';
+  }).join('') + '</tbody></table></div></div>';
+}
+function listHtml(key){
+  var vis = shownCols().slice(1);
+  return '<div class="ls">' + sorted().map(function(i){
+    return '<div class="row" data-r="' + i + '"><div class="t">' + esc(cell(ROWS[i][0], 0)) + '</div><div class="at">' + vis.map(function(j){
+      var v = ROWS[i][j];
+      return '<div class="a' + (j === sortCol ? ' on' : '') + (isHd(j) ? ' hd' : '') + '"><span class="k">' + key(j) + '</span><span class="v' + (typeof v === 'number' ? ' n' : '') + '">' + esc(cell(v, j)) + '</span></div>';
+    }).join('') + '</div></div>';
+  }).join('') + '</div>';
+}
+
+/* 描き替え。並び順が変わった行は、元の位置からすべるように動かす(FLIP) */
+var BD;
+var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function paint(html, fade){
+  var before = {};
+  [].forEach.call(BD.querySelectorAll('[data-r]'), function(el){ before[el.dataset.r + '|' + (el.dataset.c || '')] = el.getBoundingClientRect().top; });
+  var old = BD.querySelector('.sc'), sl = old ? old.scrollLeft : 0;
+  BD.innerHTML = html;
+  var sc = BD.querySelector('.sc');
+  if (sc) {
+    sc.scrollLeft = sl;
+    var edge = function(){ sc.classList.toggle('l', sc.scrollLeft > 1); sc.parentNode.classList.toggle('r', sc.scrollLeft + sc.clientWidth < sc.scrollWidth - 1); };
+    sc.addEventListener('scroll', edge, { passive: true });
+    edge();
+  }
+  if (fade && !REDUCE) { BD.classList.add('fd'); requestAnimationFrame(function(){ requestAnimationFrame(function(){ BD.classList.remove('fd'); }); }); return; }
+  if (REDUCE) return;
+  [].forEach.call(BD.querySelectorAll('[data-r]'), function(el){
+    var t = before[el.dataset.r + '|' + (el.dataset.c || '')];
+    if (t == null) return;
+    var dy = t - el.getBoundingClientRect().top;
+    if (Math.abs(dy) < 1) return;
+    el.style.transition = 'none';
+    el.style.transform = 'translateY(' + dy + 'px)';
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      el.style.transition = 'transform .34s cubic-bezier(.2,.8,.2,1)';
+      el.style.transform = '';
+    }); });
+  });
+}
+
+R.innerHTML = '<div class="top"><div class="stat"></div>' + segHtml(true) + '</div>' +
+  '<div class="hw"><div class="hs"></div></div><div class="bd"></div>';
+BD = R.querySelector('.bd');
+var STAT = R.querySelector('.stat'), HW2 = R.querySelector('.hw'), HS = R.querySelector('.hs');
+IC.gear = '<svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-dasharray="2.356 2.356"/><circle cx="8" cy="8" r="4.4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>';
+IC.xc = '<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.6 8h6.8" stroke="var(--bg)" stroke-width="1.7" stroke-linecap="round"/></svg>';
+IC.pc = '<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M8 4.6v6.8M4.6 8h6.8" stroke="var(--bg)" stroke-width="1.7" stroke-linecap="round"/></svg>';
+var GEAR = '<button type="button" class="gr" aria-label="' + T.cols + '">' + IC.gear + '</button>';
+
+/* 見出し。ふだんは押すと並び替わる。項目を選んでいるあいだは、1つ目以外に − (隠す) か + (表示する) を付ける */
+function head(j){
+  var on = j === sortCol, hd = isHd(j);
+  var mk = draft && j ? '<span class="mk ' + (hd ? 'p' : 'x') + '">' + (hd ? IC.pc : IC.xc) + '</span>' : '';
+  var label = draft && j ? ' aria-label="' + esc(hd ? T.showCol(COLS[j]) : T.hideCol(COLS[j])) + '"' : '';
+  return '<button type="button" class="hb' + (on ? ' on' : '') + (j ? '' : ' lock') + (hd ? ' hd' : '') + '" data-j="' + j + '"' + label + (draft && !j ? ' disabled' : '') + '>' +
+    mk + esc(COLS[j]) + (on ? '<span class="ar">' + (sortDesc ? IC.down : IC.up) + '</span>' : '') + '</button>';
+}
+function render(fade){
+  R.classList.toggle('edit', !!draft);
+  R.classList.toggle('vt', view === 'table');
+  [].forEach.call(R.querySelectorAll('.seg button'), function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
+  STAT.innerHTML = draft ? '<button type="button" class="cc">' + T.cancel + '</button><button type="button" class="ok"' + (changed() ? '' : ' disabled') + '>' + T.ok + '</button>' : '<span class="cnt">' + esc(T.count(ROWS.length)) + '</span>';
+  /* 2列表示には見出しが無いので、項目を並べた帯を見出しの代わりに置く */
+  HW2.style.display = view === 'list' ? '' : 'none';
+  var sl = HS.scrollLeft;
+  HS.innerHTML = view === 'list' ? shownCols().map(head).join('') : '';
+  var g = HW2.querySelector('.gr');
+  if (g) HW2.removeChild(g);
+  if (view === 'list' && !draft) HW2.insertAdjacentHTML('beforeend', GEAR);
+  HS.scrollLeft = sl;
+  HS.onscroll = function(){ HS.classList.toggle('sl', HS.scrollLeft > 1); };   // 左にも続きがあるときは左端も薄くする
+  HS.onscroll();
+  /* 並べている項目が帯の外にあれば、見える位置まで帯をずらす */
+  var on = !draft && HS.querySelector('.hb.on');
+  if (on) {
+    var l = on.offsetLeft, rr = l + on.offsetWidth;   // .hs は position:relative なので、offsetLeft は帯の中での位置
+    if (l < HS.scrollLeft + 16) HS.scrollTo({ left: Math.max(0, l - 16), behavior: 'smooth' });
+    else if (rr > HS.scrollLeft + HS.clientWidth - 16) HS.scrollTo({ left: rr - HS.clientWidth + 16, behavior: 'smooth' });
+  }
+  paint(view === 'table' ? tableHtml(head, draft ? '' : GEAR) : listHtml(function(j){ return esc(COLS[j]); }), fade);
+}
+
+R.addEventListener('click', function(e){
+  var b = e.target.closest('button');
+  if (!b || b.disabled) return;
+  if (b.dataset.v) { if (view !== b.dataset.v) { view = b.dataset.v; save(); render(true); } return; }
+  if (b.classList.contains('gr')) {   // 歯車: 今の表示を下書きにして、項目を選び始める
+    draft = {};
+    for (var k in hidden) draft[k] = true;
+    render(); return;
+  }
+  if (b.classList.contains('cc')) { draft = null; render(); return; }
+  if (b.classList.contains('ok')) {
+    hidden = draft; draft = null;
+    if (hidden[sortCol]) sortCol = -1;
+    save(); render(); return;
+  }
+  if (b.classList.contains('hb')) {
+    var j = +b.dataset.j;
+    if (draft) { if (j) { if (draft[j]) delete draft[j]; else draft[j] = true; } }
+    else {
+      if (sortCol !== j) { sortCol = j; sortDesc = false; }   // 初めて押したら小さい順
+      else if (!sortDesc) sortDesc = true;                    // 2回目は大きい順
+      else sortCol = -1;                                      // 3回目で元の順に戻す
+      save();
+    }
+    render();
+  }
+});
+render();
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>
