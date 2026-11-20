@@ -20,6 +20,10 @@
 #omikuji-w .lk i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.2);}
 #omikuji-w .box{display:block;position:relative;z-index:1;margin:0 auto;border:none;background:none;padding:0;cursor:pointer;width:89px;transform-origin:50% 100%;}
 #omikuji-w .box svg,#omikuji-w .box img{display:block;width:100%;height:auto;}
+/* タップしても、灰色のハイライト・選択の青・長押しのメニュー・フォーカスの枠が出ないようにする(キーボード操作の枠は残す) */
+#omikuji-w .box{-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+#omikuji-w .box img{pointer-events:none;-webkit-user-drag:none;}
+#omikuji-w .box:focus:not(:focus-visible){outline:none;}
 #omikuji-w .box.shake{animation:om2s 1s ease-in-out;}
 @keyframes om2s{0%,100%{transform:rotate(0) translateY(0)}10%{transform:rotate(-12deg) translateY(-6px)}20%{transform:rotate(12deg)}30%{transform:rotate(-12deg) translateY(-6px)}40%{transform:rotate(12deg)}50%{transform:rotate(-10deg) translateY(-4px)}60%{transform:rotate(10deg)}75%{transform:rotate(-5deg)}90%{transform:rotate(3deg)}}
 #omikuji-w .gd{margin:8px 0 4px;font-size:13px;color:#5a4630;}
