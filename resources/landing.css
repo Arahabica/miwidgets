@@ -61,6 +61,8 @@ h1 em{font-style:normal;color:var(--accent-ink)}
 .expand-button{display:none}
 .widget-source a{font-size:12px;color:var(--source)}
 .phone-box iframe{display:block;flex:1;min-height:0;width:100%;border:0;background:transparent}
+.lazy-preview{visibility:hidden;opacity:0;transition:opacity .3s ease-out}
+.lazy-preview.is-ready{visibility:visible;opacity:1}
 .err{font-size:13px;color:#c43d42;padding:20px}
 .closing{padding:75px 0 80px;text-align:center;border-top:1px solid var(--line);background:var(--paper)}
 .closing .section-title{font-size:31px}
@@ -118,12 +120,12 @@ section.hero{display:flex;flex-direction:column;align-items:stretch;gap:18px;min
 .widgets-section{padding:48px 0 24px}
 .widget-heading{display:block;margin-bottom:26px}
 .widget-grid{grid-template-columns:minmax(0,1fr);padding:0;gap:24px}
-.phone-box{width:100%;height:auto;border-radius:0;box-shadow:none!important;overflow:visible}
+.phone-box{--collapsed-height:630px;width:100%;height:auto;min-height:var(--collapsed-height);border-radius:0;box-shadow:none!important;overflow:visible}
 .phone-box iframe{flex:none}
 .widget-preview{width:100%}
 .widget-prompts{padding:0 20px;margin-bottom:10px}
 .widget-source{padding:10px 20px 0}
-.widget-preview.is-overflowing.is-collapsed .phone-box{position:relative;max-height:630px;overflow:hidden}
+.widget-preview.is-collapsed .phone-box{position:relative;max-height:var(--collapsed-height);overflow:hidden}
 .widget-preview.is-overflowing.is-collapsed .phone-box::after{content:"";position:absolute;inset:auto 0 0;height:180px;background:linear-gradient(transparent,var(--phone-bg,#fff) 65%);pointer-events:none}
 .widget-preview.is-overflowing .expand-button{display:flex;align-items:center;justify-content:center;width:calc(100% - 40px);margin:4px auto 0;padding:8px 15px;border:0;background:none;color:var(--accent-ink);font-size:14px;font-weight:650;line-height:1.5}
 .widget-preview.is-overflowing .expand-button::after{content:"";width:7px;height:7px;margin-left:10px;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg)}

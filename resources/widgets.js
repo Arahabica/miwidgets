@@ -282,7 +282,7 @@ var main = document.getElementById('main');
 if (location.protocol === 'file:') {
   main.innerHTML = '<div class="err">' + UI_TEXT.fileError + '<br><code>python3 -m http.server 8000</code> → <code>http://localhost:8000/</code></div>';
 } else {
-  /* プレビューは画面に入ってから読み込む。初期表示を軽くし、テンプレートの表示時のアニメーションを見られるようにする */
+  /* 先頭の2件はすぐに読み込み、残りは画面に入ったときに読み込む。 */
   var lazyFrames = window.IntersectionObserver ? new IntersectionObserver(function(entries){
     entries.forEach(function(e){
       if (!e.isIntersecting) return;
@@ -290,7 +290,7 @@ if (location.protocol === 'file:') {
       e.target.loadPreview();
     });
   }, {rootMargin: '0px 0px -20% 0px'}) : null;
-  TEMPLATES.forEach(function(t){
+  TEMPLATES.forEach(function(t, index){
     var sec = document.createElement('section');
     sec.id = t.id;
     sec.className = 'widget-preview is-collapsed';
@@ -322,38 +322,40 @@ if (location.protocol === 'file:') {
     link.textContent = UI_TEXT.source;
     var frame = sec.querySelector('iframe');
     frame.title = t.name;
+    var deferred = index >= 2 && lazyFrames !== null;
+    if (deferred) frame.className = 'lazy-preview';
     frame.loadPreview = function(){
       // 空の iframe はページに入れた時点で空白ページの load が来ることがあるので、srcdoc の中身が出てから描く
-      frame.addEventListener('load', function onload(){
+      frame.addEventListener('load', async function onload(){
         if (!frame.contentDocument.getElementById('chat')) return;
         frame.removeEventListener('load', onload);
+        await renderPreview(frame, t);
         configurePreviewSize(frame);
-        renderPreview(frame, t);
+        if (deferred) frame.classList.add('is-ready');
       });
       frame.srcdoc = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + t.name + UI_TEXT.preview + '</title></head><body>' + PREVIEW_SHELL + '</body></html>';
     };
-    // スマホ表示では読み込むまで高さが決まらないので、仮の高さを置いてページのずれを抑える
-    if (window.matchMedia('(max-width: 768px)').matches) frame.style.height = '520px';
     main.appendChild(sec);
-    if (lazyFrames) lazyFrames.observe(frame); else frame.loadPreview();
+    if (deferred) lazyFrames.observe(frame); else frame.loadPreview();
   });
 }
 
 /* スマホ表示では内容に合わせて伸ばし、ページ全体でスクロールする。長いものは折りたたむ。 */
-var COLLAPSED_HEIGHT = 630;
 function configurePreviewSize(frame){
   var doc = frame.contentDocument;
   var phone = doc.querySelector('.phone');
   var mobile = window.matchMedia('(max-width: 768px)');
   var sec = frame.closest('.widget-preview');
   var box = frame.closest('.phone-box');
+  var title = box.querySelector('h2');
   function resize(){
     doc.documentElement.classList.toggle('expanded-preview', mobile.matches);
     if (mobile.matches) {
       var height = Math.ceil(phone.getBoundingClientRect().height) + 'px';
       if (frame.style.height !== height) frame.style.height = height;
-      // 折りたたみ時の高さを超えるときだけ「続きを見る」を出す。
-      sec.classList.toggle('is-overflowing', box.scrollHeight > COLLAPSED_HEIGHT + 80);
+      // ボタンや下余白は除き、タイトルと会話が枠に収まるかを判定する。
+      var collapsedHeight = parseFloat(getComputedStyle(box).minHeight);
+      sec.classList.toggle('is-overflowing', title.offsetHeight + frame.offsetHeight > collapsedHeight);
     } else {
       frame.style.removeProperty('height');
     }
