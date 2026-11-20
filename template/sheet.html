@@ -122,7 +122,15 @@ var T = EN ? {
   table: 'Table', list: 'List', count: function(n){ return n + (n === 1 ? ' row' : ' rows'); },
   numAsc: 'Low to high', numDesc: 'High to low', txtAsc: 'A to Z', txtDesc: 'Z to A',
   sortBy: 'Sort',
-  cols: 'Choose columns', hideSet: 'Hide columns', resetSort: 'Reset', cancel: 'Cancel', ok: 'Update columns', hideCol: function(c){ return 'Hide ' + c; }, showCol: function(c){ return 'Show ' + c; },
+  cols: 'Choose columns', hideSet: 'Hide columns', resetSort: 'Reset', cancel: 'Cancel', ok: 'Update columns', hideCol: function(c){ return 'Hide ' + c; }, showCol: function(c){ return 'Show ' + c; }
+} : {
+  table: '表', list: '2列', count: function(n){ return n + '件'; },
+  numAsc: '小さい順', numDesc: '大きい順', txtAsc: '昇順', txtDesc: '降順',
+  sortBy: '並び替え',
+  cols: '表示する項目を選ぶ', hideSet: '非表示設定', resetSort: 'リセット', cancel: 'キャンセル', ok: '表示列を修正', hideCol: function(c){ return c + ' を隠す'; }, showCol: function(c){ return c + ' を表示する'; }
+};
+/* data の書き方の誤りは、英語で画面に出す */
+var E = {
   badCols: "columns must be an array of one or more names (e.g. ['Name', 'Price'])",
   dupCol: function(c){ return 'The column name ' + JSON.stringify(c) + ' is used more than once'; },
   badRows: 'rows must be an array of rows',
@@ -131,35 +139,22 @@ var T = EN ? {
   badSort: function(c){ return 'sort.column ' + JSON.stringify(c) + ' is not in columns'; },
   badHidden: function(c){ return 'hidden: ' + JSON.stringify(c) + ' is not in columns'; },
   badView: "view must be 'table' or 'list'"
-} : {
-  table: '表', list: '2列', count: function(n){ return n + '件'; },
-  numAsc: '小さい順', numDesc: '大きい順', txtAsc: '昇順', txtDesc: '降順',
-  sortBy: '並び替え',
-  cols: '表示する項目を選ぶ', hideSet: '非表示設定', resetSort: 'リセット', cancel: 'キャンセル', ok: '表示列を修正', hideCol: function(c){ return c + ' を隠す'; }, showCol: function(c){ return c + ' を表示する'; },
-  badCols: "columns は項目の名前の配列で書いてください(例: ['名前', '価格'])",
-  dupCol: function(c){ return '項目の名前 ' + JSON.stringify(c) + ' が重なっています'; },
-  badRows: 'rows は行の配列で書いてください',
-  badRow: function(i, m, n){ return (i + 1) + '行目の値は' + m + '個ありますが、columns は' + n + '個です。同じ数にしてください'; },
-  badCell: function(i, c, v){ return (i + 1) + '行目の ' + c + ' の値 ' + JSON.stringify(v) + ' は文字・数値・null のどれかで書いてください'; },
-  badSort: function(c){ return 'sort.column の ' + JSON.stringify(c) + ' は columns にありません'; },
-  badHidden: function(c){ return 'hidden の ' + JSON.stringify(c) + ' は columns にありません'; },
-  badView: "view は 'table' か 'list' で書いてください"
 };
 /* ---- data を確かめる ---- */
 var COLS = data.columns, ROWS = data.rows;
-if (!Array.isArray(COLS) || !COLS.length || COLS.some(function(c){ return typeof c !== 'string' || !c; })) throw new Error(T.badCols);
-COLS.forEach(function(c, j){ if (COLS.indexOf(c) !== j) throw new Error(T.dupCol(c)); });
-if (!Array.isArray(ROWS)) throw new Error(T.badRows);
+if (!Array.isArray(COLS) || !COLS.length || COLS.some(function(c){ return typeof c !== 'string' || !c; })) throw new Error(E.badCols);
+COLS.forEach(function(c, j){ if (COLS.indexOf(c) !== j) throw new Error(E.dupCol(c)); });
+if (!Array.isArray(ROWS)) throw new Error(E.badRows);
 ROWS.forEach(function(r, i){
   var m = Array.isArray(r) ? r.length : 0;
-  if (m !== COLS.length) throw new Error(T.badRow(i, m, COLS.length));
+  if (m !== COLS.length) throw new Error(E.badRow(i, m, COLS.length));
   r.forEach(function(v, j){
-    if (!(v === null || typeof v === 'string' || (typeof v === 'number' && isFinite(v)))) throw new Error(T.badCell(i, COLS[j], v));
+    if (!(v === null || typeof v === 'string' || (typeof v === 'number' && isFinite(v)))) throw new Error(E.badCell(i, COLS[j], v));
   });
 });
-if (data.view != null && data.view !== 'table' && data.view !== 'list') throw new Error(T.badView);
-if (data.sort && COLS.indexOf(data.sort.column) < 0) throw new Error(T.badSort(data.sort.column));
-(data.hidden || []).forEach(function(c){ if (COLS.indexOf(c) < 0) throw new Error(T.badHidden(c)); });
+if (data.view != null && data.view !== 'table' && data.view !== 'list') throw new Error(E.badView);
+if (data.sort && COLS.indexOf(data.sort.column) < 0) throw new Error(E.badSort(data.sort.column));
+(data.hidden || []).forEach(function(c){ if (COLS.indexOf(c) < 0) throw new Error(E.badHidden(c)); });
 
 /* ---- 見る人の操作(表示・並び順・隠した列)は保存する ---- */
 var view, sortCol, sortDesc, hidden;
