@@ -323,7 +323,8 @@ if (location.protocol === 'file:') {
     var frame = sec.querySelector('iframe');
     frame.title = t.name;
     var deferred = index >= 2 && lazyFrames !== null;
-    if (deferred) frame.className = 'lazy-preview';
+    var box = frame.closest('.phone-box');
+    if (deferred) box.classList.add('lazy-preview');
     frame.loadPreview = function(){
       // 空の iframe はページに入れた時点で空白ページの load が来ることがあるので、srcdoc の中身が出てから描く
       frame.addEventListener('load', async function onload(){
@@ -331,7 +332,7 @@ if (location.protocol === 'file:') {
         frame.removeEventListener('load', onload);
         await renderPreview(frame, t);
         configurePreviewSize(frame);
-        if (deferred) frame.classList.add('is-ready');
+        if (deferred) box.classList.add('is-ready');
       });
       frame.srcdoc = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + t.name + UI_TEXT.preview + '</title></head><body>' + PREVIEW_SHELL + '</body></html>';
     };

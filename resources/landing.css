@@ -61,7 +61,7 @@ h1 em{font-style:normal;color:var(--accent-ink)}
 .expand-button{display:none}
 .widget-source a{font-size:12px;color:var(--source)}
 .phone-box iframe{display:block;flex:1;min-height:0;width:100%;border:0;background:transparent}
-.lazy-preview{visibility:hidden;opacity:0;transition:opacity .3s ease-out}
+.lazy-preview{visibility:hidden;opacity:0;transition:opacity .5s ease-in-out}
 .lazy-preview.is-ready{visibility:visible;opacity:1}
 .err{font-size:13px;color:#c43d42;padding:20px}
 .closing{padding:75px 0 80px;text-align:center;border-top:1px solid var(--line);background:var(--paper)}
