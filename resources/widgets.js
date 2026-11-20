@@ -282,11 +282,19 @@ var main = document.getElementById('main');
 if (location.protocol === 'file:') {
   main.innerHTML = '<div class="err">' + UI_TEXT.fileError + '<br><code>python3 -m http.server 8000</code> → <code>http://localhost:8000/</code></div>';
 } else {
+  /* プレビューは画面に入ってから読み込む。初期表示を軽くし、テンプレートの表示時のアニメーションを見られるようにする */
+  var lazyFrames = window.IntersectionObserver ? new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (!e.isIntersecting) return;
+      lazyFrames.unobserve(e.target);
+      e.target.loadPreview();
+    });
+  }, {rootMargin: '0px 0px -20% 0px'}) : null;
   TEMPLATES.forEach(function(t){
     var sec = document.createElement('section');
     sec.id = t.id;
     sec.className = 'widget-preview is-collapsed';
-    sec.innerHTML = '<div class="phone-box"><h2></h2><iframe loading="eager"></iframe><button type="button" class="expand-button" aria-expanded="false">' + UI_TEXT.more + '</button></div><footer class="widget-source"><a target="_blank" rel="noopener"></a></footer>';
+    sec.innerHTML = '<div class="phone-box"><h2></h2><iframe></iframe><button type="button" class="expand-button" aria-expanded="false">' + UI_TEXT.more + '</button></div><footer class="widget-source"><a target="_blank" rel="noopener"></a></footer>';
     var expand = sec.querySelector('.expand-button');
     expand.setAttribute('aria-label', UI_TEXT.moreLabel(t.name));
     expand.addEventListener('click', function(){
@@ -314,12 +322,20 @@ if (location.protocol === 'file:') {
     link.textContent = UI_TEXT.source;
     var frame = sec.querySelector('iframe');
     frame.title = t.name;
-    frame.addEventListener('load', function(){
-      configurePreviewSize(frame);
-      renderPreview(frame, t);
-    }, {once: true});
-    frame.srcdoc = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + t.name + UI_TEXT.preview + '</title></head><body>' + PREVIEW_SHELL + '</body></html>';
+    frame.loadPreview = function(){
+      // 空の iframe はページに入れた時点で空白ページの load が来ることがあるので、srcdoc の中身が出てから描く
+      frame.addEventListener('load', function onload(){
+        if (!frame.contentDocument.getElementById('chat')) return;
+        frame.removeEventListener('load', onload);
+        configurePreviewSize(frame);
+        renderPreview(frame, t);
+      });
+      frame.srcdoc = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + t.name + UI_TEXT.preview + '</title></head><body>' + PREVIEW_SHELL + '</body></html>';
+    };
+    // スマホ表示では読み込むまで高さが決まらないので、仮の高さを置いてページのずれを抑える
+    if (window.matchMedia('(max-width: 768px)').matches) frame.style.height = '520px';
     main.appendChild(sec);
+    if (lazyFrames) lazyFrames.observe(frame); else frame.loadPreview();
   });
 }
 
