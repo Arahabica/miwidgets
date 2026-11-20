@@ -1,4 +1,4 @@
-<!-- 予約枠テンプレート: 開始日から7日間の予約枠を、列が日付・行が時刻の表で表示する。時刻は開始時刻から終了時刻まで、15分・30分・60分のいずれかの間隔で並ぶ。各マスに、記号(◯ △ x -)か2文字までの文字を1つ描画する。記号は細い線で描き(○ 〇 × ✕ ー − も記号として扱う)、それ以外は文字で描く。2文字の言葉は小さく描く。土曜は青、日曜と holidays で指定した祝日は赤で表示する。使えない値はエラー(英語)として画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると曜日・月の文言が英語になる。 -->
+<!-- 予約枠テンプレート: 開始日から7日間×時刻の表。各枠に記号(◯ △ x -)か文字を表示。表示内容は data で変更できる。 -->
 <div id="timetable-w"></div>
 <style>
 #timetable-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}

@@ -1,4 +1,4 @@
-<!-- 棒グラフテンプレート: 項目ごとの値を棒で比べる。Muse のテーマに追従する背景なしのデザインで、棒は角の丸みのない四角。棒の上に値を出す(棒の幅に収まらないときは出さない)。系列は5つまで並べられ、2つ以上で凡例を出す。項目をタップすると、その項目の値を吹き出しで出す(もう一度タップか外側のタップで閉じる)。表示時に棒が下から伸びる。values の数が labels と違う、値が数値でないなどの誤りはエラー(英語)として画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると数値の書式が英語になる。 -->
+<!-- 棒グラフテンプレート: 項目ごとの値を棒で比較。系列ごとに色を指定できる。表示内容は data で変更できる。 -->
 <div id="bar-w"></div>
 <style>
 #bar-w{box-sizing:border-box;width:100%;padding:14px 12px 12px;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
@@ -39,22 +39,22 @@ try {
 
 /* ===== data: 表示内容はすべてここで変える ===== */
 var data = {
-  lang: 'ja',          // 'ja' | 'en': エラーの文言と数値の書式の言語
+  lang: 'ja',          // 'ja' | 'en': 画面の文言と数値の書式の言語
   title: '月別の売上', // string: グラフのタイトル
   unit: '万円',        // string: 値の単位。値の後ろに付けて表示する。無ければ ''
   labels: ['6月', '7月', '8月', '9月', '10月', '11月'],   // 横軸の項目
   /* 系列。2つ以上あると棒を横に並べ、凡例を出す。values は labels と同じ数の数値。
-   * name は凡例とタップ時の表示に使う(系列が1つなら省略できる) */
+   * name は凡例とタップ時の表示に使う(系列が1つなら省略できる)。color で色を指定できる(省略すると下の PALETTE の順) */
   series: [
     { name: '2026年', values: [120, 135, 98, 160, 172, 150] },
     { name: '2025年', values: [100, 110, 105, 130, 140, 138] }
   ]
 };
 
-/* 系列の色(この順に使う。系列はこの数まで) */
+/* color を省略した系列の色(この順に使い、足りなければ色相をずらして作る) */
 var PALETTE = ['#3a5ad1', '#f0883e', '#20a46b', '#e5484d', '#9b6dff'];
 var EN = data.lang === 'en';
-/* エラーの文言 */
+/* 画面の文言 */
 var T = EN ? {
   series: 'Series '
 } : {
@@ -64,7 +64,7 @@ var T = EN ? {
 var E = {
   badLabels: "labels must be an array of the x-axis items (e.g. ['Jan', 'Feb'])",
   badSeries: 'series must be an array of one or more series',
-  tooMany: function(n){ return 'Up to ' + n + ' series can be shown'; },
+  badColor: function(s){ return s + ': color must be a CSS color string (e.g. \'#3a5ad1\')'; },
   badLen: function(s, m, n){ return s + ': values has ' + m + ' items but labels has ' + n + '. Make them the same length'; },
   badVal: function(s, l, v){ return s + ', ' + l + ': ' + JSON.stringify(v) + ' is not a number'; }
 };
@@ -74,13 +74,14 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 var labels = data.labels, series = data.series;
 if (!Array.isArray(labels) || !labels.length) throw new Error(E.badLabels);
 if (!Array.isArray(series) || !series.length) throw new Error(E.badSeries);
-if (series.length > PALETTE.length) throw new Error(E.tooMany(PALETTE.length));
 var NAMES = series.map(function(s, k){ return s && s.name != null ? String(s.name) : T.series + (k + 1); });
 series.forEach(function(s, k){
   var n = s && Array.isArray(s.values) ? s.values.length : 0;
   if (n !== labels.length) throw new Error(E.badLen(NAMES[k], n, labels.length));
   s.values.forEach(function(v, i){ if (typeof v !== 'number' || !isFinite(v)) throw new Error(E.badVal(NAMES[k], labels[i], v)); });
+  if (s.color != null && (typeof s.color !== 'string' || !s.color)) throw new Error(E.badColor(NAMES[k]));
 });
+var COLORS = series.map(function(s, k){ return esc(s.color || PALETTE[k] || 'hsl(' + Math.round(k * 137.5 % 360) + ',62%,52%)'); });
 var N = labels.length, M = series.length;
 var unit = data.unit == null ? '' : String(data.unit);
 var LOC = EN ? 'en-US' : 'ja-JP';
@@ -98,7 +99,7 @@ for (var t = Math.floor(vmin / step + 1e-9); t <= Math.ceil(vmax / step - 1e-9);
 var lo = TICKS[0], hi = TICKS[TICKS.length - 1];
 
 /* ---- 見出しと凡例 ---- */
-function swatch(k){ return '<i class="sw" style="background:' + PALETTE[k] + '"></i>'; }
+function swatch(k){ return '<i class="sw" style="background:' + COLORS[k] + '"></i>'; }
 R.innerHTML = '<div class="hd"><span class="ti">' + esc(data.title || '') + '</span>' + (unit ? '<span class="un">' + esc(unit) + '</span>' : '') + '</div>' +
   '<div class="cv"></div>' +
   (M > 1 ? '<div class="lg">' + NAMES.map(function(n, k){ return '<span>' + swatch(k) + esc(n) + '</span>'; }).join('') + '</div>' : '');
@@ -145,7 +146,7 @@ function draw(anim){
       var v = se.values[i], x = x0 + gw * i + (gw - inner) / 2 + bw * k + 1, w = Math.max(1, bw - 2);
       var yv = Y(v), top = Math.min(yv, base), h = Math.max(.5, Math.abs(base - yv));
       var delay = i * 60 + k * 40;
-      s += '<rect class="b' + (v < 0 ? ' neg' : '') + '" x="' + f1(x) + '" y="' + f1(top) + '" width="' + f1(w) + '" height="' + f1(h) + '" fill="' + PALETTE[k] + '" style="animation-delay:' + delay + 'ms"/>';
+      s += '<rect class="b' + (v < 0 ? ' neg' : '') + '" x="' + f1(x) + '" y="' + f1(top) + '" width="' + f1(w) + '" height="' + f1(h) + '" fill="' + COLORS[k] + '" style="animation-delay:' + delay + 'ms"/>';
       if (showVals) s += '<text class="vl" x="' + f1(x + w / 2) + '" y="' + f1(v >= 0 ? top - 4 : top + h + 11) + '" text-anchor="middle" style="animation-delay:' + (delay + 500) + 'ms">' + num(v) + '</text>';
     });
     s += '</g>';

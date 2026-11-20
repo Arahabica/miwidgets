@@ -1,4 +1,4 @@
-<!-- 線グラフテンプレート: 値の移り変わりを線で表す。Muse のテーマに追従する背景なしのデザイン。線の右端に最新の値を出す。系列は5つまで重ねられ、2つ以上で凡例を出す。項目をタップすると、縦の線と点を出し、その項目の値を吹き出しで出す(もう一度タップか外側のタップで閉じる)。表示時に線が左から描かれる。values の数が labels と違う、値が数値でないなどの誤りはエラー(英語)として画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると数値の書式が英語になる。 -->
+<!-- 線グラフテンプレート: 値の推移を線で表示。系列ごとに色を指定できる。表示内容は data で変更できる。 -->
 <div id="line-w"></div>
 <style>
 #line-w{box-sizing:border-box;width:100%;padding:14px 12px 12px;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
@@ -38,22 +38,22 @@ try {
 
 /* ===== data: 表示内容はすべてここで変える ===== */
 var data = {
-  lang: 'ja',            // 'ja' | 'en': エラーの文言と数値の書式の言語
+  lang: 'ja',            // 'ja' | 'en': 画面の文言と数値の書式の言語
   title: '今日の気温',   // string: グラフのタイトル
   unit: '℃',            // string: 値の単位。値の後ろに付けて表示する。無ければ ''
   labels: ['0時', '3時', '6時', '9時', '12時', '15時', '18時', '21時'],   // 横軸の項目
   /* 系列。2つ以上あると線を重ねて、凡例を出す。values は labels と同じ数の数値。
-   * name は凡例とタップ時の表示に使う(系列が1つなら省略できる) */
+   * name は凡例とタップ時の表示に使う(系列が1つなら省略できる)。color で色を指定できる(省略すると下の PALETTE の順) */
   series: [
     { name: '東京', values: [12, 11, 10, 14, 19, 20, 17, 14] },
     { name: '大阪', values: [13, 12, 12, 15, 21, 22, 18, 15] }
   ]
 };
 
-/* 系列の色(この順に使う。系列はこの数まで) */
+/* color を省略した系列の色(この順に使い、足りなければ色相をずらして作る) */
 var PALETTE = ['#3a5ad1', '#f0883e', '#20a46b', '#e5484d', '#9b6dff'];
 var EN = data.lang === 'en';
-/* エラーの文言 */
+/* 画面の文言 */
 var T = EN ? {
   series: 'Series '
 } : {
@@ -63,7 +63,7 @@ var T = EN ? {
 var E = {
   badLabels: "labels must be an array of the x-axis items (e.g. ['Jan', 'Feb'])",
   badSeries: 'series must be an array of one or more series',
-  tooMany: function(n){ return 'Up to ' + n + ' series can be shown'; },
+  badColor: function(s){ return s + ': color must be a CSS color string (e.g. \'#3a5ad1\')'; },
   badLen: function(s, m, n){ return s + ': values has ' + m + ' items but labels has ' + n + '. Make them the same length'; },
   badVal: function(s, l, v){ return s + ', ' + l + ': ' + JSON.stringify(v) + ' is not a number'; }
 };
@@ -73,13 +73,14 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 var labels = data.labels, series = data.series;
 if (!Array.isArray(labels) || !labels.length) throw new Error(E.badLabels);
 if (!Array.isArray(series) || !series.length) throw new Error(E.badSeries);
-if (series.length > PALETTE.length) throw new Error(E.tooMany(PALETTE.length));
 var NAMES = series.map(function(s, k){ return s && s.name != null ? String(s.name) : T.series + (k + 1); });
 series.forEach(function(s, k){
   var n = s && Array.isArray(s.values) ? s.values.length : 0;
   if (n !== labels.length) throw new Error(E.badLen(NAMES[k], n, labels.length));
   s.values.forEach(function(v, i){ if (typeof v !== 'number' || !isFinite(v)) throw new Error(E.badVal(NAMES[k], labels[i], v)); });
+  if (s.color != null && (typeof s.color !== 'string' || !s.color)) throw new Error(E.badColor(NAMES[k]));
 });
+var COLORS = series.map(function(s, k){ return esc(s.color || PALETTE[k] || 'hsl(' + Math.round(k * 137.5 % 360) + ',62%,52%)'); });
 var N = labels.length, M = series.length;
 var unit = data.unit == null ? '' : String(data.unit);
 var LOC = EN ? 'en-US' : 'ja-JP';
@@ -97,7 +98,7 @@ for (var t = Math.floor(vmin / step + 1e-9); t <= Math.ceil(vmax / step - 1e-9);
 var lo = TICKS[0], hi = TICKS[TICKS.length - 1];
 
 /* ---- 見出しと凡例 ---- */
-function swatch(k){ return '<i class="sw" style="background:' + PALETTE[k] + '"></i>'; }
+function swatch(k){ return '<i class="sw" style="background:' + COLORS[k] + '"></i>'; }
 R.innerHTML = '<div class="hd"><span class="ti">' + esc(data.title || '') + '</span>' + (unit ? '<span class="un">' + esc(unit) + '</span>' : '') + '</div>' +
   '<div class="cv"></div>' +
   (M > 1 ? '<div class="lg">' + NAMES.map(function(n, k){ return '<span>' + swatch(k) + esc(n) + '</span>'; }).join('') + '</div>' : '');
@@ -140,13 +141,13 @@ function draw(anim){
   series.forEach(function(se, k){
     var pts = se.values.map(function(v, i){ return [CX(i), Y(v)]; });
     var d = pts.map(function(p, i){ return (i ? 'L' : 'M') + f1(p[0]) + ' ' + f1(p[1]); }).join('');
-    s += '<path class="ln" pathLength="1" d="' + d + '" fill="none" stroke="' + PALETTE[k] + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+    s += '<path class="ln" pathLength="1" d="' + d + '" fill="none" stroke="' + COLORS[k] + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
     /* 点は項目が16個までのときだけ打つ */
     if (N <= 16) pts.forEach(function(p, i){
-      s += '<circle class="dt" cx="' + f1(p[0]) + '" cy="' + f1(p[1]) + '" r="3" fill="' + PALETTE[k] + '" style="animation-delay:' + (300 + i * 900 / N) + 'ms"/>';
+      s += '<circle class="dt" cx="' + f1(p[0]) + '" cy="' + f1(p[1]) + '" r="3" fill="' + COLORS[k] + '" style="animation-delay:' + (300 + i * 900 / N) + 'ms"/>';
     });
     var e = pts[N - 1];
-    s += '<text class="el" x="' + f1(e[0] + 7) + '" y="' + f1(e[1] + 3.5) + '" fill="' + PALETTE[k] + '" style="animation-delay:900ms">' + esc(fmt(se.values[N - 1])) + '</text>';
+    s += '<text class="el" x="' + f1(e[0] + 7) + '" y="' + f1(e[1] + 3.5) + '" fill="' + COLORS[k] + '" style="animation-delay:900ms">' + esc(fmt(se.values[N - 1])) + '</text>';
   });
   s += '<line class="gd" y1="' + y0 + '" y2="' + y1 + '" x1="0" x2="0"/><g class="sd"></g>';
   /* タップの当たり判定(項目ごとの縦長の帯) */
@@ -164,7 +165,7 @@ function select(i){
   if (i < 0) { tip.hidden = true; gd.style.display = 'none'; sd.innerHTML = ''; return; }
   var x = G.CX(i), ys = series.map(function(se){ return G.Y(se.values[i]); });
   gd.setAttribute('x1', f1(x)); gd.setAttribute('x2', f1(x)); gd.style.display = 'inline';
-  sd.innerHTML = series.map(function(se, k){ return '<circle cx="' + f1(x) + '" cy="' + f1(ys[k]) + '" r="4.2" fill="' + PALETTE[k] + '" stroke="#fff" stroke-width="2"/>'; }).join('');
+  sd.innerHTML = series.map(function(se, k){ return '<circle cx="' + f1(x) + '" cy="' + f1(ys[k]) + '" r="4.2" fill="' + COLORS[k] + '" stroke="#fff" stroke-width="2"/>'; }).join('');
   tip.innerHTML = '<b>' + esc(labels[i]) + '</b>' + series.map(function(se, k){
     return M > 1 ? '<span class="tr">' + swatch(k) + '<span class="tn">' + esc(NAMES[k]) + '</span><span class="tv">' + esc(fmt(se.values[i])) + '</span></span>'
       : '<span class="tv one">' + esc(fmt(se.values[i])) + '</span>';
