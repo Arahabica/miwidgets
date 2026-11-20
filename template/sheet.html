@@ -1,132 +1,100 @@
 <!-- データシート: CSV形式のデータを表として表示。行と項目のデータを表か2列で表示する。表示内容は data で変更できる。 -->
 <div id="sheet-w"></div>
 <style>
-#sheet-w{--bg:#fff;--fg:#1c1c1e;--mut:#8e8e93;--line:#e9e9ee;--soft:#f2f2f7;--ac:#3a5ad1;--acs:rgba(58,90,209,.09);--sh:rgba(0,0,0,.14);}
+#sheet-w{--bg:#fff;--fg:#1c1c1e;--mut:#8e8e93;--line:#e9e9ee;--soft:#f2f2f7;--ac:#3a5ad1;--acs:rgba(58,90,209,.09);--sh:rgba(0,0,0,.14);position:relative;display:flex;flex-direction:column;box-sizing:border-box;width:100%;max-height:550px;padding:12px 12px 10px;background:var(--bg);color:var(--fg);border-radius:12px;font:13px/1.45 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
 @media (prefers-color-scheme:dark){#sheet-w{--bg:#1c1c1e;--fg:#f2f2f7;--mut:#98989f;--line:#38383a;--soft:#2c2c2e;--ac:#8aa4ff;--acs:rgba(138,164,255,.14);--sh:rgba(0,0,0,.5);}}
-#sheet-w{position:relative;box-sizing:border-box;width:100%;padding:12px 12px 10px;background:var(--bg);color:var(--fg);border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:13px;line-height:1.45;-webkit-text-size-adjust:100%;}
 #sheet-w *{box-sizing:border-box;}
-/* ボタンはタップしても灰色のハイライト・文字の選択・長押しのメニューを出さない */
+/* タップ時のハイライト・選択・長押しメニューを出さない */
 #sheet-w button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;}
 #sheet-w button:focus:not(:focus-visible){outline:none;}
+#sheet-w button:not(:disabled):active{opacity:.6;}
+#sheet-w button:disabled{cursor:default;}
 #sheet-w svg{display:block;flex:none;}
-#sheet-w .top{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-height:32px;}
-#sheet-w .seg{display:inline-flex;flex:none;padding:2px;border-radius:9px;background:var(--soft);}
-#sheet-w .seg button{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border-radius:7px;font-size:12px;font-weight:600;color:var(--mut);transition:background .18s,color .18s,box-shadow .18s;}
-#sheet-w .seg button[aria-pressed="true"]{background:var(--bg);color:var(--fg);box-shadow:0 1px 3px var(--sh);}
-/* 表: 1列目は固定。横にずらすと影が出て、右に続きがあるときは右端がうすくなる */
-#sheet-w .scw{position:relative;}
-#sheet-w .scw::after{content:"";position:absolute;top:0;right:0;bottom:0;width:28px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--bg));opacity:0;transition:opacity .2s;}
-#sheet-w .scw.r::after{opacity:1;}
-#sheet-w .sc{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain;}
-#sheet-w .sc::-webkit-scrollbar{display:none;}
-#sheet-w table{border-collapse:separate;border-spacing:0;min-width:100%;}
-#sheet-w th,#sheet-w td{text-align:left;vertical-align:top;}
-#sheet-w th{padding:0;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:600;}
-#sheet-w td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;}
-#sheet-w tr:last-child td{border-bottom:0;}
-#sheet-w td.n,#sheet-w .v.n{text-align:right;font-variant-numeric:tabular-nums;}
-#sheet-w th:first-child,#sheet-w td:first-child{position:sticky;left:0;z-index:1;background:var(--bg);min-width:8em;max-width:10.5em;white-space:normal;transition:box-shadow .2s;}
-#sheet-w td:first-child{font-weight:600;overflow-wrap:anywhere;}
-#sheet-w .sc.l th:first-child,#sheet-w .sc.l td:first-child{box-shadow:8px 0 8px -8px var(--sh);}
-/* 並べている項目の列はうすく色を付ける */
-#sheet-w td.on{background:linear-gradient(var(--acs),var(--acs)),var(--bg);}
-#sheet-w .hb{display:flex;align-items:center;gap:3px;width:100%;min-height:36px;padding:0 10px;font-size:11.5px;font-weight:600;color:var(--mut);text-align:left;white-space:nowrap;}
-#sheet-w th.n .hb{justify-content:flex-end;}
-#sheet-w th.on .hb{color:var(--ac);}
-#sheet-w .hb:active{opacity:.6;}
-/* 2列: 左に行の名前、右にほかの項目を縦に並べる */
-#sheet-w .ls .row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
-#sheet-w .ls .row:last-child{border-bottom:0;}
-#sheet-w .ls .t{flex:0 0 36%;min-width:0;font-weight:600;overflow-wrap:anywhere;}
-#sheet-w .ls .at{flex:1;min-width:0;}
-#sheet-w .ls .a{display:flex;align-items:baseline;gap:10px;padding:1.5px 0;}
-#sheet-w .ls .k{flex:none;max-width:55%;font-size:11.5px;color:var(--mut);overflow-wrap:anywhere;}
-#sheet-w .ls .v{flex:1;min-width:0;overflow-wrap:anywhere;text-align:right;}   /* 2列では文字も数値も右寄せ */
-#sheet-w .ls .a.on .k,#sheet-w .ls .a.on .v{color:var(--ac);font-weight:600;}
+/* 上の段: 件数(列を選ぶあいだはキャンセル・修正)、並び替え(2列)、表示の切り替え */
+#sheet-w .top{flex:none;display:flex;align-items:center;gap:6px;min-height:32px;margin-bottom:10px;}
+#sheet-w .stat{flex:1;min-width:0;display:flex;align-items:center;gap:6px;}
+#sheet-w .cnt{font-size:12px;color:var(--mut);white-space:nowrap;}
+#sheet-w.vt .cnt{padding-left:10px;}
+#sheet-w .seg{flex:none;display:flex;padding:2px;border-radius:9px;background:var(--soft);}
+#sheet-w .seg button{height:28px;padding:0 9px;border-radius:7px;color:var(--mut);transition:background .18s,color .18s,box-shadow .18s;}
+#sheet-w .seg [aria-pressed="true"]{background:var(--bg);color:var(--fg);box-shadow:0 1px 3px var(--sh);}
+#sheet-w.edit .seg{opacity:.4;pointer-events:none;}
+#sheet-w .stat>button,#sheet-w .mf button{height:30px;padding:0 14px;border-radius:9px;font-weight:600;}
+#sheet-w .cc{background:var(--soft);}
+#sheet-w .ok{color:#fff;background:var(--ac);}
+#sheet-w .ok:disabled{opacity:.35;}
+/* データ: 550px を超えるとデータだけスクロール。続きがある端はうすくする */
+#sheet-w .bd,#sheet-w .scw{position:relative;display:flex;flex-direction:column;min-height:0;}
 #sheet-w .bd{transition:opacity .15s;}
 #sheet-w .bd.fd{opacity:0;}
-/* 全体は高さ 550px まで。超えるときは見出し・上の段を残して、データの行だけをスクロールする。少ないときは中身の高さ */
-#sheet-w{display:flex;flex-direction:column;max-height:550px;}
-#sheet-w .top{flex:none;}
-#sheet-w .bd,#sheet-w .scw{display:flex;flex-direction:column;min-height:0;}
-#sheet-w .sc{min-height:0;overflow-y:auto;}
-#sheet-w .ls{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-#sheet-w th{position:sticky;top:0;z-index:2;background:var(--bg);}
-#sheet-w th:first-child{top:0;z-index:3;}
-/* 下に続きがあるときは、データの下端を背景色へうすくして、スクロールできることを示す */
-#sheet-w .bd{position:relative;}
-#sheet-w .bd::after{content:"";position:absolute;left:0;right:0;bottom:0;z-index:4;height:60px;pointer-events:none;background:linear-gradient(180deg,transparent,var(--bg));opacity:0;transition:opacity .2s;}
-#sheet-w .bd.b::after{opacity:1;}
-@media (prefers-reduced-motion:reduce){#sheet-w *{transition:none !important;animation:none !important;}}
-
-#sheet-w .top{gap:6px;}
-#sheet-w .stat{flex:1;min-width:0;display:flex;}
-/* 歯車: 表では見出しの行の一番右(横にスクロールしきると見える) */
-#sheet-w th.g{width:1%;padding:0;}
-#sheet-w td.g{padding:0;}
+#sheet-w .bd::after,#sheet-w .scw::after{content:"";position:absolute;right:0;bottom:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .2s;}
+#sheet-w .bd::after{left:0;height:60px;background:linear-gradient(transparent,var(--bg));}
+#sheet-w .scw::after{top:0;width:28px;background:linear-gradient(90deg,transparent,var(--bg));}
+#sheet-w .bd.b::after,#sheet-w .scw.r::after{opacity:1;}
+#sheet-w .sc,#sheet-w .ls{min-height:0;overflow:auto;overscroll-behavior-x:contain;scrollbar-width:none;}
+#sheet-w .sc::-webkit-scrollbar,#sheet-w .ls::-webkit-scrollbar{display:none;}
+/* 表: 見出しと1列目は固定 */
+#sheet-w table{border-collapse:separate;border-spacing:0;min-width:100%;}
+#sheet-w th,#sheet-w td{padding:10px;text-align:left;vertical-align:top;white-space:nowrap;background:var(--bg);border-bottom:1px solid var(--line);}
+#sheet-w th{position:sticky;top:0;z-index:2;padding:0;}
+#sheet-w tr:last-child td{border-bottom:0;}
+#sheet-w th:first-child,#sheet-w td:first-child{position:sticky;left:0;z-index:1;min-width:8em;max-width:10.5em;white-space:normal;transition:box-shadow .2s;}
+#sheet-w th:first-child{z-index:3;}
+#sheet-w td:first-child{font-weight:600;overflow-wrap:anywhere;}
+#sheet-w .sc.l th:first-child,#sheet-w .sc.l td:first-child{box-shadow:8px 0 8px -8px var(--sh);}
+#sheet-w .n{text-align:right;font-variant-numeric:tabular-nums;}
+#sheet-w td.on{background:linear-gradient(var(--acs),var(--acs)),var(--bg);}
+#sheet-w .hb{display:flex;align-items:center;gap:3px;width:100%;min-height:36px;padding:0 10px;font-size:11.5px;font-weight:600;color:var(--mut);white-space:nowrap;}
+#sheet-w .n .hb{justify-content:flex-end;}
+#sheet-w .on .hb{color:var(--ac);}
+#sheet-w .g{width:1%;padding:0;}
 #sheet-w .gr{display:flex;align-items:center;justify-content:center;width:34px;height:36px;color:var(--mut);}
-#sheet-w .gr:active{opacity:.5;}
-/* 項目を選ぶあいだ: すべての項目を出し、名前の左に × か + を付ける。隠す項目と、データの部分は薄くする */
-#sheet-w .hb .mk{display:none;}
-#sheet-w.edit .hb .mk{display:flex;}
-#sheet-w.edit .hb .mk{color:var(--mut);}
+/* 2列 */
+#sheet-w .row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
+#sheet-w .row:last-child{border-bottom:0;}
+#sheet-w .t{flex:0 0 36%;min-width:0;font-weight:600;overflow-wrap:anywhere;}
+#sheet-w .at{flex:1;min-width:0;}
+#sheet-w .a{display:flex;align-items:baseline;gap:10px;padding:1.5px 0;}
+#sheet-w .k{flex:none;max-width:55%;font-size:11.5px;color:var(--mut);overflow-wrap:anywhere;}
+#sheet-w .v{flex:1;min-width:0;text-align:right;overflow-wrap:anywhere;}
+#sheet-w .a.on>*{color:var(--ac);font-weight:600;}
+/* 列を選ぶあいだ: 文字を薄く、隠す列は灰色の背景 */
+#sheet-w .mk{display:flex;width:15px;color:var(--mut);}
 #sheet-w.edit .hb{color:var(--fg);}
-#sheet-w.edit .hb .ar{display:none;}
-#sheet-w.edit .hb.lock{cursor:default;}
-#sheet-w.edit .hd .hb,#sheet-w.edit .hb.hd{opacity:.42;}
-#sheet-w.edit th.on .hb{color:var(--fg);}
-#sheet-w.edit td.on{background:var(--bg);}
-#sheet-w.edit .ls .a.on .k,#sheet-w.edit .ls .a.on .v{color:var(--mut);font-weight:inherit;}
-#sheet-w.edit td,#sheet-w.edit .ls .t,#sheet-w.edit .ls .v{color:var(--mut);}
-#sheet-w.edit th.hd,#sheet-w.edit td.hd{background:var(--soft);}
-#sheet-w.edit td.hd,#sheet-w.edit .ls .a.hd .k,#sheet-w.edit .ls .a.hd .v{color:color-mix(in srgb,var(--mut) 55%,var(--bg));}
-#sheet-w.edit .ls .a.hd{background:var(--soft);border-radius:4px;margin:0 -6px;padding-left:6px;padding-right:6px;}
-#sheet-w.edit .seg{opacity:.4;pointer-events:none;}
-/* 「キャンセル」「決定」は、項目を選んでいるあいだだけ左上に出す */
-#sheet-w .stat{gap:6px;}
-#sheet-w .cnt{font-size:12px;color:var(--mut);white-space:nowrap;}
-#sheet-w.vt .cnt{padding-left:10px;}   /* 表では「名前」の見出しと左端をそろえる */
-#sheet-w .stat{align-items:center;}
-#sheet-w .stat>button,#sheet-w .mf button{height:30px;padding:0 14px;border-radius:9px;font-size:13px;font-weight:600;}
-#sheet-w .cc{color:var(--fg);background:var(--soft);}
-#sheet-w .ok{color:#fff;background:var(--ac);}
-#sheet-w .stat>button:active,#sheet-w .mf button:active{opacity:.7;}
-#sheet-w .ok:disabled{opacity:.35;cursor:default;}
-/* 2列: 右上(表・2列の切り替えの左)の「並び替え」から開くメニュー。項目を押すと並び替え、「非表示設定」で隠す項目を選ぶ */
-#sheet-w .dd{position:relative;flex:none;margin-left:auto;}   /* 表・2列の切り替えのすぐ左 */
-/* ふだんは背景なし。メニューを開いているあいだだけ色を付ける。並べているときは「人口(万人) ↓」のように出し、120px を超える名前は … で切る */
-#sheet-w .sb{display:inline-flex;align-items:center;gap:5px;max-width:120px;height:30px;padding:0 8px;border-radius:9px;font-size:13px;font-weight:500;color:var(--mut);transition:background .15s,color .15s;}
-#sheet-w .dd.open .sb{background:var(--soft);color:var(--fg);}
-#sheet-w .sb.on{font-weight:600;color:var(--ac);}   /* 並べているときは太い青字 */
-#sheet-w .sb .sl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-#sheet-w .sb .cv{transition:transform .18s;}
-#sheet-w .dd.open .sb .cv{transform:rotate(180deg);}
-#sheet-w .sb:active{opacity:.7;}
-#sheet-w .mn{position:absolute;top:calc(100% + 6px);right:0;z-index:10;width:max-content;min-width:200px;max-width:min(280px,calc(100vw - 40px));padding:6px;border-radius:13px;background:var(--bg);box-shadow:0 10px 30px var(--sh),0 0 0 1px var(--line);visibility:hidden;opacity:0;transform:translateY(-4px) scale(.98);transform-origin:top right;transition:opacity .15s,transform .18s cubic-bezier(.2,.8,.2,1),visibility 0s .18s;}
-#sheet-w .dd.open .mn{visibility:visible;opacity:1;transform:none;transition:opacity .15s,transform .18s cubic-bezier(.2,.8,.2,1);}
+#sheet-w.edit .hb.hd{opacity:.42;}
+#sheet-w.edit td,#sheet-w.edit .t,#sheet-w.edit .v{color:var(--mut);}
+#sheet-w.edit .hd{background:var(--soft);}
+#sheet-w.edit td.hd,#sheet-w.edit .a.hd>*{color:color-mix(in srgb,var(--mut) 55%,var(--bg));}
+#sheet-w.edit .a.hd{margin:0 -6px;padding:1.5px 6px;border-radius:4px;}
+/* 2列の並び替えボタンとメニュー */
+#sheet-w .dd{position:relative;flex:none;margin-left:auto;}
+#sheet-w .sb{display:flex;align-items:center;gap:5px;max-width:120px;height:30px;padding:0 8px;border-radius:9px;font-weight:500;color:var(--mut);transition:background .15s,color .15s;}
+#sheet-w .open .sb{background:var(--soft);color:var(--fg);}
+#sheet-w .sb.on{font-weight:600;color:var(--ac);}
+#sheet-w .sl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#sheet-w .cv{transition:transform .18s;}
+#sheet-w .open .cv{transform:rotate(180deg);}
+#sheet-w .mn{position:absolute;top:calc(100% + 6px);right:0;z-index:10;display:flex;flex-direction:column;width:max-content;min-width:200px;max-width:min(280px,calc(100vw - 40px));max-height:488px;padding:6px;border-radius:13px;background:var(--bg);box-shadow:0 10px 30px var(--sh),0 0 0 1px var(--line);visibility:hidden;opacity:0;transform:translateY(-4px) scale(.98);transform-origin:top right;transition:opacity .15s,transform .18s cubic-bezier(.2,.8,.2,1),visibility 0s .18s;}
+#sheet-w .open .mn{visibility:visible;opacity:1;transform:none;transition-delay:0s;}
+#sheet-w .mis{min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+#sheet-w .mis.b{-webkit-mask-image:linear-gradient(#000 calc(100% - 48px),transparent);}
 #sheet-w .mi{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:0 10px;border-radius:8px;font-size:14px;text-align:left;}
-#sheet-w button.mi:active{background:var(--soft);}
 #sheet-w .mi.on{color:var(--ac);font-weight:600;}
 #sheet-w .mi .ar{margin-left:auto;}
-#sheet-w .mi.g{color:var(--mut);}
-#sheet-w .mi.g svg{width:16px;height:16px;}   /* 「リセット」と「非表示設定」のアイコンの大きさをそろえる */
+#sheet-w .mi.g,#sheet-w .mi.lock,#sheet-w .mi.hd{color:var(--mut);}
+#sheet-w .mi.hd{border-radius:0;}
+#sheet-w .mi.g svg{width:16px;height:16px;}
 #sheet-w .sep{height:1px;margin:5px 6px;background:var(--line);}
-#sheet-w .mi .mm{display:flex;width:15px;color:var(--mut);}
-#sheet-w .mi.hd{background:var(--soft);color:var(--mut);border-radius:0;}
-#sheet-w .mi.lock{color:var(--mut);}
-/* メニューは全体の高さ(550px)に収まるようにし、項目が多いときは項目の部分だけをスクロールする。非表示設定の「表示列を修正」「キャンセル」は常に見える */
-#sheet-w .mn{display:flex;flex-direction:column;max-height:488px;}
-#sheet-w .mis{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
-#sheet-w .mis.b{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 48px),transparent);}
-#sheet-w .mf{flex:none;}
-#sheet-w .mf{display:flex;flex-direction:column;gap:6px;padding:8px 2px 2px;}
+#sheet-w .mf{flex:none;display:flex;flex-direction:column;gap:6px;padding:8px 2px 2px;}
 #sheet-w .mf button{height:38px;}
+@media (prefers-reduced-motion:reduce){#sheet-w *{transition:none !important;}}
 </style>
 <script>
 (function(){
 var R = document.getElementById("sheet-w");
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 try {
-/* Muse 以外のブラウザでも動くよう、hatchWidget が無ければメモリ上の代替を使う */
+/* hatchWidget が無いブラウザではメモリに保存する */
 var HW = window.hatchWidget || (function(){ var s = null; return { getState: function(d){ return s === null ? d : s; }, setState: function(v){ s = v; } }; })();
 
 /* ===== data: 表示内容はすべてここで変える ===== */
@@ -134,59 +102,18 @@ var data = {
   lang: 'ja',          // 'ja' | 'en': 画面の文言と数値の書式の言語
   view: 'table',       // 'table' | 'list': 最初の表示。table は表、list は2列(1列目に行の名前、2列目にほかの項目を縦に並べる)
   /* 項目の名前。1つ目は行の名前(2列表示の1列目)になる */
-  columns: ['都道府県', '県庁所在地', '人口(万人)', '面積(km²)', '地方', '出生数', '出生率(‰)', '転出数', '転出率(‰)', '転入数', '転入率(‰)', '人口密度(人/km²)', '人口の割合(%)', '政令市の数'],
+  columns: ['都道府県', '県庁所在地', '人口(万人)', '面積(km²)'],
   /* 行。各行は columns と同じ数の値。数値は右寄せ、文字は左寄せで表示する。値が無いときは null */
   rows: [
-    ['北海道', '札幌市', 522, 83424, '北海道', 24429, 4.8, 58620, 11.2, 53382, 10.2, 63, 4.1, 1],
-    ['青森県', '青森市', 124, 9646, '東北', 5696, 4.8, 21892, 17.7, 16236, 13.1, 129, 1.0, 0],
-    ['岩手県', '盛岡市', 121, 15275, '東北', 5432, 4.7, 20843, 17.2, 16220, 13.4, 79, 1.0, 0],
-    ['宮城県', '仙台市', 230, 7282, '東北', 12328, 5.5, 47367, 20.6, 45915, 20.0, 316, 1.8, 1],
-    ['秋田県', '秋田市', 96, 11638, '東北', 3611, 4.0, 13606, 14.2, 10697, 11.1, 82, 0.8, 0],
-    ['山形県', '山形市', 107, 9323, '東北', 5151, 5.1, 16523, 15.4, 12670, 11.8, 115, 0.8, 0],
-    ['福島県', '福島市', 183, 13784, '東北', 9019, 5.2, 30805, 16.8, 24226, 13.2, 133, 1.5, 0],
-    ['茨城県', '水戸市', 287, 6097, '関東', 14898, 5.4, 60152, 21.0, 58289, 20.3, 471, 2.3, 0],
-    ['栃木県', '宇都宮市', 193, 6408, '関東', 9958, 5.4, 38796, 20.1, 37296, 19.3, 301, 1.5, 0],
-    ['群馬県', '前橋市', 194, 6362, '関東', 9950, 5.4, 38041, 19.6, 37100, 19.1, 305, 1.5, 0],
-    ['埼玉県', 'さいたま市', 734, 3798, '関東', 42107, 5.9, 164917, 22.5, 189756, 25.9, 1933, 5.8, 1],
-    ['千葉県', '千葉市', 628, 5157, '関東', 35658, 5.9, 156489, 24.9, 161274, 25.7, 1218, 5.0, 1],
-    ['東京都', '新宿区', 1405, 2194, '関東', 86347, 6.4, 385848, 27.5, 454133, 32.3, 6404, 11.1, 0],
-    ['神奈川県', '横浜市', 924, 2416, '関東', 53989, 6.0, 207937, 22.5, 236543, 25.6, 3825, 7.3, 3],
-    ['新潟県', '新潟市', 220, 12584, '中部', 10916, 5.2, 28354, 12.9, 22504, 10.2, 175, 1.7, 1],
-    ['富山県', '富山市', 103, 4248, '中部', 5512, 5.6, 15716, 15.3, 13854, 13.5, 242, 0.8, 0],
-    ['石川県', '金沢市', 113, 4186, '中部', 6752, 6.2, 20976, 18.6, 18515, 16.4, 270, 0.9, 0],
-    ['福井県', '福井市', 77, 4191, '中部', 4563, 6.3, 13094, 17.0, 9686, 12.6, 184, 0.6, 0],
-    ['山梨県', '甲府市', 81, 4465, '中部', 4397, 5.7, 15863, 19.6, 15277, 18.9, 181, 0.6, 0],
-    ['長野県', '長野市', 205, 13562, '中部', 11125, 5.7, 33300, 16.2, 31372, 15.3, 151, 1.6, 0],
-    ['岐阜県', '岐阜市', 198, 10621, '中部', 10469, 5.6, 37021, 18.7, 32505, 16.4, 186, 1.6, 0],
-    ['静岡県', '静岡市', 363, 7777, '中部', 18969, 5.5, 64896, 17.9, 58742, 16.2, 467, 2.9, 2],
-    ['愛知県', '名古屋市', 754, 5173, '中部', 48402, 6.7, 131387, 17.4, 123979, 16.4, 1458, 6.0, 1],
-    ['三重県', '津市', 177, 5774, '近畿', 9524, 5.7, 36829, 20.8, 30432, 17.2, 307, 1.4, 0],
-    ['滋賀県', '大津市', 141, 4017, '近畿', 9249, 6.8, 30672, 21.8, 30684, 21.8, 351, 1.1, 0],
-    ['京都府', '京都市', 258, 4612, '近畿', 13882, 5.6, 62087, 24.1, 59452, 23.0, 559, 2.0, 1],
-    ['大阪府', '大阪市', 884, 1905, '近畿', 55292, 6.5, 167082, 18.9, 177874, 20.1, 4640, 7.0, 2],
-    ['兵庫県', '神戸市', 547, 8401, '近畿', 32615, 6.2, 100321, 18.3, 92924, 17.0, 651, 4.3, 1],
-    ['奈良県', '奈良市', 132, 3691, '近畿', 6943, 5.4, 25834, 19.6, 24515, 18.6, 358, 1.0, 0],
-    ['和歌山県', '和歌山市', 92, 4725, '近畿', 4901, 5.5, 14174, 15.4, 12051, 13.1, 195, 0.7, 0],
-    ['鳥取県', '鳥取市', 55, 3507, '中国', 3263, 6.1, 10238, 18.6, 8482, 15.4, 157, 0.4, 0],
-    ['島根県', '松江市', 67, 6708, '中国', 3759, 5.9, 12586, 18.8, 10697, 16.0, 100, 0.5, 0],
-    ['岡山県', '岡山市', 189, 7114, '中国', 11575, 6.4, 34539, 18.3, 28918, 15.3, 266, 1.5, 1],
-    ['広島県', '広島市', 280, 8479, '中国', 16682, 6.2, 56069, 20.0, 44660, 15.9, 330, 2.2, 1],
-    ['山口県', '山口市', 134, 6113, '中国', 7189, 5.6, 26903, 20.1, 23185, 17.3, 219, 1.1, 0],
-    ['徳島県', '徳島市', 72, 4147, '四国', 3903, 5.7, 11975, 16.6, 9418, 13.1, 174, 0.6, 0],
-    ['香川県', '高松市', 95, 1877, '四国', 5365, 5.9, 19067, 20.1, 16283, 17.1, 506, 0.8, 0],
-    ['愛媛県', '松山市', 133, 5676, '四国', 6950, 5.4, 22506, 16.9, 17727, 13.3, 234, 1.1, 0],
-    ['高知県', '高知市', 69, 7104, '四国', 3380, 5.1, 11039, 16.0, 9204, 13.3, 97, 0.5, 0],
-    ['福岡県', '福岡市', 514, 4987, '九州', 33942, 6.8, 100707, 19.6, 105094, 20.4, 1031, 4.1, 2],
-    ['佐賀県', '佐賀市', 81, 2441, '九州', 5144, 6.5, 17437, 21.5, 16261, 20.1, 332, 0.6, 0],
-    ['長崎県', '長崎市', 131, 4131, '九州', 7656, 6.1, 28292, 21.6, 21853, 16.7, 317, 1.0, 0],
-    ['熊本県', '熊本市', 174, 7409, '九州', 11189, 6.6, 31999, 18.4, 30375, 17.5, 235, 1.4, 1],
-    ['大分県', '大分市', 112, 6341, '九州', 6259, 5.8, 22712, 20.3, 19604, 17.5, 177, 0.9, 0],
-    ['宮崎県', '宮崎市', 107, 7735, '九州', 6502, 6.3, 19954, 18.6, 18843, 17.6, 138, 0.8, 0],
-    ['鹿児島県', '鹿児島市', 159, 9187, '九州', 9867, 6.4, 29837, 18.8, 27085, 17.0, 173, 1.3, 0],
-    ['沖縄県', '那覇市', 147, 2282, '九州', 12549, 8.7, 29337, 20.0, 28847, 19.6, 644, 1.2, 0]
+    ['滋賀県', '大津市', 141, 4017],
+    ['京都府', '京都市', 258, 4612],
+    ['大阪府', '大阪市', 884, 1905],
+    ['兵庫県', '神戸市', 547, 8401],
+    ['奈良県', '奈良市', 132, 3691],
+    ['和歌山県', '和歌山市', 92, 4725]
   ],
   sort: null,          // 最初の並び順。{ column: '人口(万人)', desc: true } の形で書く。null なら rows の順
-  hidden: []           // 最初に隠す項目の名前。例: ['地方']。1つ目の項目は隠せない
+  hidden: []           // 最初に隠す項目の名前。例: ['面積(km²)']。1つ目の項目は隠せない
 };
 
 var EN = data.lang === 'en';
@@ -218,8 +145,6 @@ var T = EN ? {
   badHidden: function(c){ return 'hidden の ' + JSON.stringify(c) + ' は columns にありません'; },
   badView: "view は 'table' か 'list' で書いてください"
 };
-function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-
 /* ---- data を確かめる ---- */
 var COLS = data.columns, ROWS = data.rows;
 if (!Array.isArray(COLS) || !COLS.length || COLS.some(function(c){ return typeof c !== 'string' || !c; })) throw new Error(T.badCols);
@@ -236,7 +161,7 @@ if (data.view != null && data.view !== 'table' && data.view !== 'list') throw ne
 if (data.sort && COLS.indexOf(data.sort.column) < 0) throw new Error(T.badSort(data.sort.column));
 (data.hidden || []).forEach(function(c){ if (COLS.indexOf(c) < 0) throw new Error(T.badHidden(c)); });
 
-/* ---- 表示の状態。見る人の操作は保存し、次に開いたときもそのまま出す ---- */
+/* ---- 見る人の操作(表示・並び順・隠した列)は保存する ---- */
 var view, sortCol, sortDesc, hidden;
 function setState(s){
   view = s && s.view === 'list' ? 'list' : 'table';
@@ -254,26 +179,19 @@ function save(){
   try { HW.setState({ view: view, sort: sortCol < 0 ? null : { column: COLS[sortCol], desc: sortDesc }, hidden: COLS.filter(function(c, j){ return hidden[j]; }) }); } catch (e) {}
 }
 
-/* 項目ごとに、値がすべて数値(と null)なら数値の項目とみなす。見出しの寄せと並び替えの言葉に使う */
+/* 値がすべて数値(か null)の列は数値の列 */
 var NUMCOL = COLS.map(function(c, j){
   var any = false;
   return ROWS.every(function(r){ if (typeof r[j] === 'number') any = true; return r[j] === null || typeof r[j] === 'number'; }) && any;
 });
-/* 数値の小数の桁は、項目ごとに一番多い桁にそろえる(4.0 と 4.6 が並んだら 4.0 と出す) */
+/* 小数の桁は列ごとにそろえる(4 と 4.6 なら 4.0) */
 var DEC = COLS.map(function(c, j){
   return ROWS.reduce(function(m, r){ var v = r[j]; return typeof v === 'number' ? Math.max(m, (String(v).split('.')[1] || '').length) : m; }, 0);
 });
 function cell(v, j){ return v === null ? '' : typeof v === 'number' ? v.toLocaleString(LOC, { minimumFractionDigits: DEC[j], maximumFractionDigits: DEC[j] }) : String(v); }
 function dirWord(j, desc){ return NUMCOL[j] ? (desc ? T.numDesc : T.numAsc) : (desc ? T.txtDesc : T.txtAsc); }
 function visCols(){ return COLS.map(function(c, j){ return j; }).filter(function(j){ return !hidden[j]; }); }
-/* 項目を選んでいるあいだ(draft があるとき)は、隠す項目も含めてすべて出す */
-var draft = null;
-function shownCols(){ return draft ? COLS.map(function(c, j){ return j; }) : visCols(); }
-function isHd(j){ return !!(draft && draft[j]); }
-/* 下書きが今の表示と違うか。同じなら「表示列を修正」は押せなくする */
-function changed(){ return COLS.some(function(c, j){ return !!draft[j] !== !!hidden[j]; }); }
-
-/* 並び替え。null はいつも最後。数値は数値の順、文字は辞書順(数字は数値として比べる) */
+/* 並び替え。null は最後 */
 function sorted(){
   var idx = ROWS.map(function(r, i){ return i; });
   if (sortCol < 0) return idx;
@@ -287,54 +205,89 @@ function sorted(){
 }
 
 /* ---- アイコン ---- */
+function svg(size, box, body){ return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + box + ' ' + box + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + body + '</svg>'; }
+function dot(sign){ return svg(15, 16, '<circle cx="8" cy="8" r="7" fill="currentColor" stroke="none"/><path d="' + sign + '" stroke="var(--bg)" stroke-width="1.7"/>'); }
 var IC = {
-  up: '<svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10V2M2.5 5.5L6 2l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  down: '<svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2.5 6.5L6 10l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  chev: '<svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><path d="M1.5 3L4 5.5 6.5 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  table: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="2" width="11" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 5.5h11M1.5 8.7h11M5.3 2v10" stroke="currentColor" stroke-width="1.3"/></svg>',
-  list: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 3h4M1.5 8.5h4M8 3h4.5M8 5.2h4.5M8 8.5h4.5M8 10.7h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
-  reset: '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7a4.5 4.5 0 1 0 1.4-3.3M2.5 2v2.5H5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  up: svg(11, 12, '<path d="M6 10V2M2.5 5.5L6 2l3.5 3.5" stroke-width="1.7"/>'),
+  down: svg(11, 12, '<path d="M6 2v8M2.5 6.5L6 10l3.5-3.5" stroke-width="1.7"/>'),
+  chev: svg(8, 8, '<path d="M1.5 3L4 5.5 6.5 3"/>'),
+  table: svg(14, 14, '<rect x="1.5" y="2" width="11" height="10" rx="1.5" stroke-width="1.3"/><path d="M1.5 5.5h11M1.5 8.7h11M5.3 2v10" stroke-width="1.3" stroke-linecap="butt"/>'),
+  list: svg(14, 14, '<path d="M1.5 3h4M1.5 8.5h4M8 3h4.5M8 5.2h4.5M8 8.5h4.5M8 10.7h4.5" stroke-width="1.3"/>'),
+  reset: svg(13, 14, '<path d="M2.5 7a4.5 4.5 0 1 0 1.4-3.3M2.5 2v2.5H5"/>'),
+  gear: svg(17, 16, '<circle cx="8" cy="8" r="6" stroke-width="2.1" stroke-dasharray="2.356 2.356" stroke-linecap="butt"/><circle cx="8" cy="8" r="4.4" stroke-width="1.6"/><circle cx="8" cy="8" r="1.7"/>'),
+  minus: dot('M4.6 8h6.8'),
+  plus: dot('M8 4.6v6.8M4.6 8h6.8')
 };
-function segHtml(){
-  return '<div class="seg" role="group">' + ['table', 'list'].map(function(v){
-    return '<button type="button" data-v="' + v + '" aria-label="' + T[v] + '">' + IC[v] + '</button>';
-  }).join('') + '</div>';
-}
+function btn(cls, attrs, body){ return '<button type="button" class="' + cls + '"' + attrs + '>' + body + '</button>'; }
 
-/* ---- 表と2列の HTML。見出し・項目名の中身は案ごとに渡す ---- */
-function tableHtml(head, gear){
+/* draft: 列を選んでいるあいだの下書き。すべての列を出し、並び替えの印は出さない */
+var draft = null, menu = null, misTop = 0;   // menu: null | 'sort' | 'edit'
+function shownCols(){ return draft ? COLS.map(function(c, j){ return j; }) : visCols(); }
+function isOn(j){ return !draft && j === sortCol; }
+function isHd(j){ return !!(draft && draft[j]); }
+function cls(base, j){ return base + (isOn(j) ? ' on' : '') + (isHd(j) ? ' hd' : ''); }
+function arrow(){ return sortDesc ? IC.down : IC.up; }
+/* 変更が無ければ「表示列を修正」は押せない */
+function changed(){ return COLS.some(function(c, j){ return !!draft[j] !== !!hidden[j]; }); }
+function mark(j){ return '<span class="mk">' + (draft[j] ? IC.plus : IC.minus) + '</span>'; }
+function markLabel(j){ return ' aria-label="' + esc(draft[j] ? T.showCol(COLS[j]) : T.hideCol(COLS[j])) + '"'; }
+function cancelBtn(){ return btn('cc', '', T.cancel); }
+function okBtn(){ return btn('ok', changed() ? '' : ' disabled', T.ok); }
+
+/* ---- 表と2列の HTML ---- */
+/* 見出し: 押すと並び替え。列を選ぶあいだは隠す・戻す(1列目は不可) */
+function head(j){
+  var pick = draft && j;
+  return btn(cls('hb', j), ' data-j="' + j + '"' + (pick ? markLabel(j) : '') + (draft && !j ? ' disabled' : ''),
+    (pick ? mark(j) : '') + esc(COLS[j]) + (isOn(j) ? arrow() : ''));
+}
+function tableHtml(){
   var vis = shownCols();
   return '<div class="scw"><div class="sc"><table><thead><tr>' + vis.map(function(j){
-    return '<th class="' + (NUMCOL[j] ? 'n' : '') + (j === sortCol ? ' on' : '') + (isHd(j) ? ' hd' : '') + '">' + head(j) + '</th>';
-  }).join('') + '<th class="g">' + gear + '</th></tr></thead><tbody>' + sorted().map(function(i){
-    return '<tr>' + vis.map(function(j, c){
+    return '<th class="' + cls(NUMCOL[j] ? 'n' : '', j) + '">' + head(j) + '</th>';
+  }).join('') + '<th class="g">' + (draft ? '' : btn('gr', ' aria-label="' + T.cols + '"', IC.gear)) + '</th></tr></thead><tbody>' + sorted().map(function(i){
+    return '<tr>' + vis.map(function(j){
       var v = ROWS[i][j];
-      return '<td data-r="' + i + '" data-c="' + j + '" class="' + (typeof v === 'number' ? 'n' : '') + (j === sortCol ? ' on' : '') + (isHd(j) ? ' hd' : '') + '">' + esc(cell(v, j)) + '</td>';
+      return '<td data-r="' + i + '" data-c="' + j + '" class="' + cls(typeof v === 'number' ? 'n' : '', j) + '">' + esc(cell(v, j)) + '</td>';
     }).join('') + '<td class="g"></td></tr>';
   }).join('') + '</tbody></table></div></div>';
 }
-function listHtml(key){
+function listHtml(){
   var vis = shownCols().slice(1);
   return '<div class="ls">' + sorted().map(function(i){
     return '<div class="row" data-r="' + i + '"><div class="t">' + esc(cell(ROWS[i][0], 0)) + '</div><div class="at">' + vis.map(function(j){
       var v = ROWS[i][j];
-      return '<div class="a' + (j === sortCol ? ' on' : '') + (isHd(j) ? ' hd' : '') + '"><span class="k">' + key(j) + '</span><span class="v' + (typeof v === 'number' ? ' n' : '') + '">' + esc(cell(v, j)) + '</span></div>';
+      return '<div class="' + cls('a', j) + '"><span class="k">' + esc(COLS[j]) + '</span><span class="v' + (typeof v === 'number' ? ' n' : '') + '">' + esc(cell(v, j)) + '</span></div>';
     }).join('') + '</div></div>';
   }).join('') + '</div>';
 }
+/* 2列の並び替えボタンとメニュー(並び替え・リセット・非表示設定 / 非表示設定のあいだは −・+ と修正・キャンセル) */
+function sortButton(){
+  var on = sortCol >= 0;
+  return btn('sb' + (on ? ' on' : ''), ' aria-haspopup="true" aria-expanded="' + !!menu + '"' + (on ? ' aria-label="' + esc(T.sortBy + ': ' + COLS[sortCol] + ' ' + dirWord(sortCol, sortDesc)) + '"' : ''),
+    '<span class="sl">' + esc(on ? COLS[sortCol] : T.sortBy) + '</span>' + (on ? arrow() : '<span class="cv">' + IC.chev + '</span>'));
+}
+function menuHtml(){
+  if (menu === 'edit') return '<div class="mis">' + COLS.map(function(c, j){
+    return j ? btn('mi' + (draft[j] ? ' hd' : ''), ' data-j="' + j + '"' + markLabel(j), mark(j) + esc(c)) : '<div class="mi lock"><span class="mk"></span>' + esc(c) + '</div>';
+  }).join('') + '</div><div class="mf">' + okBtn() + cancelBtn() + '</div>';
+  return '<div class="mis">' + visCols().map(function(j){
+    return btn('mi' + (isOn(j) ? ' on' : ''), ' data-j="' + j + '"', esc(COLS[j]) + (isOn(j) ? '<span class="ar">' + arrow() + '</span>' : ''));
+  }).join('') + (sortCol >= 0 ? btn('mi g mr', '', IC.reset + T.resetSort) : '') + '<div class="sep"></div>' + btn('mi g mg', '', IC.gear + T.hideSet) + '</div>';
+}
 
-/* 描き替え。並び順が変わった行は、元の位置からすべるように動かす(FLIP) */
+/* 描き替え。動いた行はすべらせる(FLIP) */
 var BD;
 var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function paint(html, fade){
   var before = {};
   [].forEach.call(BD.querySelectorAll('[data-r]'), function(el){ before[el.dataset.r + '|' + (el.dataset.c || '')] = el.getBoundingClientRect().top; });
   var old = BD.querySelector('.sc'), sl = old ? old.scrollLeft : 0;
-  var oldV = BD.querySelector('.sc,.ls'), st = oldV && !fade ? oldV.scrollTop : 0;   // 縦のスクロール位置も描き替えの前後で保つ(表示を切り替えたときは先頭から)
+  var oldV = BD.querySelector('.sc,.ls'), st = oldV && !fade ? oldV.scrollTop : 0;   // 表示を切り替えたときだけ先頭へ
   BD.innerHTML = html;
   var sc = BD.querySelector('.sc'), ls = BD.querySelector('.ls');
   if (ls) ls.scrollTop = st;
-  var v = sc || ls;   // 縦にスクロールする要素
+  var v = sc || ls;
   var below = function(){ BD.classList.toggle('b', v.scrollTop + v.clientHeight < v.scrollHeight - 1); };
   v.addEventListener('scroll', below, { passive: true });
   below();
@@ -361,51 +314,19 @@ function paint(html, fade){
   });
 }
 
-R.innerHTML = '<div class="top"><div class="stat"></div>' + segHtml() + '</div>' +
-  '<div class="bd"></div>';
+R.innerHTML = '<div class="top"><div class="stat"></div><div class="seg" role="group">' + ['table', 'list'].map(function(v){
+  return btn('', ' data-v="' + v + '" aria-label="' + T[v] + '"', IC[v]);
+}).join('') + '</div></div><div class="bd"></div>';
 BD = R.querySelector('.bd');
-var STAT = R.querySelector('.stat'), menu = null, misTop = 0;   // menu: 2列のメニュー。null(閉じている)・'sort'・'edit'
-IC.gear = '<svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-dasharray="2.356 2.356"/><circle cx="8" cy="8" r="4.4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>';
-IC.xc = '<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.6 8h6.8" stroke="var(--bg)" stroke-width="1.7" stroke-linecap="round"/></svg>';
-IC.pc = '<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M8 4.6v6.8M4.6 8h6.8" stroke="var(--bg)" stroke-width="1.7" stroke-linecap="round"/></svg>';
-var GEAR = '<button type="button" class="gr" aria-label="' + T.cols + '">' + IC.gear + '</button>';
+var STAT = R.querySelector('.stat');
 
-/* 見出し。ふだんは押すと並び替わる。項目を選んでいるあいだは、1つ目以外に − (隠す) か + (表示する) を付ける */
-function head(j){
-  var on = j === sortCol, hd = isHd(j);
-  var mk = draft && j ? '<span class="mk ' + (hd ? 'p' : 'x') + '">' + (hd ? IC.pc : IC.xc) + '</span>' : '';
-  var label = draft && j ? ' aria-label="' + esc(hd ? T.showCol(COLS[j]) : T.hideCol(COLS[j])) + '"' : '';
-  return '<button type="button" class="hb' + (on ? ' on' : '') + (j ? '' : ' lock') + (hd ? ' hd' : '') + '" data-j="' + j + '"' + label + (draft && !j ? ' disabled' : '') + '>' +
-    mk + esc(COLS[j]) + (on ? '<span class="ar">' + (sortDesc ? IC.down : IC.up) + '</span>' : '') + '</button>';
-}
-/* 2列のメニューの中身。ふだんは並び替えの項目と「非表示設定」、非表示設定のあいだは − / + の付いた項目と「表示列を修正」「キャンセル」 */
-function menuHtml(){
-  if (menu === 'edit') return '<div class="mis">' + COLS.map(function(c, j){
-    if (!j) return '<div class="mi lock"><span class="mm"></span>' + esc(c) + '</div>';   // 1つ目(行の名前)は隠せない
-    return '<button type="button" class="mi' + (draft[j] ? ' hd' : '') + '" data-e="' + j + '" aria-label="' + esc(draft[j] ? T.showCol(c) : T.hideCol(c)) + '"><span class="mm">' + (draft[j] ? IC.pc : IC.xc) + '</span>' + esc(c) + '</button>';
-  }).join('') + '</div><div class="mf"><button type="button" class="ok"' + (changed() ? '' : ' disabled') + '>' + T.ok + '</button><button type="button" class="cc">' + T.cancel + '</button></div>';
-  return '<div class="mis">' + visCols().map(function(j){
-    var on = j === sortCol;
-    return '<button type="button" class="mi' + (on ? ' on' : '') + '" data-s="' + j + '">' + esc(COLS[j]) + (on ? '<span class="ar">' + (sortDesc ? IC.down : IC.up) + '</span>' : '') + '</button>';
-  }).join('') + (sortCol >= 0 ? '<button type="button" class="mi g mr">' + IC.reset + T.resetSort + '</button>' : '') + '<div class="sep"></div><button type="button" class="mi g mg">' + IC.gear + T.hideSet + '</button></div>';
-}
-function startEdit(){ draft = {}; for (var k in hidden) draft[k] = true; }
-/* 同じ項目を押すたびに 小さい順 → 大きい順 → 元の順 */
-function cycle(j){
-  if (sortCol !== j) { sortCol = j; sortDesc = false; }
-  else if (!sortDesc) sortDesc = true;
-  else sortCol = -1;
-  save();
-}
 function render(fade){
   R.classList.toggle('edit', !!draft);
   R.classList.toggle('vt', view === 'table');
-  [].forEach.call(R.querySelectorAll('.seg button'), function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
+  [].forEach.call(R.querySelectorAll('[data-v]'), function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
   var cnt = '<span class="cnt">' + esc(T.count(ROWS.length)) + '</span>';
-  if (view === 'table') STAT.innerHTML = draft ? '<button type="button" class="cc">' + T.cancel + '</button><button type="button" class="ok"' + (changed() ? '' : ' disabled') + '>' + T.ok + '</button>' : cnt;
-  else STAT.innerHTML = cnt + '<div class="dd' + (menu ? ' open' : '') + '"><button type="button" class="sb' + (sortCol >= 0 ? ' on' : '') + '" aria-haspopup="true" aria-expanded="' + !!menu + '"' + (sortCol >= 0 ? ' aria-label="' + esc(T.sortBy + ': ' + COLS[sortCol] + ' ' + dirWord(sortCol, sortDesc)) + '"' : '') + '>' +
-    (sortCol >= 0 ? '<span class="sl">' + esc(COLS[sortCol]) + '</span>' + (sortDesc ? IC.down : IC.up) : '<span class="sl">' + T.sortBy + '</span><span class="cv">' + IC.chev + '</span>') + '</button>' +
-    '<div class="mn" role="menu">' + menuHtml() + '</div></div>';
+  if (view === 'table') STAT.innerHTML = draft ? cancelBtn() + okBtn() : cnt;
+  else STAT.innerHTML = cnt + '<div class="dd' + (menu ? ' open' : '') + '">' + sortButton() + '<div class="mn" role="menu">' + menuHtml() + '</div></div>';
   var mis = STAT.querySelector('.mis');
   if (mis) {
     mis.scrollTop = misTop;
@@ -413,42 +334,43 @@ function render(fade){
     mis.addEventListener('scroll', more, { passive: true });
     more();
   }
-  paint(view === 'table' ? tableHtml(head, draft ? '' : GEAR) : listHtml(function(j){ return esc(COLS[j]); }), fade);
+  paint(view === 'table' ? tableHtml() : listHtml(), fade);
+}
+function startEdit(m){ draft = {}; for (var k in hidden) draft[k] = true; menu = m; misTop = 0; }
+function stopEdit(){ draft = null; menu = null; }
+/* 小さい順 → 大きい順 → 元の順 */
+function cycle(j){
+  if (sortCol !== j) { sortCol = j; sortDesc = false; }
+  else if (!sortDesc) sortDesc = true;
+  else sortCol = -1;
 }
 
 R.addEventListener('click', function(e){
-  var b = e.target.closest('button');
+  var b = e.target.closest('button'), c = b && b.classList;
   if (!b || b.disabled) return;
-  if (b.dataset.v) { if (view !== b.dataset.v) { view = b.dataset.v; menu = null; draft = null; save(); render(true); } return; }
-  if (b.classList.contains('sb')) { if (menu) { menu = null; draft = null; } else { menu = 'sort'; misTop = 0; } render(); return; }
-  if (b.classList.contains('gr')) { startEdit(); render(); return; }        // 表の歯車
-  if (b.classList.contains('mr')) { sortCol = -1; save(); menu = null; render(); return; }   // メニューの「リセット」: 元の順に戻す
-  if (b.classList.contains('mg')) { startEdit(); menu = 'edit'; misTop = 0; render(); return; }   // メニューの「非表示設定」
-  if (b.classList.contains('cc')) { draft = null; menu = null; render(); return; }
-  if (b.classList.contains('ok')) {
-    hidden = draft; draft = null; menu = null;
-    if (hidden[sortCol]) sortCol = -1;
-    save(); render(); return;
-  }
-  if (b.dataset.s) { cycle(+b.dataset.s); menu = null; render(); return; }  // メニューで項目を選んだら並び替えて閉じる
-  if (b.dataset.e) { var k = +b.dataset.e; if (draft[k]) delete draft[k]; else draft[k] = true; render(); return; }
-  if (b.classList.contains('hb')) {
+  if (b.dataset.v) { if (view !== b.dataset.v) { view = b.dataset.v; stopEdit(); save(); render(true); } return; }
+  if (b.dataset.j) {
     var j = +b.dataset.j;
-    if (draft) { if (j) { if (draft[j]) delete draft[j]; else draft[j] = true; } }
-    else cycle(j);
-    render();
+    if (draft) { if (draft[j]) delete draft[j]; else draft[j] = true; }
+    else { cycle(j); menu = null; save(); }
   }
+  else if (c.contains('sb')) { if (menu) stopEdit(); else { menu = 'sort'; misTop = 0; } }
+  else if (c.contains('gr')) startEdit(null);     // 表の歯車
+  else if (c.contains('mg')) startEdit('edit');   // メニューの「非表示設定」
+  else if (c.contains('mr')) { sortCol = -1; menu = null; save(); }   // メニューの「リセット」
+  else if (c.contains('cc')) stopEdit();
+  else if (c.contains('ok')) { hidden = draft; if (hidden[sortCol]) sortCol = -1; stopEdit(); save(); }
+  else return;
+  render();
 });
-/* メニューの外を押すか Esc で閉じる(非表示設定の途中なら取り消す) */
-function closeMenu(){ if (!menu) return; menu = null; draft = null; render(); }
+/* メニューの外か Esc で閉じる */
+function closeMenu(){ if (menu) { stopEdit(); render(); } }
 document.addEventListener('click', function(e){
-  if (!menu || !document.contains(e.target)) return;   // 押したボタンが描き替えで外れたとき(メニューの中の操作)は閉じない
-  if (!e.target.closest('#sheet-w .dd')) closeMenu();
+  if (menu && document.contains(e.target) && !R.querySelector('.dd').contains(e.target)) closeMenu();
 });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeMenu(); });
 render();
 
-} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
-function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc(e) + '</pre>'; }
 })();
 </script>
