@@ -124,7 +124,7 @@ var first = trains[0], last = trains[trains.length - 1];
 /* 時刻を、経路の日付の 0:00 からの分にする。前の時刻より小さければ日付をまたいだとみなす */
 var dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(data.date));
 var day0 = dm && new Date(+dm[1], +dm[2] - 1, +dm[3]);
-if (!day0 || day0.getDate() !== +dm[3]) throw new Error(EN ? "date must be a date like '2026-11-21'" : "date は '2026-11-21' のような日付で書いてください");
+if (!day0 || day0.getDate() !== +dm[3]) throw new Error("date must be a date like '2026-11-21'");   // data の誤りは英語で出す
 var prev = 0;
 function abs(t){ var n = tm(t); while (n < prev) n += 1440; prev = n; return n; }
 trains.forEach(function(s){ s.d = abs(s.dep); s.a = abs(s.arr); });

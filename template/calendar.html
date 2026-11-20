@@ -1,4 +1,4 @@
-<!-- カレンダーテンプレート: 白い背景に、細字の大きな月と罫線なしの1か月のカレンダー。各日付のマスに、記号(◯ △ x -)か2文字までの文字を1つ描画する。記号は細い線で描き(○ 〇 × ✕ ー − も記号として扱う)、それ以外は文字で描く。2文字の言葉は小さく描く。祝日は holidays で指定すると日曜と同じ赤で表示する。過去の日付や非営業日などは disabled で薄く表示できる。カレンダーの端に出る前月・翌月の日も disabled と同じく薄く表示し、'YYYY-MM-DD' で指定すれば記号も入れられる。使えない値はエラーとして画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると曜日・月・エラーの文言が英語になる。 -->
+<!-- カレンダーテンプレート: 白い背景に、細字の大きな月と罫線なしの1か月のカレンダー。各日付のマスに、記号(◯ △ x -)か2文字までの文字を1つ描画する。記号は細い線で描き(○ 〇 × ✕ ー − も記号として扱う)、それ以外は文字で描く。2文字の言葉は小さく描く。祝日は holidays で指定すると日曜と同じ赤で表示する。過去の日付や非営業日などは disabled で薄く表示できる。カレンダーの端に出る前月・翌月の日も disabled と同じく薄く表示し、'YYYY-MM-DD' で指定すれば記号も入れられる。使えない値はエラー(英語)として画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると曜日・月の文言が英語になる。 -->
 <div id="calendar-w"></div>
 <style>
 #calendar-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
@@ -57,22 +57,19 @@ var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'A
 /* 画面とエラーの文言 */
 var T = EN ? {
   wd: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-  monthLabel: function(mo){ return MONTHS[mo - 1]; },
+  monthLabel: function(mo){ return MONTHS[mo - 1]; }
+} : {
+  wd: ['日', '月', '火', '水', '木', '金', '土'],
+  monthLabel: function(){ return '月'; }
+};
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
   badMonth: "month must look like '2026-12'",
   noDay: function(mo, k){ return MONTHS[mo - 1] + ' has no day ' + k; },
   notShown: function(k){ return k + ' is not shown on this calendar'; },
   badType: function(d){ return d + ': write the value as a string or a number'; },
   tooLong: function(d, v){ return d + ': ' + JSON.stringify(v) + ' is too long. Each day fits up to 2 characters'; },
   badList: function(name){ return name + ' must be an array of days (e.g. [1, 2, 6])'; }
-} : {
-  wd: ['日', '月', '火', '水', '木', '金', '土'],
-  monthLabel: function(){ return '月'; },
-  badMonth: "month は '2026-12' のように書いてください",
-  noDay: function(mo, k){ return mo + '月に ' + k + '日はありません'; },
-  notShown: function(k){ return k + ' はこのカレンダーに表示されない日付です'; },
-  badType: function(d){ return d + ' の値は文字か数値で書いてください'; },
-  tooLong: function(d, v){ return d + ' の値 ' + JSON.stringify(v) + ' は長すぎます。1マスに入るのは2文字までです'; },
-  badList: function(name){ return name + ' は日付の配列で書いてください(例: [1, 2, 6])'; }
 };
 /* ◯ △ x - は線で描く記号として特別扱いする。似た文字はこれらに寄せる */
 var SYMBOLS = ['◯', '△', 'x', '-'];
@@ -83,7 +80,7 @@ function textSize(m, n){ return Array.from(m).length > 1 && /[^\x00-\x7f]/.test(
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 var ym = /^(\d{4})-(\d{1,2})$/.exec(String(data.month));
-if (!ym || +ym[2] < 1 || +ym[2] > 12) throw new Error(T.badMonth);
+if (!ym || +ym[2] < 1 || +ym[2] > 12) throw new Error(E.badMonth);
 var y = +ym[1], mo = +ym[2];
 var days = new Date(y, mo, 0).getDate();
 var lead = new Date(y, mo - 1, 1).getDay();
@@ -99,18 +96,18 @@ for (var c = 0; c < cells; c++) {
 }
 /* 日付と値を確かめる。使えない値は描かずにエラーにする。日付は 'YYYY-MM-DD' にそろえて返す */
 function day(k){
-  if (typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k)) { if (!SHOWN[k]) throw new Error(T.notShown(k)); return k; }
+  if (typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k)) { if (!SHOWN[k]) throw new Error(E.notShown(k)); return k; }
   var d = Number(k);
-  if (!(d >= 1 && d <= days && d % 1 === 0)) throw new Error(T.noDay(mo, k));
+  if (!(d >= 1 && d <= days && d % 1 === 0)) throw new Error(E.noDay(mo, k));
   return y + '-' + p2(mo) + '-' + p2(d);
 }
 function mark(v, d){
   if (v === '' || v === null || v === undefined) return '';
   if (typeof v === 'number') v = String(v);
-  if (typeof v !== 'string') throw new Error(T.badType(d));
+  if (typeof v !== 'string') throw new Error(E.badType(d));
   v = v.trim();
   v = ALIAS[v] || v;
-  if (Array.from(v).length > 2) throw new Error(T.tooLong(d, v));
+  if (Array.from(v).length > 2) throw new Error(E.tooLong(d, v));
   return v;
 }
 var marks = {};
@@ -118,7 +115,7 @@ Object.keys(data.days || {}).forEach(function(k){ var d = day(k); marks[d] = mar
 /* 日付の配列(holidays・disabled)を、日付をキーにした表にする */
 function dayset(name){
   var list = data[name] || [], set = {};
-  if (!Array.isArray(list)) throw new Error(T.badList(name));
+  if (!Array.isArray(list)) throw new Error(E.badList(name));
   list.forEach(function(k){ set[day(k)] = true; });
   return set;
 }

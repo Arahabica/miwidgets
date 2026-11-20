@@ -1,4 +1,4 @@
-<!-- 予約枠テンプレート: 開始日から7日間の予約枠を、列が日付・行が時刻の表で表示する。時刻は開始時刻から終了時刻まで、15分・30分・60分のいずれかの間隔で並ぶ。各マスに、記号(◯ △ x -)か2文字までの文字を1つ描画する。記号は細い線で描き(○ 〇 × ✕ ー − も記号として扱う)、それ以外は文字で描く。2文字の言葉は小さく描く。土曜は青、日曜と holidays で指定した祝日は赤で表示する。使えない値はエラーとして画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると曜日・月・エラーの文言が英語になる。 -->
+<!-- 予約枠テンプレート: 開始日から7日間の予約枠を、列が日付・行が時刻の表で表示する。時刻は開始時刻から終了時刻まで、15分・30分・60分のいずれかの間隔で並ぶ。各マスに、記号(◯ △ x -)か2文字までの文字を1つ描画する。記号は細い線で描き(○ 〇 × ✕ ー − も記号として扱う)、それ以外は文字で描く。2文字の言葉は小さく描く。土曜は青、日曜と holidays で指定した祝日は赤で表示する。使えない値はエラー(英語)として画面に出す。表示内容はスクリプト冒頭の data で変更できる。data.lang を 'en' にすると曜日・月の文言が英語になる。 -->
 <div id="timetable-w"></div>
 <style>
 #timetable-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
@@ -65,7 +65,13 @@ var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'A
 /* 画面とエラーの文言 */
 var T = EN ? {
   wd: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-  monthLabel: function(a, b){ return a === b ? MONTHS[a - 1] : MONTHS[a - 1].slice(0, 3) + ' – ' + MONTHS[b - 1].slice(0, 3); },
+  monthLabel: function(a, b){ return a === b ? MONTHS[a - 1] : MONTHS[a - 1].slice(0, 3) + ' – ' + MONTHS[b - 1].slice(0, 3); }
+} : {
+  wd: ['日', '月', '火', '水', '木', '金', '土'],
+  monthLabel: function(){ return '月'; }
+};
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
   badStart: "start must be a date like '2026-11-23'",
   badTime: function(name){ return name + " must be a time like '10:00'"; },
   badStep: 'step must be 15, 30 or 60',
@@ -75,18 +81,6 @@ var T = EN ? {
   badType: function(k){ return k + ': write each value as a string or a number'; },
   tooLong: function(k, v){ return k + ': ' + JSON.stringify(v) + ' is too long. Each slot fits up to 2 characters'; },
   badHolidays: "holidays must be an array of dates (e.g. ['2026-11-23'])"
-} : {
-  wd: ['日', '月', '火', '水', '木', '金', '土'],
-  monthLabel: function(){ return '月'; },
-  badStart: "start は '2026-11-23' のような日付で書いてください",
-  badTime: function(name){ return name + " は '10:00' のような時刻で書いてください"; },
-  badStep: 'step は 15・30・60 のどれかにしてください',
-  badRange: function(s){ return 'to は from より後で、from から ' + s + '分単位の時刻にしてください'; },
-  notShown: function(k){ return k + ' は表に出ない時刻です(from・to・step を確かめてください)'; },
-  badRow: function(k){ return k + ' の行は、7日分の値を配列で書いてください'; },
-  badType: function(k){ return k + ' の値は文字か数値で書いてください'; },
-  tooLong: function(k, v){ return k + ' の値 ' + JSON.stringify(v) + ' は長すぎます。1マスに入るのは2文字までです'; },
-  badHolidays: "holidays は日付の配列で書いてください(例: ['2026-11-23'])"
 };
 /* ◯ △ x - は線で描く記号として特別扱いする。似た文字はこれらに寄せる */
 var ALIAS = { '○': '◯', '〇': '◯', '×': 'x', '✕': 'x', 'ー': '-', '−': '-' };
@@ -100,7 +94,7 @@ function iso(dt){ return dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-' + 
 /* 7日分の日付 */
 var sd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(data.start));
 var first = sd && new Date(+sd[1], +sd[2] - 1, +sd[3]);
-if (!first || iso(first) !== data.start) throw new Error(T.badStart);
+if (!first || iso(first) !== data.start) throw new Error(E.badStart);
 var DAYS = [];
 for (var i = 0; i < 7; i++) {
   var dt = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i);
@@ -110,14 +104,14 @@ for (var i = 0; i < 7; i++) {
 /* 時刻は 0:00 からの分で扱う */
 function minutes(v, name){
   var t = /^(\d{1,2}):(\d{2})$/.exec(String(v).trim());
-  if (!t || +t[1] > 24 || +t[2] > 59) throw new Error(T.badTime(name));
+  if (!t || +t[1] > 24 || +t[2] > 59) throw new Error(E.badTime(name));
   return +t[1] * 60 + +t[2];
 }
 function hm(n){ return Math.floor(n / 60) + ':' + p2(n % 60); }
 var step = data.step;
-if ([15, 30, 60].indexOf(step) < 0) throw new Error(T.badStep);
+if ([15, 30, 60].indexOf(step) < 0) throw new Error(E.badStep);
 var from = minutes(data.from, 'from'), to = minutes(data.to, 'to');
-if (to <= from || (to - from) % step) throw new Error(T.badRange(step));
+if (to <= from || (to - from) % step) throw new Error(E.badRange(step));
 var TIMES = [];
 for (var t = from; t < to; t += step) TIMES.push(t);
 
@@ -125,22 +119,22 @@ for (var t = from; t < to; t += step) TIMES.push(t);
 function mark(v, k){
   if (v === '' || v === null || v === undefined) return '';
   if (typeof v === 'number') v = String(v);
-  if (typeof v !== 'string') throw new Error(T.badType(k));
+  if (typeof v !== 'string') throw new Error(E.badType(k));
   v = v.trim();
   v = ALIAS[v] || v;
-  if (Array.from(v).length > 2) throw new Error(T.tooLong(k, v));
+  if (Array.from(v).length > 2) throw new Error(E.tooLong(k, v));
   return v;
 }
 var rows = {};
 Object.keys(data.slots || {}).forEach(function(k){
   var n = minutes(k, k);
-  if (TIMES.indexOf(n) < 0) throw new Error(T.notShown(k));
+  if (TIMES.indexOf(n) < 0) throw new Error(E.notShown(k));
   var row = data.slots[k];
-  if (!Array.isArray(row) || row.length !== 7) throw new Error(T.badRow(k));
+  if (!Array.isArray(row) || row.length !== 7) throw new Error(E.badRow(k));
   rows[n] = row.map(function(v){ return mark(v, k); });
 });
 var hol = {};
-if (!Array.isArray(data.holidays || [])) throw new Error(T.badHolidays);
+if (!Array.isArray(data.holidays || [])) throw new Error(E.badHolidays);
 /* 表の7日間に入らない祝日は無視する(start だけ変えて holidays を残しても表示できるように) */
 (data.holidays || []).forEach(function(k){ hol[k] = true; });
 
