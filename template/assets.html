@@ -169,6 +169,31 @@ function colPanel(v){ return v < 0 ? C.panelDown : C.panelUp; }
 function last(arr){ return arr[arr.length - 1]; }
 function r1(n){ return n.toFixed(1); }
 
+/* ---- data を確かめる(誤りは直す人(Muse の AI)向けに英語で画面に出す) ---- */
+var E = {
+  badDates: "dates must be an array of one or more x-axis labels (e.g. ['11/10', '11/11'])",
+  badItems: 'items must be an array of one or more items',
+  badLen: function(s, m, n){ return s + ' has ' + m + ' values but dates has ' + n + '. Make them the same length'; },
+  badVal: function(s, d, v){ return s + ', ' + d + ': ' + JSON.stringify(v) + ' is not a number' + (s === 'totals' ? '' : ' or null'); },
+  noVal: function(s){ return s + ': pnl needs at least one number'; }
+};
+if (!Array.isArray(data.dates) || !data.dates.length) throw new Error(E.badDates);
+if (!Array.isArray(data.items) || !data.items.length) throw new Error(E.badItems);
+function checkSeries(label, arr, allowNull){
+  var n = Array.isArray(arr) ? arr.length : 0;
+  if (n !== data.dates.length) throw new Error(E.badLen(label, n, data.dates.length));
+  arr.forEach(function(v, j){
+    if (allowNull && v === null) return;
+    if (typeof v !== 'number' || !isFinite(v)) throw new Error(E.badVal(label, data.dates[j], v));
+  });
+}
+checkSeries('totals', data.totals, false);
+data.items.forEach(function(it, i){
+  var label = 'items[' + i + ']' + (it && it.name != null ? ' (' + it.name + ')' : '') + '.pnl';
+  checkSeries(label, it && it.pnl, true);
+  if (!it.pnl.some(function(v){ return v !== null; })) throw new Error(E.noVal(label));
+});
+
 /* ---- 派生値(座標・スケール・銘柄ごとの最終損益) ---- */
 var N = data.dates.length;
 var xs = data.dates.map(function(_, j){ return CH.left + j * ((CH.right - CH.left) / (N - 1)); });
@@ -375,7 +400,13 @@ if (!window.hatchWidget) {
   var memState = null;
   window.hatchWidget = { getState: function(d){ return memState || d; }, setState: function(s){ memState = s; } };
 }
-var st = window.hatchWidget.getState({sel:-1, date:-1});
+/* 保存された状態は data を差し替える前のものかもしれない。範囲外の添字は未選択に戻す */
+function clampState(s){
+  s = s || {};
+  function ok(v, n){ return typeof v === 'number' && v >= 0 && v < n && v % 1 === 0 ? v : -1; }
+  return {sel: ok(s.sel, data.items.length), date: ok(s.date, N)};
+}
+var st = clampState(window.hatchWidget.getState({sel:-1, date:-1}));
 
 function render(){
   var sel = st.sel, dj = st.date;
@@ -426,7 +457,7 @@ R.addEventListener('click', function(e){
   if (e.target.closest('.lg') || e.target.closest('.chart') || e.target.closest('.panel')) return;
   if (st.sel >= 0 || st.date >= 0) set({sel: -1, date: -1});
 });
-window.addEventListener('hatch-widget-state', function(e){ st = e.detail.state; render(); });
+window.addEventListener('hatch-widget-state', function(e){ st = clampState(e.detail.state); render(); });
 render();
 
 } catch (err) {
