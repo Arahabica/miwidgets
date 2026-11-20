@@ -49,3 +49,33 @@
     state.resetTimer = window.setTimeout(function(){ button.innerHTML = state.original; }, 2400);
   });
 })();
+
+/* The clock face is in the initial HTML. Only its Tokyo time changes. */
+(function(){
+  var clock = document.querySelector('.hero-clock-shot');
+  if (!clock) return;
+  var timeFormat = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Tokyo', hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  var dateFormat = new Intl.DateTimeFormat(document.documentElement.lang, {
+    timeZone: 'Asia/Tokyo', weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+  });
+  var hourHand = clock.querySelector('.clock-hour');
+  var minuteHand = clock.querySelector('.clock-minute');
+  var secondHand = clock.querySelector('.clock-second');
+  var time = clock.querySelector('.clock-time');
+  var date = clock.querySelector('.clock-date');
+  function tick(){
+    var now = new Date();
+    var display = timeFormat.format(now);
+    var parts = display.split(':').map(Number);
+    hourHand.setAttribute('transform', 'rotate(' + ((parts[0] % 12 + parts[1] / 60) * 30) + ' 100 100)');
+    minuteHand.setAttribute('transform', 'rotate(' + ((parts[1] + parts[2] / 60) * 6) + ' 100 100)');
+    secondHand.setAttribute('transform', 'rotate(' + (parts[2] * 6) + ' 100 100)');
+    time.textContent = display;
+    var today = dateFormat.format(now);
+    if (date.textContent !== today) date.textContent = today;
+  }
+  tick();
+  setInterval(tick, 1000);
+})();

@@ -46,7 +46,98 @@
   <nav class="site-nav" aria-label="Main navigation"><a class="nav-cta" href="#widgets">Browse widgets <span aria-hidden="true">↓</span></a></nav>
 </header>
 <main id="page-main">
-<section class="hero wrap" aria-labelledby="hero-title"><div class="hero-copy"><h1 id="hero-title"><span class="hero-title-line">Your Muse chats,</span>now with <em>widgets</em>.</h1><p class="hero-lead">Weather, transit directions, charts, quizzes and more.<br><strong>Widgets that run right inside Muse’s chat bubbles.</strong></p><p class="install-callout">Install with a single prompt!</p><div class="prompt-pane"><p class="prompt-text" id="registration-prompt">Register the widgets from miwidgets.com/register.txt</p><button class="copy-button" type="button" data-copy="registration-prompt"><svg class="copy-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>Copy prompt</button></div><ol class="install-steps" aria-label="How to use"><li><span class="step-num" aria-hidden="true">1</span>Copy the prompt</li><li><span class="step-num" aria-hidden="true">2</span>Paste it into a Muse chat and send</li><li><span class="step-num" aria-hidden="true">3</span>Then just ask, “Show tomorrow’s weather in London as a widget”</li></ol><ul class="trust-badges" aria-label="Highlights"><li>Free</li><li>Open source (MIT)</li><li><a href="https://github.com/Arahabica/miwidgets" target="_blank" rel="noopener">Source on GitHub</a></li></ul></div><div class="hero-visual" aria-label="Examples of widgets in a chat"><figure class="hero-weather-shot"><img src="resources/hero-weather-widget-en.png" width="732" height="836" alt="Weather widget example: sunny, with the temperature and a forecast every 6 hours" fetchpriority="high"></figure><figure class="hero-assets-shot"><img src="resources/hero-assets-widget-en.png" width="732" height="994" alt="Stock chart example: a line chart with profit and loss per holding" fetchpriority="high"></figure><figure class="hero-clock-shot"><img src="resources/hero-clock-widget-en.png" width="732" height="724" alt="Analog clock widget with a second hand" loading="eager"></figure><figure class="hero-route-shot"><img src="resources/hero-route-widget-en.png" width="732" height="792" alt="Transit timeline from Shinjuku, Track 3 at 07:58, to Kokusaikaikan with transfers and times" fetchpriority="high"></figure></div></section>
+<section class="hero wrap" aria-labelledby="hero-title"><div class="hero-copy"><h1 id="hero-title"><span class="hero-title-line">Your Muse chats,</span>now with <em>widgets</em>.</h1><p class="hero-lead">Weather, transit directions, charts, quizzes and more.<br><strong>Widgets that run right inside Muse’s chat bubbles.</strong></p><p class="install-callout">Install with a single prompt!</p><div class="prompt-pane"><p class="prompt-text" id="registration-prompt">Register the widgets from miwidgets.com/register.txt</p><button class="copy-button" type="button" data-copy="registration-prompt"><svg class="copy-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>Copy prompt</button></div><ol class="install-steps" aria-label="How to use"><li><span class="step-num" aria-hidden="true">1</span>Copy the prompt</li><li><span class="step-num" aria-hidden="true">2</span>Paste it into a Muse chat and send</li><li><span class="step-num" aria-hidden="true">3</span>Then just ask, “Show tomorrow’s weather in London as a widget”</li></ol><ul class="trust-badges" aria-label="Highlights"><li>Free</li><li>Open source (MIT)</li><li><a href="https://github.com/Arahabica/miwidgets" target="_blank" rel="noopener">Source on GitHub</a></li></ul></div><div class="hero-visual" aria-label="Examples of widgets in a chat">
+  <figure class="hero-weather-shot" role="img" aria-label="Weather widget example: sunny, with the temperature and a forecast every 6 hours">
+    <div id="wx1b">
+      <div class="weather-meta">
+        <strong><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg>Osaka, Japan</strong>
+        <small>Updated Nov 17, 9:00 AM</small>
+      </div>
+      <div class="weather-today">
+        <span class="weather-temp">22<sup>°</sup></span>
+        <svg class="weather-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <symbol id="weather-sun" viewBox="0 0 64 64">
+              <path class="sun-rays" d="M32 13V6M45.4 18.6l5-5M51 32h7M45.4 45.4l5 5M32 51v7M18.6 45.4l-5 5M13 32H6M18.6 18.6l-5-5" fill="none" stroke="#ffc13a" stroke-width="3.5" stroke-linecap="round"/>
+              <circle cx="32" cy="32" r="12.5" fill="#ffbd49"/>
+            </symbol>
+            <symbol id="weather-moon" viewBox="0 0 64 64">
+              <path fill="#ffe6a0" d="M31 11a21 21 0 1 0 22 27 19 19 0 0 1-22-27Z"/>
+              <g class="weather-stars" fill="#fff6c8"><circle cx="50" cy="16" r="1.7"/><circle cx="57" cy="27" r="1.2"/></g>
+            </symbol>
+            <symbol id="weather-partly" viewBox="0 0 64 64">
+              <use href="#weather-sun" width="46" height="46"/>
+              <path class="weather-cloud" fill="#e4ecf7" d="M27 55a9 9 0 1 1 0-18 12 12 0 0 1 23-2 10 10 0 1 1 1 20Z"/>
+            </symbol>
+          </defs>
+          <use href="#weather-sun"/>
+        </svg>
+      </div>
+      <div class="weather-condition"><strong>Sunny</strong> <small>Tue, Nov 17</small></div>
+      <div class="weather-chips"><span>H 25° / L 14°</span><span><svg viewBox="0 0 24 28" fill="currentColor"><path d="M12 1C8 8 3 12.5 3 18a9 9 0 0 0 18 0c0-5.5-5-10-9-17z"/></svg>Rain 10%</span></div>
+      <div class="weather-forecast">
+        <div class="forecast-heading">Every 6 hours</div>
+        <svg class="forecast-curve" viewBox="0 0 330 154" fill="white" text-anchor="middle">
+          <path d="M34 94C66.75 94 66.75 86 99.5 86S132.25 58 165 58S197.75 70 230.5 70S263.25 90 296 90V114H34Z" fill="white" opacity=".16"/>
+          <rect x="75.9" width="47.2" height="154" rx="12" fill="#ffffff2e" stroke="#ffffff57"/>
+          <path d="M34 94C66.75 94 66.75 86 99.5 86S132.25 58 165 58S197.75 70 230.5 70S263.25 90 296 90" fill="none" stroke="white" stroke-width="2.4"/>
+            <g transform="translate(34 0)">
+              <use href="#weather-moon" x="-15" y="4" width="30" height="30"/>
+              <text y="85" class="forecast-temp">15°</text>
+              <circle cy="94" r="3.6" fill="#94cdf6" stroke="white" stroke-width="2"/>
+              <text y="130">12 AM</text><text y="145">0%</text>
+            </g>
+            <g transform="translate(99.5 0)">
+              <use href="#weather-sun" x="-15" y="4" width="30" height="30"/>
+              <text y="77" class="forecast-temp">17°</text>
+              <circle cy="86" r="4.8" fill="#ffd166" stroke="white" stroke-width="2"/>
+              <text y="130">6 AM</text><text y="145">0%</text>
+            </g>
+            <g transform="translate(165 0)">
+              <use href="#weather-sun" x="-15" y="4" width="30" height="30"/>
+              <text y="49" class="forecast-temp">24°</text>
+              <circle cy="58" r="3.6" fill="#94cdf6" stroke="white" stroke-width="2"/>
+              <text y="130">12 PM</text><text y="145">10%</text>
+            </g>
+            <g transform="translate(230.5 0)">
+              <use href="#weather-partly" x="-15" y="4" width="30" height="30"/>
+              <text y="61" class="forecast-temp">21°</text>
+              <circle cy="70" r="3.6" fill="#94cdf6" stroke="white" stroke-width="2"/>
+              <text y="130">6 PM</text><text y="145">10%</text>
+            </g>
+            <g transform="translate(296 0)">
+              <use href="#weather-moon" x="-15" y="4" width="30" height="30"/>
+              <text y="81" class="forecast-temp">16°</text>
+              <circle cy="90" r="3.6" fill="#94cdf6" stroke="white" stroke-width="2"/>
+              <text y="130">12 AM</text><text y="145">0%</text>
+            </g>
+        </svg>
+      </div>
+    </div>
+  </figure>
+  <figure class="hero-assets-shot"><img src="resources/hero-assets-widget-en.png" width="732" height="994" alt="Stock chart example: a line chart with profit and loss per holding" fetchpriority="high"></figure>
+  <figure class="hero-clock-shot" role="img" aria-label="Analog clock widget with a second hand">
+    <svg viewBox="0 0 366 370" text-anchor="middle">
+      <text x="183" y="29" class="clock-city">TOKYO</text>
+      <svg x="58" y="42" width="250" height="250" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="98" fill="white" stroke="#d1d1d6" stroke-width="2"/>
+        <g fill="none" stroke="#555" transform="rotate(-90 100 100)">
+          <circle cx="100" cy="100" r="92.5" pathLength="60" stroke-width="7" stroke-dasharray=".15 .85" stroke-dashoffset=".075"/>
+          <circle cx="100" cy="100" r="88" pathLength="12" stroke-width="16" stroke-dasharray=".065 .935" stroke-dashoffset=".0325"/>
+        </g>
+        <g class="clock-numbers" dominant-baseline="central"><text x="100" y="38">12</text><text x="162" y="100">3</text><text x="100" y="162">6</text><text x="38" y="100">9</text></g>
+        <g stroke-linecap="round" stroke="#1c1c1e">
+          <path class="clock-hour" d="M100 104V52" stroke-width="7" transform="rotate(290.5 100 100)"/>
+          <path class="clock-minute" d="M100 106V30" stroke-width="4.5" transform="rotate(246 100 100)"/>
+          <path class="clock-second" d="M100 118V22" stroke="#e5484d" stroke-width="2"/>
+        </g>
+        <circle cx="100" cy="100" r="5" fill="#e5484d"/>
+      </svg>
+      <text class="clock-time" x="183" y="325">09:41:00</text>
+      <text class="clock-date" x="183" y="349">Tue, Nov 17, 2026</text>
+    </svg>
+  </figure>
+  <figure class="hero-route-shot"><img src="resources/hero-route-widget-en.png" width="732" height="792" alt="Transit timeline from Shinjuku, Track 3 at 07:58, to Kokusaikaikan with transfers and times" fetchpriority="high"></figure></div></section>
 
 <section class="widgets-section" id="widgets" aria-labelledby="widgets-title">
   <div class="widget-heading wrap"><div><h2 class="section-title" id="widgets-title">What will you add?</h2></div></div>

@@ -406,17 +406,17 @@ var SAMPLE_IMAGES = {
   secret: { photo: 'resources/samples/secret-photo.webp' }
 };
 
-/* テンプレートの HTML にサンプルのデータを当てる。suffix を渡すと、同じ文書に並べても ID がぶつからないよう付け替える。 */
+/* テンプレートにサンプルのデータを当て、シナリオごとに ID を分ける。 */
 function templateHtml(source, t, sc, suffix){
   var html = source;
   if (t.id === 'weather') {
-    if (suffix != null) html = html.split('wx1b').join('wx1b_' + suffix);
+    html = html.split('wx1b').join('wx1b_' + suffix);
     if (sc && sc.data) {
       html = html.replace(/(var data = \{[\s\S]*?\n\};)/, function(m){ return m + '\nObject.assign(data, ' + JSON.stringify(sc.data) + ');'; });
     }
   }
   if (t.id === 'route') {
-    if (suffix != null) html = html.split('route-w').join('route-w' + suffix);
+    html = html.split('route-w').join('route-w' + suffix);
     if (sc && sc.now) html = html.replace('now: null', "now: '" + sc.now + "'");
     // 端末の時計で動かすシナリオでも経路が今日のものになるよう、日付を今日にする
     var d = new Date(), p2 = function(n){ return (n < 10 ? '0' : '') + n; };
@@ -443,32 +443,3 @@ function runScripts(container, doc){
     old.replaceWith(el);
   });
 }
-
-/* ヒーローの天気と時計は、テンプレートを DOM として描画して動かす。
-   テンプレートは ID でスコープされた HTML 片なので、ページに直接入れられる。ランディング側の CSS とクラス名がぶつからないよう注意する。 */
-var HERO_WIDTH = 366; // ヒーローの PNG は 366px 幅の表示を2倍解像度で撮影している
-
-/* テンプレートをヒーローに入れる。PNG は読み込み完了まで表示し、その後は場所取りとして残す。 */
-function mountHeroTemplate(id, selector){
-  var fig = document.querySelector(selector);
-  var t = TEMPLATES.filter(function(x){ return x.id === id; })[0];
-  if (!fig || !t || location.protocol === 'file:') return;
-  fetch(SITE_ROOT + t.file).then(function(r){
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.text();
-  }).then(function(source){
-    var live = document.createElement('div');
-    live.className = 'hero-live';
-    live.setAttribute('aria-hidden', 'true'); // 内容は PNG の alt で説明済み
-    live.innerHTML = templateHtml(source, t, (t.scenarios || [])[0], null);
-    fig.appendChild(live);
-    runScripts(live, document);
-    function fit(){ live.style.transform = 'scale(' + (fig.clientWidth / HERO_WIDTH) + ')'; }
-    new ResizeObserver(fit).observe(fig);
-    fit();
-    fig.classList.add('is-live');
-  }).catch(function(){ /* 読み込めなければ PNG のまま */ });
-}
-
-mountHeroTemplate('weather', '.hero-weather-shot');
-mountHeroTemplate('clock', '.hero-clock-shot');

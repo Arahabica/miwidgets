@@ -93,8 +93,43 @@ section.hero{display:grid;grid-template-columns:1.04fr .96fr;align-items:center;
 .hero-assets-shot{position:absolute;bottom:90px;left:75px;width:172px;margin:0;transform:rotate(-5deg);z-index:1}
 .hero-clock-shot{position:absolute;top:65px;right:25px;width:130px;margin:0;transform:rotate(6deg);z-index:0}
 .hero-route-shot{position:absolute;top:230px;right:0;width:300px;margin:0;transform:rotate(3deg);z-index:2}
-.hero-route-shot img,.hero-weather-shot img,.hero-assets-shot img,.hero-clock-shot img{display:block;width:100%;height:auto;border:1px solid var(--shot-border);border-radius:20px;box-shadow:0 16px 45px #241e361a;background:#fff}
-.hero-weather-shot img{border:0;border-radius:0;box-shadow:none;background:transparent;filter:drop-shadow(0 16px 22px #241e361a)}
+.hero-route-shot img,.hero-assets-shot img{display:block;width:100%;height:auto;border:1px solid var(--shot-border);border-radius:20px;box-shadow:0 16px 45px #241e361a;background:#fff}
+.hero-weather-shot{container-type:inline-size;filter:drop-shadow(0 16px 22px #241e361a)}
+/* The card scales with its figure. At the template's 366px width, 1em is 16px. */
+#wx1b{font-size:4.3716cqi;line-height:1.5;padding:1em 1em .875em;border-radius:1.125em;color:white;background:radial-gradient(circle at 88% 7%,#ffd16675,transparent 30%),linear-gradient(160deg,#2b7de9,#5db7ff 55%,#ffcf70)}
+.weather-meta,.weather-today,.weather-chips,.weather-meta strong,.weather-chips span{display:flex;align-items:center}
+.weather-meta,.weather-today{justify-content:space-between}
+.weather-meta strong{font-size:.875em;gap:.36em;letter-spacing:.02em}
+.weather-meta strong svg{width:.93em;height:.93em}
+.weather-meta small{font-size:.65625em;opacity:.75}
+.weather-today{margin-top:.25em}
+.weather-temp{font-size:4.875em;font-weight:200;line-height:1;letter-spacing:-.05em;text-shadow:0 .03em .23em #0003}
+.weather-temp sup{font-size:.436em;vertical-align:top;position:relative;top:.2em}
+.weather-icon{width:6em;margin-right:.25em;filter:drop-shadow(0 .375em .875em #0004)}
+.weather-condition strong{font-size:1.3125em}
+.weather-condition small{font-size:.75em;margin-left:.4em;opacity:.8}
+.weather-chips{gap:.5em;margin-top:.6875em}
+.weather-chips span{font-size:.75em;font-weight:600;gap:.42em;padding:.42em .92em;border:1px solid #ffffff47;border-radius:2em;background:#ffffff33}
+.weather-chips svg{width:.92em;height:1.08em}
+.weather-forecast{margin-top:.9375em;padding:.625em .375em .6875em;border:1px solid #ffffff42;border-radius:1em;background:#ffffff26;box-shadow:inset 0 .5em 1.5em #0000001f}
+.forecast-heading{font-size:.6875em;letter-spacing:.08em;opacity:.85;margin:0 .73em .73em}
+.forecast-curve{width:100%;height:auto;overflow:visible}
+.forecast-curve text{font-size:11px;paint-order:stroke;stroke:#0a1e464d;stroke-width:2.4;stroke-linejoin:round}
+.forecast-curve .forecast-temp{font-size:13px;font-weight:700}
+@media(prefers-reduced-motion:no-preference){
+  .sun-rays{transform-origin:32px 32px;animation:hero-sun-spin 28s linear infinite}
+  .weather-stars{animation:hero-star-glow 2.4s ease-in-out infinite alternate}
+  .weather-cloud{animation:hero-cloud-drift 6s ease-in-out infinite alternate}
+}
+@keyframes hero-sun-spin{to{transform:rotate(360deg)}}
+@keyframes hero-star-glow{to{opacity:.3}}
+@keyframes hero-cloud-drift{to{transform:translateX(3px)}}
+.hero-clock-shot{overflow:hidden;border:1px solid var(--shot-border);border-radius:20px;background:white;box-shadow:0 16px 45px #241e361a}
+.hero-clock-shot>svg{width:100%;height:auto;fill:#1c1c1e}
+.clock-city,.clock-date{fill:#6e6e73;font-size:13px}
+.clock-city{letter-spacing:.14em}
+.clock-numbers{font-size:17px;font-weight:600}
+.clock-time{font-size:26px;font-weight:300;letter-spacing:.06em;font-variant-numeric:tabular-nums}
 @media(min-width:1500px){
 .hero h1{font-size:68px}}
 @media(max-width:1050px){
@@ -171,18 +206,9 @@ section.hero{gap:0}
 .hero-assets-shot{bottom:65px}
 .hero-route-shot{top:220px}}
 @media(prefers-color-scheme:dark){
-.hero-route-shot img,.hero-assets-shot img,.hero-clock-shot img{box-shadow:0 16px 45px #0006}
-.hero-weather-shot img{filter:drop-shadow(0 16px 22px #0006)}}
+.hero-route-shot img,.hero-assets-shot img,.hero-clock-shot{box-shadow:0 16px 45px #0006}
+.hero-weather-shot{filter:drop-shadow(0 16px 22px #0006)}}
 /* 英語の見出しは語が長いので、和文より一回り小さくする(既存のサイズ指定より後に置く) */
 :lang(en) .hero h1{font-size:clamp(34px,4.1vw,58px)}
 @media(max-width:768px){:lang(en) .hero h1{font-size:36px}}
 @media(max-width:370px){:lang(en) .hero h1{font-size:31px}}
-/* 動くヒーロー(widgets.js の mountHeroTemplate): テンプレートを PNG と同じ位置・大きさで重ね、PNG は場所取りとして残す */
-.hero-live{position:absolute;top:0;left:0;width:366px;transform-origin:0 0;line-height:normal;letter-spacing:normal;text-align:left;color:#1c1c1e}
-.is-live>img{visibility:hidden}
-.hero-weather-shot.is-live{filter:drop-shadow(0 16px 22px #241e361a)}
-.hero-clock-shot.is-live{background:#fff;border:1px solid var(--shot-border);border-radius:20px;box-shadow:0 16px 45px #241e361a;overflow:hidden}
-.hero-clock-shot.is-live>img{border:0}
-@media(prefers-color-scheme:dark){
-.hero-weather-shot.is-live{filter:drop-shadow(0 16px 22px #0006)}
-.hero-clock-shot.is-live{box-shadow:0 16px 45px #0006}}
