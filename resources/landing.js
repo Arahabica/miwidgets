@@ -7,6 +7,11 @@
     copied: 'コピーしました \u2713', manual: '選択してコピーしてください',
     copiedStatus: 'コピーしました。Museのチャットに貼り付けてください。', manualStatus: 'コピーできませんでした。選択されたテキストを手動でコピーしてください。'
   };
+  /* フッターで言語を選んだら覚えておき、次からルートで自動的に移さない(index.html の冒頭のスクリプト) */
+  document.addEventListener('click', function(event){
+    var link = event.target.closest('a[hreflang]');
+    if (link) try { localStorage.setItem('miwidgets:lang', link.hreflang); } catch (e) {}
+  });
   document.addEventListener('click', async function(event){
     var button = event.target.closest('[data-copy]');
     if (!button) return;

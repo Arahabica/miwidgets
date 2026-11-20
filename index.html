@@ -6,6 +6,14 @@
 <title>miwidgets — Add widgets to Muse</title>
 <meta name="description" content="Show interactive widgets like weather, transit directions and quizzes right inside Muse chat bubbles. Send “Register the widgets from miwidgets.com/register.txt” to get started.">
 <link rel="canonical" href="https://miwidgets.com/">
+<script>
+/* ブラウザの言語が日本語なら日本語ページへ移す。フッターで言語を選んだ人は、その選択を優先する */
+(function(){
+  try { var chosen = localStorage.getItem('miwidgets:lang'); } catch (e) {}
+  var lang = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+  if (chosen ? chosen === 'ja' : /^ja\b/i.test(lang)) location.replace('ja/' + location.search + location.hash);
+})();
+</script>
 <link rel="alternate" hreflang="en" href="https://miwidgets.com/">
 <link rel="alternate" hreflang="ja" href="https://miwidgets.com/ja/">
 <link rel="alternate" hreflang="x-default" href="https://miwidgets.com/">
