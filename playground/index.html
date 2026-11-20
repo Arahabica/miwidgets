@@ -7,7 +7,7 @@
 <!--
   テンプレートを1つずつ確認するための開発用ページ。配信はしない(.assetsignore で除外)。
   リポジトリのルートで python3 -m http.server 8000 を起動し、http://localhost:8000/playground/ を開く。
-  - テンプレートの一覧は register.txt から読む
+  - テンプレートの一覧は register.txt から読む。register.txt に無い template/*.html(作りかけの案など)も「未登録」として下に並べる
   - template/*.html を保存すると、1秒以内に自動で描き直す
   - data をその場で書き換えられる(テンプレートのファイルは変えない)
   - 複数の幅・ライト/ダーク・英語(data.lang = 'en')で同時に確認できる
@@ -216,11 +216,20 @@ WIDTHS.forEach(function(w){
     var m = /^https:\/\/miwidgets\.com\/(template\/([\w-]+)\.html)\s*$/.exec(line);
     if (m) templates.push({ id: m[2], file: m[1], name: (lines[i - 1] || '').split(' — ')[0] || m[2] });
   });
+  /* python3 -m http.server のディレクトリ一覧から、register.txt に無いテンプレートを拾う */
+  try {
+    var dir = await (await fetch('/template/', { cache: 'no-store' })).text();
+    var known = templates.map(function(t){ return t.id; });
+    (dir.match(/href="([\w-]+)\.html"/g) || []).forEach(function(h){
+      var id = /href="([\w-]+)\.html"/.exec(h)[1];
+      if (known.indexOf(id) < 0) templates.push({ id: id, file: 'template/' + id + '.html', name: id, draft: true });
+    });
+  } catch (e) {}
   templates.forEach(function(t){
     var b = document.createElement('button');
     b.type = 'button';
     b.dataset.id = t.id;
-    b.innerHTML = t.name + '<small>' + t.file + '</small>';
+    b.innerHTML = t.name + '<small>' + (t.draft ? '未登録 · ' : '') + t.file + '</small>';
     b.addEventListener('click', function(){ load(t); });
     $('list').appendChild(b);
   });
