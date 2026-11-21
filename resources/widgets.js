@@ -8,7 +8,6 @@ var PREVIEW_SHELL = `<style>
   *{box-sizing:border-box}
   html,body{margin:0}
   body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%}
-  #widgets{display:flex;flex-direction:column;gap:10px}
   .bubble.widget{overflow:hidden;border-radius:18px 18px 18px 6px;background:var(--bubble-ai-bg);color:var(--hatch-widget-text);font-size:14px;line-height:1.55;overflow-wrap:anywhere}
 </style><div id="widgets"></div>`;
 
@@ -153,21 +152,35 @@ var PIE_SCENARIOS = [
     { name: 'マーケティング', value: 22 }, { name: '品質管理', value: 18 }, { name: '研究', value: 15 }, { name: '経理', value: 11 },
     { name: '人事', value: 9 }, { name: '総務', value: 8 }, { name: '広報', value: 6 }, { name: '法務', value: 4 }] } }
 ];
+var RACE_TEMPLATE = 'template/bar_chart_race.html';
+var RACE_SCENARIOS = [
+  { sample: 'gdp', name: LANG === 'en' ? 'Nominal GDP by country (1990–2025)' : '国別名目GDP（1990–2025年）',
+    unit: LANG === 'en' ? 'US$ trillions' : '兆米ドル', source: 'https://data.worldbank.org/indicator/NY.GDP.MKTP.CD', sourceLabel: LANG === 'en' ? 'GDP data' : 'GDP出典' },
+  { sample: 'birth-rate', name: LANG === 'en' ? 'Birth rates by country (2000–2025)' : '各国の出生率（2000–2025年）',
+    note: LANG === 'en' ? 'The birth rates for 2024 and 2025 (*) are UN projections.' : '＊の付いた2024年と2025年の出生率は、国連の予測値です。',
+    unit: LANG === 'en' ? 'per 1,000' : '人口千人当たり', source: 'https://population.un.org/wpp/', sourceLabel: LANG === 'en' ? 'Birth rate data' : '出生率出典' },
+  { sample: 'suicide-rate', name: LANG === 'en' ? 'Suicide rates by country (2000–2021)' : '各国の自殺死亡率（2000–2021年）',
+    note: LANG === 'en' ? 'WHO estimates for 185 countries and areas, all ages and both sexes, without age adjustment.' : '185の国・地域のWHO推計値。男女計・全年齢、年齢調整前。',
+    unit: LANG === 'en' ? 'per 100,000' : '人口10万人当たり', source: 'https://data.worldbank.org/indicator/SH.STA.SUIC.P5', sourceLabel: LANG === 'en' ? 'Suicide rate data' : '自殺死亡率出典' }
+];
 var TEMPLATES = [
   { id: 'weather', name: '天気', file: 'template/weather.html', user: '各地の天気をおしえて', reply: '各地の今日の天気です。', scenarios: WEATHER_SCENARIOS },
-  { id: 'route', name: '乗り換え案内', file: 'template/route.html', user: '明日の朝、新宿から国際会館までの行き方を教えて', reply: '新宿から国際会館までの経路です。現在時刻に合わせて、次にすることを表示します。', scenarios: ROUTE_SCENARIOS },
-  { id: 'assets', name: '株価チャート', file: 'template/assets.html', user: '一週間の資産の推移を見せて', reply: '直近1週間の損益推移です。' },
-  { id: 'quiz', name: 'クイズ', file: 'template/quiz.html', user: 'クイズを出して', reply: 'クイズです。答えを選んで「OK」を押してください。' },
+  { id: 'route', name: '乗り換え案内', file: 'template/route.html', user: '新宿から国際会館までの行き方を教えて', reply: '新宿から国際会館までの経路です。', scenarios: ROUTE_SCENARIOS },
+  { id: 'assets', name: '株価チャート', file: 'template/assets.html', user: '11月10日から16日までの運用損益を見せて', reply: '11月10日から16日までの損益です。' },
+  { id: 'quiz', name: 'クイズ', file: 'template/quiz.html', user: 'クイズを出して', reply: '生き物と歴史のクイズです。' },
   { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
-  { id: 'calendar', name: 'カレンダー', file: 'template/calendar.html', user: '11月の予約の空き状況を見せて', reply: '11月の空き状況です。数字の日は残りの席数です。薄い日は受付していません。' },
-  { id: 'timetable', name: '予約枠', file: 'template/timetable.html', user: '来週の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。数字の枠は残りの席数です。' },
-  { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '6月から11月までの売上を、去年と並べました。月をタップすると値が出ます。' },
-  { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '今日の3時間ごとの気温です。時刻をタップすると値が出ます。' },
-  { id: 'pie', name: 'パイチャート', file: 'template/pie.html', user: '支出の内訳と、アンケートの男女比、部署別の人数を見せて', reply: '3つの内訳をパイチャートにしました。扇形か表の行をタップすると、その項目が目立ちます。', scenarios: PIE_SCENARIOS },
-  { id: 'ranking', name: 'ランキング', file: 'template/ranking.html', user: '好きなおにぎりの具のアンケート結果を順位で見せて', reply: '票の多い順に並べました。1〜3位にはリボンが付きます。' },
-  { id: 'sheet', name: 'データシート', file: 'template/sheet.html', user: '都道府県の人口や出生数を一覧で見たい', reply: '47都道府県のデータです。見出しをタップすると並び替わり、右端の歯車で表示する列を選べます。' },
-  { id: 'omikuji', name: 'おみくじ', file: 'template/omikuji.html', user: 'おみくじを引きたい', reply: 'おみくじを用意しました。箱をタップして引いてください。' },
-  { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' }
+  { id: 'calendar', name: 'カレンダー', file: 'template/calendar.html', user: '11月の予約の空き状況を見せて', reply: '11月の予約状況です。' },
+  { id: 'timetable', name: '予約枠', file: 'template/timetable.html', user: '11月23日から1週間の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。' },
+  { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '今年と去年の月別売上です。' },
+  { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '東京と大阪の今日の気温です。' },
+  { id: 'pie', name: 'パイチャート', file: 'template/pie.html', user: '支出の内訳と、アンケートの男女比、部署別の人数を見せて', reply: '3つの内訳をパイチャートにしました。', scenarios: PIE_SCENARIOS },
+  { id: 'ranking', name: 'ランキング', file: 'template/ranking.html', user: '好きなおにぎりの具のアンケート結果を順位で見せて', reply: '好きなおにぎりの具のランキングです。' },
+  { id: 'bar-chart-race', name: 'バーチャートレース', file: RACE_TEMPLATE, scenarios: RACE_SCENARIOS,
+    user: 'GDP、出生率、自殺死亡率で上位に入る国の移り変わりを見せて',
+    reply: '各国のGDP・出生率・自殺死亡率の推移です。' },
+  { id: 'sheet', name: 'データシート', file: 'template/sheet.html', user: '都道府県の人口や出生数を一覧で見たい', reply: '47都道府県の人口と出生数です。' },
+  { id: 'omikuji', name: 'おみくじ', file: 'template/omikuji.html', user: 'おみくじを引きたい', reply: '今日のおみくじです。' },
+  { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: 'パスコードは123456です。' }
 ];
 
 var PROMPT_EXAMPLES = {
@@ -184,6 +197,7 @@ var PROMPT_EXAMPLES = {
   line: 'miwidgets.com/register.txt の線グラフウィジェットで、この10年の日本の人口の移り変わりを表示',
   pie: 'miwidgets.com/register.txt のパイチャートウィジェットで、日本の発電量の電源別の割合を表示',
   ranking: 'miwidgets.com/register.txt のランキングウィジェットで、都道府県の面積の上位10位を表示',
+  'bar-chart-race': 'miwidgets.com/register.txt のバーチャートレースで、1990年から2025年までの各国の名目GDPの上位10件を年ごとに表示',
   sheet: 'miwidgets.com/register.txt のデータシートウィジェットで、都道府県の人口・面積・人口密度を一覧表示'
 };
 
@@ -334,20 +348,23 @@ var EN_PIE_SCENARIOS = [
     { name: 'HR', value: 9 }, { name: 'General Affairs', value: 8 }, { name: 'PR', value: 6 }, { name: 'Legal', value: 4 }] } }
 ];
 var EN_TEMPLATES = [
-  { id: 'weather', name: 'Weather', user: 'What\u2019s the weather like around Japan?', reply: 'Here\u2019s today\u2019s weather in each city.', scenarios: EN_WEATHER_SCENARIOS },
-  { id: 'route', name: 'Transit Directions', user: 'How do I get from Shinjuku to Kokusaikaikan tomorrow morning?', reply: 'Here\u2019s your route from Shinjuku to Kokusaikaikan. It shows what to do next based on the current time.', scenarios: ROUTE_SCENARIOS },
-  { id: 'assets', name: 'Stock Chart', user: 'Show me how my portfolio did this week', reply: 'Here\u2019s your profit and loss over the past week.' },
-  { id: 'quiz', name: 'Quiz', user: 'Give me a quiz', reply: 'Here\u2019s a quiz. Pick an answer and tap \u201cCheck\u201d.' },
-  { id: 'clock', name: 'Analog Clock', user: 'Show me the time', reply: 'Here\u2019s the current time.' },
-  { id: 'calendar', name: 'Calendar', user: 'Show me the availability for November', reply: 'Here\u2019s November\u2019s availability. Numbers show how many seats are left. Faded days aren\u2019t taking bookings.' },
-  { id: 'timetable', name: 'Time Slots', user: 'Show me the open slots for next week', reply: 'Here are the open slots for the week of November 23. Numbers show how many seats are left.' },
-  { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are sales from June to November next to last year\u2019s. Tap a month to see the values.' },
-  { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here\u2019s today\u2019s temperature every 3 hours. Tap a time to see the values.' },
-  { id: 'pie', name: 'Pie Chart', user: 'Show me my spending breakdown, the gender split of the survey, and headcount by department', reply: 'Here are the three breakdowns as pie charts. Tap a slice or a table row to highlight it.', scenarios: EN_PIE_SCENARIOS },
-  { id: 'ranking', name: 'Ranking', user: 'Rank the results of our favorite onigiri filling survey', reply: 'Here they are from most to fewest votes. The top three get ribbons.' },
-  { id: 'sheet', name: 'Data Sheet', user: 'Show me population and birth data for each prefecture in Japan', reply: 'Here\u2019s data for all 47 prefectures. Tap a header to sort, and use the gear at the right end to choose columns.' },
-  { id: 'omikuji', name: 'Omikuji Fortune', user: 'I want to draw an omikuji fortune', reply: 'Your omikuji is ready. Tap the box to draw it.' },
-  { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'Your secret message is ready. The passcode is 123456.' }
+  { id: 'weather', name: 'Weather', user: 'What\u2019s the weather like around Japan?', reply: 'Here’s today’s weather in each city.', scenarios: EN_WEATHER_SCENARIOS },
+  { id: 'route', name: 'Transit Directions', user: 'How do I get from Shinjuku to Kokusaikaikan?', reply: 'Here’s the route from Shinjuku to Kokusaikaikan.', scenarios: ROUTE_SCENARIOS },
+  { id: 'assets', name: 'Stock Chart', user: 'Show me how my portfolio did from November 10 to 16', reply: 'Here’s your portfolio’s profit and loss for November 10–16.' },
+  { id: 'quiz', name: 'Quiz', user: 'Give me a quiz', reply: 'Here’s a nature and history quiz.' },
+  { id: 'clock', name: 'Analog Clock', user: 'Show me the time', reply: 'Here’s the current time.' },
+  { id: 'calendar', name: 'Calendar', user: 'Show me the availability for November', reply: 'Here’s the booking availability for November.' },
+  { id: 'timetable', name: 'Time Slots', user: 'Show me the open slots for the week of November 23', reply: 'Here are the open slots for the week of November 23.' },
+  { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are monthly sales for this year and last year.' },
+  { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here are today’s temperatures in Tokyo and Osaka.' },
+  { id: 'pie', name: 'Pie Chart', user: 'Show me my spending breakdown, the gender split of the survey, and headcount by department', reply: 'Here are the three breakdowns as pie charts.', scenarios: EN_PIE_SCENARIOS },
+  { id: 'ranking', name: 'Ranking', user: 'Rank the results of our favorite onigiri filling survey', reply: 'Here’s how the onigiri fillings ranked.' },
+  { id: 'bar-chart-race', name: 'Bar chart race', file: RACE_TEMPLATE, scenarios: RACE_SCENARIOS,
+    user: 'Which countries ranked highest over time for GDP, birth rates and suicide rates?',
+    reply: 'Here’s how countries ranked in GDP, birth rates and suicide rates.' },
+  { id: 'sheet', name: 'Data Sheet', user: 'Show me population and birth data for each prefecture in Japan', reply: 'Here are population and birth counts for all 47 prefectures.' },
+  { id: 'omikuji', name: 'Omikuji Fortune', user: 'I want to draw an omikuji fortune', reply: 'Here’s your fortune for today.' },
+  { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'The passcode is 123456.' }
 ];
 var EN_PROMPT_EXAMPLES = {
   weather: 'Show tomorrow\u2019s weather in London with the miwidgets.com/register.txt weather widget',
@@ -363,6 +380,7 @@ var EN_PROMPT_EXAMPLES = {
   line: 'Use the miwidgets.com/register.txt line chart widget to show how the US population changed over the last 10 years',
   pie: 'Use the miwidgets.com/register.txt pie chart widget to show the share of US electricity by source',
   ranking: 'Use the miwidgets.com/register.txt ranking widget to show the 10 largest US states by area',
+  'bar-chart-race': 'Use the miwidgets.com/register.txt bar chart race to show the top 10 countries by nominal GDP each year from 1990 to 2025',
   sheet: 'Use the miwidgets.com/register.txt data sheet widget to list the 50 US states with population, area and density'
 };
 var UI_TEXT = LANG === 'en' ? {
@@ -426,6 +444,12 @@ if (location.protocol === 'file:') {
     var link = sec.querySelector('footer a');
     link.href = SITE_ROOT + t.file; // template/ はテキストで配信される(_headers)
     link.textContent = UI_TEXT.source;
+    (t.scenarios || []).filter(function(sc){ return sc.source; }).forEach(function(sc){
+      var citation = link.cloneNode(false);
+      citation.href = sc.source;
+      citation.textContent = sc.sourceLabel;
+      link.before(citation, ' · ');
+    });
     var box = sec.querySelector('.phone-box');
     var scroll = document.createElement('div');
     scroll.className = 'preview-scroll';
@@ -441,16 +465,22 @@ if (location.protocol === 'file:') {
     scroll.querySelector('.preview-reply').textContent = t.reply;
     box.insertBefore(scroll, expand);
     box.loadPreview = function(){
-      var frame = document.createElement('iframe');
-      frame.title = t.name + UI_TEXT.preview;
-      if (previewObserver) frame.classList.add('lazy-preview');
-      frame.addEventListener('load', async function(){
-        await renderPreview(frame, t);
-        configurePreviewSize(frame);
-        if (previewObserver) frame.classList.add('is-ready');
-      }, {once: true});
-      frame.srcdoc = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + t.name + UI_TEXT.preview + '</title></head><body>' + PREVIEW_SHELL + '</body></html>';
-      scroll.appendChild(frame);
+      var source;
+      var scenarios = t.scenarios || [{}];
+      scenarios.forEach(function(sc, i){
+        var frame = document.createElement('iframe');
+        var label = sc.name || (scenarios.length > 1 ? t.name + ' (' + (i + 1) + '/' + scenarios.length + ')' : t.name);
+        frame.title = label + UI_TEXT.preview;
+        if (previewObserver) frame.classList.add('lazy-preview');
+        frame.addEventListener('load', async function(){
+          if (!source) source = loadTemplateSource(t);
+          await renderPreview(frame, t, sc, source);
+          configurePreviewSize(frame);
+          if (previewObserver) frame.classList.add('is-ready');
+        }, {once: true});
+        frame.srcdoc = '<!doctype html><html lang="' + LANG + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + frame.title + '</title></head><body>' + PREVIEW_SHELL + '</body></html>';
+        scroll.appendChild(frame);
+      });
     };
     main.appendChild(sec);
     if (previewObserver) previewObserver.observe(box); else box.loadPreview();
@@ -479,21 +509,34 @@ function configurePreviewSize(frame){
   resize();
 }
 
-/* テンプレートごとに iframe を分け、CSS と状態を独立させる。 */
-async function renderPreview(frame, t){
+async function loadTemplateSource(t){
+  var response = await fetch(SITE_ROOT + t.file, {cache: 'no-store'});
+  if (!response.ok) throw new Error('HTTP ' + response.status);
+  var source = await response.text();
+  if (t.id === 'quiz' || t.id === 'secret') {
+    var imageFile = 'resources/samples/' + t.id + '-images.json';
+    var imageData = await fetch(SITE_ROOT + imageFile);
+    if (!imageData.ok) throw new Error(imageFile + ': HTTP ' + imageData.status);
+    var images = await imageData.json();
+    source = source.replace(/^var IMAGES = \{[\s\S]*?^\};/m, function(){
+      return 'var IMAGES = ' + JSON.stringify(images).replace(/</g, '\\u003c') + ';';
+    });
+  }
+  return source;
+}
+
+/* サンプルごとに1つの iframe でテンプレートを実行する。 */
+async function renderPreview(frame, t, sc, sourcePromise){
   var doc = frame.contentDocument;
   var widgets = doc.getElementById('widgets');
   try {
-    var response = await fetch(SITE_ROOT + t.file, {cache: 'no-store'});
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    var source = await response.text();
-    (t.scenarios || [{}]).forEach(function(sc, i){
-      var mount = doc.createElement('div');
-      mount.className = 'bubble widget';
-      widgets.appendChild(mount);
-      mount.innerHTML = templateHtml(source, t, sc, i);
-      runScripts(mount, doc);
-    });
+    var source = await sourcePromise;
+    if (sc.sample) sc = {data: await loadRaceSample(sc)};
+    var mount = doc.createElement('div');
+    mount.className = 'bubble widget';
+    widgets.appendChild(mount);
+    mount.innerHTML = templateHtml(source, t, sc);
+    runScripts(mount, doc);
   } catch (err) {
     var error = doc.createElement('div');
     error.style.cssText = 'padding:12px;font-size:12px;color:#d33;';
@@ -502,37 +545,45 @@ async function renderPreview(frame, t){
   }
 }
 
-/* テンプレートに埋め込んだサンプル画像は 30px の縮小版なので、サイトのプレビューでは元の画像に差し替える */
-var SAMPLE_IMAGES = {
-  quiz: { raccoon: 'resources/samples/quiz-raccoon.webp', pansy: 'resources/samples/quiz-pansy.webp' },
-  secret: { photo: 'resources/samples/secret-photo.webp' }
-};
+async function loadRaceSample(sc){
+  var response = await fetch(SITE_ROOT + 'resources/samples/' + sc.sample + '.json');
+  if (!response.ok) throw new Error(sc.sample + ': HTTP ' + response.status);
+  var sample = await response.json();
+  var names = new Intl.DisplayNames([LANG], {type: 'region'});
+  var times = sample.series[0].values.map(function(_, i){
+    var year = sample.startYear + i;
+    var projected = sample.projectionFrom != null && year >= sample.projectionFrom;
+    return String(year) + (projected ? (LANG === 'ja' ? '＊' : '*') : '');
+  });
+  var series = sample.series.map(function(country){
+    var label = LANG === 'ja' && country.label || names.of(country.code.toUpperCase());
+    return {label: label, image: country.image, values: country.values};
+  });
+  return {lang: LANG, title: sc.name, unit: sc.unit, note: sc.note, times: times, series: series};
+}
 
-/* テンプレートにサンプルのデータを当て、シナリオごとに ID を分ける。 */
-function templateHtml(source, t, sc, suffix){
+/* テンプレートに各サンプルのデータを当てる。 */
+function templateHtml(source, t, sc){
   var html = source;
+  if (t.file === RACE_TEMPLATE && sc.data) {
+    html = html.replace(/^var data = \{[\s\S]*?^\};/m, function(){
+      return 'var data = ' + JSON.stringify(sc.data).replace(/</g, '\\u003c') + ';';
+    });
+  }
   if (t.id === 'weather') {
-    html = html.split('wx1b').join('wx1b_' + suffix);
     if (sc && sc.data) {
       html = html.replace(/(var data = \{[\s\S]*?\n\};)/, function(m){ return m + '\nObject.assign(data, ' + JSON.stringify(sc.data) + ');'; });
     }
   }
   if (t.id === 'route') {
-    html = html.split('route-w').join('route-w' + suffix);
     if (sc && sc.now) html = html.replace('now: null', "now: '" + sc.now + "'");
     // 端末の時計で動かすシナリオでも経路が今日のものになるよう、日付を今日にする
     var d = new Date(), p2 = function(n){ return (n < 10 ? '0' : '') + n; };
     html = html.replace(/(\nvar data = \{[\s\S]*?\n\};)/, function(m){ return m + "\ndata.date = '" + d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + "';"; });
   }
-  // パイチャートは見本ごとに ID を分け、2つ目以降は data を差し替える
+  // パイチャートは2つ目以降の見本に data を差し替える
   if (t.id === 'pie') {
-    html = html.split('pie-w').join('pie-w' + suffix);
     if (sc && sc.data) html = html.replace(/(\nvar data = \{[\s\S]*?\n\};)/, function(m){ return m + '\ndata = ' + JSON.stringify(sc.data) + ';'; });
-  }
-  if (SAMPLE_IMAGES[t.id]) {
-    var full = {};
-    Object.keys(SAMPLE_IMAGES[t.id]).forEach(function(k){ full[k] = SITE_ROOT + SAMPLE_IMAGES[t.id][k]; });
-    html = html.replace(/(\nvar IMAGES = \{[\s\S]*?\n\};)/, function(m){ return m + '\nObject.assign(IMAGES, ' + JSON.stringify(full) + ');'; });
   }
   // 英語ページでは、テンプレートの data の直後で英語のサンプルに置き換える。
   if (t.dataPatch) {

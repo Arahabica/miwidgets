@@ -31,7 +31,7 @@ python3 -m http.server 8000
 
 `python3 -m http.server 8000` は全インターフェースで待ち受けるので、同じ LAN のスマホからは `http://<Mac の IP アドレス>:8000/playground/view.html` で開けます(IP は `ipconfig getifaddr en0` で確認)。`--bind 127.0.0.1` を付けると Mac からしか開けません。
 
-`index.html` は `template/` の HTML を `fetch` で読み込むため、`file://` では表示できません。テンプレートごとに iframe を分け、CSS や JavaScript の干渉を防いでいます。
+`index.html` は `template/` の HTML を `fetch` で読み込むため、`file://` では表示できません。各サンプルを個別の iframe に読み込むため、同じテンプレートを並べても元の ID・CSS・JavaScript をそのまま使えます。
 
 PC表示ではスマホ風の画面の高さを `min(900px, 88dvh)` にし、内容が収まらない場合は画面内でスクロールします。幅768px以下では高さ制限と枠内のスクロールをなくし、iframeを内容の高さに合わせてページ全体でスクロールします。吹き出しの見た目は推測による再現で、実際の Muse の画面とは異なります。
 

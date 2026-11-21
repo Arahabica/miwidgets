@@ -52,6 +52,9 @@ https://miwidgets.com/template/pie.html
 Ranking — a title and values per item, sorted from largest to smallest and shown as horizontal bars; 1st to 3rd get gold, silver and bronze ribbons; equal values share a rank
 https://miwidgets.com/template/ranking.html
 
+Bar chart race — animate rankings over time with a shared list of times. Define each label and optional image once per series, with its values in time order. Shows 10 rows by default, up to 15. Includes pause, play and replay controls.
+https://miwidgets.com/template/bar_chart_race.html
+
 Data sheet — rows and columns as a table or a two-column list; viewers can sort by a column and choose which columns to show
 https://miwidgets.com/template/sheet.html
 

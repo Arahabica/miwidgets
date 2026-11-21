@@ -1,0 +1,339 @@
+<!-- FIFA形式。横軸はその時点の最大値に合わせ、右下に時点を表示する。表示内容は data で変更できる。 -->
+<meta charset="utf-8">
+<div id="bar_chart_race">
+  <header><h2></h2></header>
+  <div class="scale"><span class="unit"></span><div class="ticks"></div></div>
+  <div class="plot"><div class="grid" aria-hidden="true"></div><div class="rows" role="list"></div></div>
+  <div class="dateline">
+    <div class="controls">
+      <button type="button" class="play" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="pause-symbol" d="M6 4h4v16H6zm8 0h4v16h-4z"/><path class="play-symbol" d="M7 4v16l13-8z"/></svg>
+      </button>
+      <button type="button" class="restart" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v6h6"/><path d="M4.5 9.5a8 8 0 1 1 0 5"/></svg>
+      </button>
+    </div>
+    <strong class="period"></strong>
+  </div>
+  <p class="note" hidden></p>
+</div>
+<style>
+#bar_chart_race{--step:30px;--names:clamp(67px,24%,126px);--numbers:46px;--icon-size:18px;--gap:4px;
+  --ink:var(--hatch-widget-text,#18263c);--sub:var(--hatch-widget-muted,#54647a);--line:var(--hatch-widget-border,#dce3eb);--accent:#3972b4;
+  position:relative;box-sizing:border-box;width:100%;padding:16px 13px 10px;color:var(--ink);
+  font:13px/1.3 -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;font-variant-numeric:tabular-nums;}
+#bar_chart_race *,#bar_chart_race *::before{box-sizing:border-box;}
+#bar_chart_race [hidden]{display:none!important;}
+#bar_chart_race header{padding-bottom:11px;}
+#bar_chart_race h2{margin:0;font-size:clamp(18px,5vw,26px);line-height:1.24;font-weight:760;overflow-wrap:anywhere;}
+#bar_chart_race .scale{height:24px;position:relative;color:var(--sub);font-size:10px;}
+#bar_chart_race .unit{position:absolute;left:0;bottom:4px;font-weight:650;max-width:var(--names);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#bar_chart_race .ticks,#bar_chart_race .grid,#bar_chart_race .track{position:absolute;left:var(--names);right:var(--numbers);}
+#bar_chart_race .ticks{bottom:4px;height:1em;}
+#bar_chart_race .tick{position:absolute;transform:translateX(-50%);line-height:1;}
+#bar_chart_race .plot{position:relative;overflow:hidden;}
+#bar_chart_race .grid{inset-block:0;}
+#bar_chart_race .grid i{position:absolute;inset-block:0;border-left:1px solid var(--line);}
+#bar_chart_race .row{position:absolute;inset:0 0 auto;height:var(--step);}
+#bar_chart_race .name{position:absolute;left:0;width:var(--names);height:100%;padding-right:7px;display:flex;align-items:center;justify-content:flex-end;gap:4px;}
+#bar_chart_race .name b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600;}
+#bar_chart_race .track{top:3px;bottom:3px;}
+#bar_chart_race .bar{height:100%;position:relative;background:var(--color);}
+#bar_chart_race .tip{position:absolute;left:100%;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:var(--gap);padding-left:var(--gap);width:max-content;}
+#bar_chart_race .tip.inset{transform:translate(calc(0px - var(--icon-size) - var(--gap)),-50%);}
+#bar_chart_race .tip.inset .icon{position:relative;right:var(--gap);}
+#bar_chart_race .value{color:var(--ink);white-space:nowrap;font-size:11px;font-weight:650;}
+#bar_chart_race .icon{width:var(--icon-size);height:var(--icon-size);object-fit:contain;}
+#bar_chart_race .dateline{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:50px;padding:5px 0;}
+#bar_chart_race .note{margin:4px 0 0;color:var(--sub);font-size:12px;line-height:1.5;overflow-wrap:anywhere;white-space:pre-line;}
+#bar_chart_race .period{margin-left:auto;color:var(--ink);font-size:clamp(26px,8vw,40px);line-height:1.05;letter-spacing:-.045em;overflow-wrap:anywhere;text-align:right;}
+#bar_chart_race .controls{display:flex;flex:none;align-items:center;gap:4px;}
+#bar_chart_race .controls button{appearance:none;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:color-mix(in srgb,var(--ink) 4%,transparent);color:var(--ink);cursor:pointer;}
+#bar_chart_race .controls button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+#bar_chart_race .controls svg{width:20px;height:20px;}
+#bar_chart_race .play svg{fill:currentColor;}
+#bar_chart_race .play .pause-symbol,#bar_chart_race .play.playing .play-symbol{display:none;}
+#bar_chart_race .play.playing .pause-symbol{display:inline;}
+</style>
+<script>
+(function(){
+'use strict';
+const root = document.getElementById('bar_chart_race');
+const find = selector => root.querySelector(selector);
+try {
+var data = {
+  lang: 'ja', title: '国別名目GDP（2022–2025年）', unit: '兆米ドル',
+  note: '', // 任意の注釈。文字列を指定するとグラフ下部に表示。省略・空欄なら非表示。
+  limit: 10, // 表示件数は1〜15、省略時は10
+  times: [2022, 2023, 2024, 2025],
+  // 各項目の values は times 順。欠測は null、0 は数値として扱う。
+  // image は省略可。埋め込み画像は縦横128px以下、8192バイト以下。
+  // GDP：世界銀行 https://data.worldbank.org/indicator/NY.GDP.MKTP.CD ／ 国旗：https://flagcdn.com/
+  series: [
+    { label: "アメリカ", values: [26.054614, 27.811517, 29.298013, 30.7697],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAVBAMAAADGNLEtAAAALVBMVEX////GU3LZjKGzGUINM2PsxtAYPWotT3hed5enma46WoBPa46zGkMkR3Jrgp+6ntXWAAAAiklEQVQY02Nwc0lJcQMSxghgw+CRVdaWkVXWooQEGFxaPLxKWjxcGJCBn1fJExAWRAJglUuAKlEEPdyXgA1A0e62LTu9bFt2CopF3iCh9LItKE5yX5tVe31tVgmq9pL0NLcy95RQJMAAdiUQo2ifCQUoKrECY0xgw6CEBWDXLogFYBfECrBahM1JAItMTcEiMDpsAAAAAElFTkSuQmCC" },
+    { label: "日本", values: [4.447976, 4.384854, 4.190008, 4.435163],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAAOVBMVEW8AC3dfJPMPF7ILFHQTGvuvcjADzn////55urjkaXyzte9BTHqrbvDHEP++fr77/Hst8PmobHXZ4H4lhdsAAAAcUlEQVQ4y9XTuw6AIAyF4XKVclXf/2FNjDF0OMjgwj9/YWgLbZPRkjA4Zhc+YbB0Z8MYHp6efB7BmOgtRQyroQ6aCmEm0Q6hklBBqCXUEHoJPYRm9kUr4QkhS8gQttK70vBmHM1tRkyS/7me+Xtc+hdeTWcZDIhvaeAAAAAASUVORK5CYII=" },
+    { label: "ドイツ", values: [4.201022, 4.562208, 4.685593, 5.050923],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAYAgMAAAD16ldTAAAACVBMVEUAAADdAAD/zgDGIigcAAAAFUlEQVQY02NgoBEIhQPqMlfBAVWZANYST7G6bxb2AAAAAElFTkSuQmCC" },
+    { label: "フランス", values: [2.794788, 3.056251, 3.160443, 3.366316],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbBAMAAAD8PtBdAAAAD1BMVEUAJlT////OESbvr7aqtsYrjF9NAAAAGUlEQVQoz2NgAAMWQTAwUgIDhlHBUUG8ggBpKyX5efKDZQAAAABJRU5ErkJggg==" },
+    { label: "イタリア", values: [2.104068, 2.316882, 2.383436, 2.551557],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbBAMAAAD8PtBdAAAAElBMVEXOKzcAkkb///+q28EBkkbvt7tlcfnnAAAAGUlEQVQoz2NwFAQBYSUwCGCAgFHBUUG8ggBTFC/I4rFoIQAAAABJRU5ErkJggg==" },
+    { label: "イギリス", values: [3.181244, 3.420797, 3.69554, 4.002588],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAMAAADImI+JAAAANlBMVEX////w8vfyxcx8jbJCWpAOLHFVa5sBIWnIEC7WTGLnv8qAkLTheYpecqHx0digrMfz3+T21dqBS5WQAAAApUlEQVQoz8WTyxpFMAyEpyqOuhTv/7IntImmurAzC59kfsIIhA5wnn6iASMLgzbIT2Fk6joUaAUKBsiJm+kJ0iyuR1mQBam8Cex1dINkZ6EesSZwrR8JfdYWl7AcbCRw5ypytYmPpy6w3X6jL8HXL6PxOODgTPYEcnXmFe94cuBsdJzwpIFrRwK3WPkJLQqL2aUoUVisXjOvLizWWNyMVljrV0gz/wdhEi0lRIbcAAAAAElFTkSuQmCC" },
+    { label: "カナダ", values: [2.200563, 2.196594, 2.270076, 2.3199],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAMAAADImI+JAAAASFBMVEX/////ubn/oqL/Z2f/Jib/09P/7e3/AAD/+/v/Gxv/W1v/rq7/eXn/nZ3/DAz/OTn/AwP/Pj7//Pz/QED/PT3/g4P/xsb/xcWY5npoAAAAkUlEQVQoz43TyQ7DIAxFUQbDNZCx4///aTdt00ohsXdPHIFsGce33E79nO5AvRjhGCxQVYs41fMbpUIVw9MzwHwKk4sA0aUj6IdW7iNAGEobfBfmBbgC3IAld6HKllhEuzDwV6HfjJ+2OPmjrlP5pJKOx5PfsuSTOWZZY61xlWxYiufDuD3eG2FrRpiSEe5+hRcblQ+AegtNbgAAAABJRU5ErkJggg==" },
+    { label: "スペイン", values: [1.448851, 1.619482, 1.725672, 1.906453],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAApVBMVEX6vQCtFRnBPxP3tgCkSRTxsQC9miCtkjL3ugDcdwrVkwndpwauUEi3k3ecLQyvGx01YomtXy3Zhha+gw+4LiCzn4jKeBKyYgjmoAOkXUK/RhC1kJmmKh+0oKCbYwN5OAWWHxSVi0HypQNcdGsDAgC9g1j6vgSWhnLfsSXCn169cE24eBuaNwzQaiOYagW8bxWIOhqoKhPLdq4yUHR+UgVZLWaBHkAs3esWAAAAk0lEQVQ4y+WTVxLDIAxESQwBAwb33tKc3sv9j5YbWJp8JvurNzsrzYpMkCI/BU6RIt9phqIcJSOpEGBu7c2WA+iXOWmbtTmTACh42PdelSgwp+d2nXdvTjuAc3X5vL6qJo4XQEZ9qd8PXaR7yDE5GFOf6XbNRrmB8cgcKaUraJm5z4NiE4RLH3FyIUaG6Pb85XN9AIg9CvrV7UGSAAAAAElFTkSuQmCC" },
+    { label: "ロシア", values: [2.292495, 2.046285, 2.186462, 2.56131],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbAgMAAABzfiX9AAAACVBMVEUAOabVKx7///95ANL1AAAAFUlEQVQY02NYBQcMtGLSAYTCAa2YAJQLWaccQRfwAAAAAElFTkSuQmCC" },
+    { label: "ブラジル", values: [1.951924, 2.191132, 2.185822, 2.27992],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAcCAMAAAAkyw3kAAAAkFBMVEUAlED/ywAwJoEOlzwemjdQSI83oDHjxQZKpC2fthhGN3NAM3VZU5fywAjEmyQ/NYf5yQFoU101K4OVd0OvuRRzdKTSwQuOshx8ryFjqifCvQ+p0MFGP4y8w8q+0tKXrLjwyATrxwXltRC+lyhkXp+JdW12XlWkgji0uM+rqnXr8vDS593K4tmZflSJj7ROQ3x/jyqZAAAA70lEQVQ4y82T2RKCMAxFTaEKBSwUcQEUF9y3//87IwVxpEp9cbyPmTNZbpJO56/U7WphxghgZLRzVg9QPasFM20oZX9MOpmDFwaOE4QeLCbv08UAfUYKsT5AbKq5sY8ceQhJf6zyZIiNeawGmYeB4atThhxiPzsektku4i6SW8VQ0hOAtStE6kZZMkVyI2NPTpmDypOqMo2SLGVVdGA2QAchLtnLKWqAdemAins+eifzaaN0PUzICTYniurpWb2hwp6lQzjFjJzQnC5V9lSGr8ppXC5Wbwx/WeH1wwr1j+KLM9M/XPkKvs4r6D/Xz3QDO1IMs+uu/zEAAAAASUVORK5CYII=" },
+    { label: "中国", values: [18.316765, 18.270357, 18.729668, 19.498039],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAAOVBMVEXuHCX3jRL//wDuISPyURvvLCH6ugrwPh7xSRz0ZxjwNyD1ehX+6QP7wgn/+AH5ow793wX3lhHzXBqicYSuAAAAX0lEQVQYGe3BSRKCQBAAweplVgYB//9YY/QMdHgmk7+kxB1janvhhjD5mzvD+XHn3CKbriIJsG3lXMqqOipTMa4MVSegvo5d+KqdC61gwmQ5GyG9E+ALMS0XYhKPR9wHPPwBnsz8tAoAAAAASUVORK5CYII=" },
+    { label: "インド", values: [3.249938, 3.500906, 3.760813, 3.956067],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbBAMAAAD8PtBdAAAAMFBMVEUEajj/aCD////f3/GpqNhPTa7MzOiOjMthX7f5+fxubLyFg8b4+Py+veF1dMD9/f41r+HyAAAATElEQVQoz2MQxAIYhoqgEhRoloZPgrHhgqZuKcEYgotNnK3QBfXb/J5koAsq722NuG2Ern2Z95YsDDOLTZzNMQRPuKX0YAiiuHMoAwA5/S6KfoLQ6QAAAABJRU5ErkJggg==" },
+    { label: "オーストラリア", values: [1.695628, 1.734451, 1.757022, 1.798519],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAMAAADImI+JAAAAdVBMVEUBIWn+/v8LKm8rRoLsS2lZa5sCI2rkACvAyNojP317jLGrtc2qtc3FzN1fc6FBWY/5w83ecIr+8vQRL3P5x9DY3ejU2OVeZpZLVIn709oYNndNZJacqcWLmrra3unVZ4Xy9Pj22uFEXJHIz94VM3XUZYPb3+rlcwqvAAAAz0lEQVQoz7WQyRKDIBBEB2STRHHfTdQs//+JQVxiSlNFDunLAPOomW4gycVnAHDi/KwLoyEJ4EjFgyQpXcBcY54C+IpmdAQNNmxavv8+C62sLyPEeVRGXTbelx72BF5BfqC16bpgB25lRnd6KucoKvuP0UaOdObT4CUkzEczNA3ItZheq2oxhKYUlMHmeNiK4ps3+7jXzFSN0W3g/jMgY5WSwS+i1BLcBrS4c6x+xrJpZGxDtgi1NpwSCAlls44rxG5vfEnxHozjvUFaw//0ApepC3HnUeodAAAAAElFTkSuQmCC" },
+    { label: "韓国", values: [1.799363, 1.844801, 1.875388, 1.872375],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAAvVBMVEX///8AR6DNLjrt7e6cnJwKCgoaGhrY2NiMjIxAQEB5eXmvr6+8vLyEhIQdQ5IgICCYmJivMUn59vfExMQ6OjrGxsaJiYlkZGReXl5wcHDQR1P55OYMT6TyyczH1ur+/f0RERGVlZWhoaEhISFoiLzZ4/HmvsZnOWx7n84HRZzlk5rOND/FLj3109XOMT3Ozs5HR0ff398zMzMgXqyFNl3dcXmWkrfkjpVKPXvCgpUmYq65zOXIqLuwvtqfudvB4UIoAAABKklEQVQ4y7WTWXeCMBCFmZCEQEBRW8oiKuC+Vbvv//9nFdLIaRPl+GDvS3KG73CTmRvD+D9Zpl4zLb02vHN6aq3nXOkgawfU/fNT06WsjVVuTzjB5PZ36ZpkJA9UczvahXb0s082XbHe2OFONccFpgGtvifLGCH0mFTeDqe5Yo75yCduuUlXSGiVCnOfcuWUlmeH5TLdIqltKsw9vUGsvHI3RrXiypydaPr0QHXWCG0apvMksRYsZmjZAI4fJFfq5bkBnMNsLTmA1wZwALCQGMDHCai6tfEGtVrDo7eWfRz0a/DzaB/rydTkVxUz4o+UyeQFo5mYtTm/B+iP38WsXZqpQbMjzg7pmUwMmR7GtejuyzT6ah59grU8Gqzw9IR7esLPfzNnv8KL6RtMsRLeZtvj3wAAAABJRU5ErkJggg==" },
+    { label: "メキシコ", values: [1.466935, 1.79441, 1.830489, 1.832641],
+      image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAXCAMAAABODP0nAAAAh1BMVEUAaEfOESb///+qzMHvrrXR0rWKYUHe4dHy7+fW069pPyP8/PnBxKJwra/ur7a2upL19ezm28vRtKOng3HIrHHnzserlmmSblSgelzQ6OJRkpB4VDxkRjXDs4r889m4296Bp6mfZj9/Tie5r6i7083Dtq7b2MLcwpGUlI+Ogmu5iVulyszYwIRdbSBmAAAAfElEQVQoz+XTtxbCMAxAUUMid+P0XihpkPz/92U1A0dkzpvvIh2JEDfv6nS7uJHf0D8TVGH0oOkfUCQfKiVHYTe1RSOfMQYD1c60LmiuEKhTveVNPb4sAsVgljV7xyEgkENpqsrcgWHDMCiTrBeAr4drFtngbNdzHH5/4Q77sAk1toKo3AAAAABJRU5ErkJggg==" }
+  ]
+};
+
+const en = data.lang === 'en';
+const limit = Math.min(15, Math.max(1, Math.trunc(data.limit ?? 10)));
+if (!Number.isFinite(limit)) throw new Error('limit must be a number');
+function framesFromSeries(times, series) {
+  if (!Array.isArray(times) || !times.length || !Array.isArray(series)) throw new Error('Provide times and series');
+  const frames = times.map(time => ({time, items: []}));
+  const labels = new Set();
+  for (const {label, image, values} of series) {
+    if (typeof label !== 'string' || !label.trim() || labels.has(label)) throw new Error('Use unique labels');
+    if (!Array.isArray(values) || values.length !== times.length) throw new Error('Provide one value per time for ' + label);
+    labels.add(label);
+    values.forEach((value, i) => {
+      if (value !== null) frames[i].items.push({label, value, image});
+    });
+  }
+  return frames;
+}
+const observations = data.frames ?? framesFromSeries(data.times, data.series);
+if (!Array.isArray(observations) || !observations.length) throw new Error('Provide at least one frame');
+const identities = new Map();
+let capacity = 0;
+const frames = observations.map((frame, i) => {
+  if (frame.time == null || !Array.isArray(frame.items)) throw new Error('Expected time and items in frame ' + (i + 1));
+  const items = new Map();
+  for (const item of frame.items) {
+    if (typeof item.label !== 'string' || !item.label.trim() || items.has(item.label)) throw new Error('Use unique labels in each frame');
+    if (!Number.isFinite(item.value) || item.value < 0) throw new Error('Expected a non-negative number for ' + item.label);
+    if (!identities.has(item.label)) identities.set(item.label, identities.size);
+    items.set(item.label, item);
+  }
+  capacity = Math.max(capacity, Math.min(limit, items.size));
+  return { time: String(frame.time), items };
+});
+const last = frames.length - 1;
+const plot = find('.plot'), rows = find('.rows'), play = find('.play'), restart = find('.restart');
+const step = parseFloat(getComputedStyle(root).getPropertyValue('--step'));
+const locale = en ? 'en-US' : 'ja-JP';
+const format = new Intl.NumberFormat(locale, {maximumFractionDigits:2});
+const compact = new Intl.NumberFormat(locale, {notation:'compact',maximumFractionDigits:1});
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+root.lang = en ? 'en' : 'ja';
+find('h2').textContent = data.title || (en ? 'Bar chart race' : 'バーチャートレース');
+find('.unit').textContent = data.unit || (en ? 'Value' : '値');
+if (typeof data.note === 'string' && data.note.trim()) {
+  const note = find('.note');
+  note.textContent = data.note.trim();
+  note.hidden = false;
+}
+rows.setAttribute('aria-label',find('h2').textContent);
+plot.style.height = step * capacity + 'px';
+restart.title = en ? 'Reset and replay' : 'リセットして最初から再生';
+restart.setAttribute('aria-label',restart.title);
+
+// Move the grid and bars against the same interpolated maximum.
+const intervals = 4;
+const tickFormat = new Intl.NumberFormat(locale, {maximumSignificantDigits:3});
+const marks = Array.from({length:intervals + 1}, () => {
+  const tick = document.createElement('span'), line = document.createElement('i');
+  tick.className = 'tick';
+  find('.ticks').appendChild(tick);
+  find('.grid').appendChild(line);
+  return {tick,line};
+});
+let previousMax = 0;
+function updateAxis(max) {
+  if (max === previousMax) return;
+  previousMax = max;
+  const rough = max / intervals;
+  const magnitude = 10 ** Math.floor(Math.log10(rough));
+  const multiple = [1,2,2.5,5,10].find(n => n * magnitude >= rough) || 10;
+  const stride = multiple * magnitude || max;
+  marks.forEach(({tick,line},i) => {
+    const value = i * stride;
+    tick.hidden = line.hidden = value > max;
+    if (tick.hidden) return;
+    tick.style.left = line.style.left = (value / max * 100) + '%';
+    tick.textContent = value >= 10000 ? compact.format(value) : tickFormat.format(value);
+  });
+}
+
+
+// Resolve optional, bounded raster images before displaying them. Never request a remote URL.
+const icons = new Map();
+function iconSource(key) {
+  const src = data.images && Object.prototype.hasOwnProperty.call(data.images,key) ? data.images[key] : key;
+  if (typeof src !== 'string' || src.length > 11000) return Promise.resolve(null);
+  if (!icons.has(src)) {
+    icons.set(src, new Promise(resolve => {
+      const match = /^data:image\/(?:png|jpeg|gif|webp);base64,([A-Za-z0-9+/]+={0,2})$/i.exec(src);
+      if (!match || match[1].length % 4) return resolve(null);
+      const padding = match[1].endsWith('==') ? 2 : match[1].endsWith('=') ? 1 : 0;
+      if (match[1].length * .75 - padding > 8192) return resolve(null);
+      const image = new Image();
+      image.onload = () => resolve(image.naturalWidth <= 128 && image.naturalHeight <= 128 ? src : null);
+      image.onerror = () => resolve(null);
+      image.src = src;
+    }));
+  }
+  return icons.get(src);
+}
+function setIcon(node, key) {
+  if (key === node.key) return;
+  node.key = key;
+  node.icon.hidden = true;
+  node.icon.removeAttribute('src');
+  if (key) iconSource(key).then(src => {
+    if (src && node.key === key) { node.icon.src = src; node.icon.hidden = false; }
+  });
+}
+
+const palette = ['#477fdb','#8393ac','#399774','#ea8141','#d85267','#d9ae46','#579b94','#c5779b','#b95870','#63915f','#6b74be','#6b989e'];
+const nodes = new Map();
+// Test the outside position even when the tip is currently inset.
+const tipObserver = new ResizeObserver(() => {
+  const right = plot.getBoundingClientRect().right;
+  for (const {bar,tip,icon} of nodes.values()) {
+    const outsideEnd = bar.getBoundingClientRect().right + tip.getBoundingClientRect().width;
+    tip.classList.toggle('inset', !icon.hidden && outsideEnd > right);
+  }
+});
+tipObserver.observe(plot);
+function makeRow(label) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.setAttribute('role','listitem');
+  row.innerHTML = '<div class="name"><b></b></div><div class="track"><div class="bar"><span class="tip"><img class="icon" alt="" hidden><span class="value"></span></span></div></div>';
+  row.querySelector('b').textContent = label;
+  const color = palette[identities.get(label) % palette.length];
+  row.style.setProperty('--color', color);
+  rows.appendChild(row);
+  const bar = row.querySelector('.bar'), tip = row.querySelector('.tip');
+  tipObserver.observe(bar);
+  tipObserver.observe(tip);
+  return {row, bar, tip, value:row.querySelector('.value'), icon:row.querySelector('img'), y:capacity};
+}
+
+// Combine neighbouring observations once. Missing participants enter/leave from zero between points.
+const segments = frames.map((a,i) => {
+  const b = frames[Math.min(last,i+1)];
+  return Array.from(new Set([...a.items.keys(), ...b.items.keys()]), label => ({
+    label, order:identities.get(label), a:a.items.get(label), b:b.items.get(label)
+  }));
+});
+const duration = 500;
+let elapsed = 0, playing = false, previous = null, request = 0;
+function draw(delta, snap) {
+  const position = elapsed / duration, index = Math.min(last, Math.floor(position));
+  const t = reduced.matches ? 0 : Math.max(0, (position - index - .2) / .8);
+  const point = t >= .5 ? Math.min(index + 1,last) : index;
+  const time = frames[point].time;
+  find('.period').textContent = time;
+
+  const values = [];
+  for (const item of segments[index]) {
+    if (!t && !item.a) continue;
+    const start = item.a?.value ?? 0, end = item.b?.value ?? 0;
+    values.push({item, value:start + (end-start)*t});
+  }
+  values.sort((a,b) => b.value-a.value || a.item.order-b.item.order);
+  values.length = Math.min(capacity,values.length);
+  const axisMax = values[0]?.value || 1;
+  updateAxis(axisMax);
+  const visible = new Set(values.map(r => r.item.label));
+  for (const [label,node] of nodes) {
+    if (!visible.has(label)) {
+      tipObserver.unobserve(node.bar);
+      tipObserver.unobserve(node.tip);
+      node.row.remove();
+      nodes.delete(label);
+    }
+  }
+  let rank = 0;
+  values.forEach(({item,value},i) => {
+    if (!i || value !== values[i-1].value) rank = i+1;
+    if (!nodes.has(item.label)) nodes.set(item.label,makeRow(item.label));
+    const node = nodes.get(item.label);
+    node.y = snap || reduced.matches ? i : i + (node.y-i)*Math.exp(-delta/85);
+    node.row.style.transform = 'translateY('+(node.y*step).toFixed(2)+'px)';
+    node.row.style.zIndex = limit-i;
+    node.bar.style.width = (value/axisMax*100)+'%';
+    const observation = (t >= .5 ? item.b || item.a : item.a || item.b);
+    const display = t && Number.isInteger(item.a?.value ?? 0) && Number.isInteger(item.b?.value ?? 0) ? Math.round(value) : value;
+    const full = format.format(display);
+    node.value.textContent = full.length > 7 ? compact.format(display) : full;
+    node.row.title = rank+' · '+item.label+' · '+full+' '+(data.unit || '');
+    node.row.setAttribute('aria-label',node.row.title);
+    node.row.setAttribute('aria-posinset',i+1);
+    node.row.setAttribute('aria-setsize',values.length);
+    setIcon(node,observation.image);
+  });
+}
+function controls() {
+  const focused = document.activeElement;
+  const ended = elapsed >= last * duration;
+  play.hidden = ended;
+  restart.hidden = playing || !last;
+  play.classList.toggle('playing',playing);
+  play.title = playing ? (en ? 'Pause' : '一時停止') : (en ? 'Play' : '再生');
+  play.setAttribute('aria-label',play.title);
+  if (focused === play && play.hidden && !restart.hidden) restart.focus();
+  if (focused === restart && restart.hidden && !play.hidden) play.focus();
+}
+function pause() {
+  cancelAnimationFrame(request);
+  playing = false;
+  controls();
+}
+function tick(now) {
+  const delta = previous === null ? 0 : Math.min(now-previous,100);
+  previous = now;
+  elapsed = Math.min(elapsed+delta,last*duration);
+  const done = elapsed >= last*duration;
+  draw(delta,done);
+  if (done) pause(); else request = requestAnimationFrame(tick);
+}
+function start(reset) {
+  cancelAnimationFrame(request);
+  if (reset || elapsed >= last*duration) { elapsed = 0; draw(0,true); }
+  previous = null;
+  playing = true;
+  controls();
+  request = requestAnimationFrame(tick);
+}
+play.onclick = () => playing ? pause() : start(false);
+restart.onclick = () => start(true);
+
+draw(0,true);
+if (last && !reduced.matches) start(false); else controls();
+} catch(error) {
+  root.textContent = error.message;
+  root.setAttribute('role','alert');
+}
+})();
+</script>
