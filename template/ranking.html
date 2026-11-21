@@ -1,0 +1,111 @@
+<!-- ランキング(横棒): 値の大きい順に自動で並べ、横棒の長さで値を見せる。1〜3位は金・銀・銅のリボンに数字を入れ、1位は金色の太い棒、2・3位は濃い棒。リボンには光を一度だけ通す。同じ値は同じ順位。表示内容は data で変更できる。 -->
+<div id="rank-w"></div>
+<style>
+#rank-w{box-sizing:border-box;width:100%;padding:14px 12px 12px;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#rank-w *{box-sizing:border-box;}
+#rank-w .ti{margin:0 2px 10px;font-size:17px;font-weight:800;overflow-wrap:anywhere;}
+#rank-w .row{display:grid;grid-template-columns:28px minmax(0,32%) minmax(0,1fr);align-items:center;gap:8px;padding:5px 2px;}
+#rank-w .rk{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--hatch-widget-muted,#6e6e73);}
+#rank-w .nm{min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#rank-w .tr{display:flex;align-items:center;gap:6px;min-width:0;}
+#rank-w .bar{flex:none;height:18px;background:#3a5ad1;opacity:.4;transition:width .7s cubic-bezier(.22,.61,.36,1);}
+#rank-w .vl{flex:none;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
+/* 1〜3位: 金・銀・銅のリボン(しおり形)に白い数字 */
+#rank-w .rb{display:block;width:18px;height:22px;overflow:visible;}
+#rank-w .rb text{font-size:12px;font-weight:800;fill:#fff;}
+#rank-w .m1 .rb{width:21px;height:26px;}
+#rank-w .m2 .nm,#rank-w .m3 .nm{font-weight:700;}
+#rank-w .m2 .bar,#rank-w .m3 .bar{opacity:.85;}
+/* 1位: 大きな名前、金色の太い棒 */
+#rank-w .m1{padding:8px 2px 10px;}
+#rank-w .m1 .nm{font-size:16px;font-weight:800;}
+#rank-w .m1 .bar{height:26px;background:#d4a72c;opacity:1;}
+#rank-w .m1 .vl{font-size:16px;font-weight:800;color:#b8901f;}
+/* 動き: 棒が伸びきったあと、1〜3位のリボンに同時に光が左上から右下へ一度だけ通る。1位は右上で星も一度だけ光る */
+#rank-w .rb .sh{transform:skewY(-35deg);animation:rank-shine .7s ease-in-out .85s 1 both;}
+@keyframes rank-shine{from{transform:translateY(0) skewY(-35deg);}to{transform:translateY(56px) skewY(-35deg);}}
+#rank-w .rb .sp{transform-box:fill-box;transform-origin:center;transform:scale(0);animation:rank-spark .7s ease-out 1.3s 1 both;}
+@keyframes rank-spark{0%{transform:scale(0) rotate(0);}50%{transform:scale(1) rotate(45deg);}100%{transform:scale(0) rotate(90deg);}}
+@media (prefers-reduced-motion: reduce){#rank-w .bar{transition:none;}#rank-w .rb .sh,#rank-w .rb .sp{animation:none;}#rank-w .rb .sp{display:none;}}
+</style>
+<script>
+(function(){
+var R = document.getElementById("rank-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',                    // 'ja' | 'en': 数値の書式の言語
+  title: '好きなおにぎりの具',   // string: ランキングのタイトル
+  unit: '票',                    // string: 値の単位。値の後ろに付けて表示する。無ければ ''
+  /* 項目の名前と値。values は labels と同じ数の、0以上の数値。
+   * 並び順は自由で、値の大きい順に自動で並べる。同じ値は同じ順位(1, 2, 3, 3, 5 のように次の順位を飛ばす) */
+  labels: ['鮭', 'ツナマヨ', '梅', '明太子', '昆布', 'おかか', 'いくら', '高菜'],
+  values: [412, 388, 301, 301, 220, 185, 160, 98]
+};
+
+var EN = data.lang === 'en';
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
+  badLabels: "labels must be an array of one or more names (e.g. ['Salmon', 'Tuna'])",
+  badLen: function(m, n){ return 'values has ' + m + ' items but labels has ' + n + '. Make them the same length'; },
+  badVal: function(l, v){ return l + ': ' + JSON.stringify(v) + ' must be a number, 0 or more'; }
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+var labels = data.labels, values = data.values;
+if (!Array.isArray(labels) || !labels.length) throw new Error(E.badLabels);
+var nv = Array.isArray(values) ? values.length : 0;
+if (nv !== labels.length) throw new Error(E.badLen(nv, labels.length));
+values.forEach(function(v, i){ if (typeof v !== 'number' || !isFinite(v) || v < 0) throw new Error(E.badVal(labels[i], v)); });
+var unit = data.unit == null ? '' : String(data.unit);
+var LOC = EN ? 'en-US' : 'ja-JP';
+
+/* 値の大きい順に並べる(同じ値は書いた順)。順位は同じ値なら同じ */
+var rows = labels.map(function(l, k){ return { name: String(l), v: values[k], k: k }; })
+  .sort(function(a, b){ return b.v - a.v || a.k - b.k; });
+rows.forEach(function(r, i){ r.rank = i && r.v === rows[i - 1].v ? rows[i - 1].rank : i + 1; });
+var MAX = rows[0].v || 1;
+
+/* 1〜3位のリボン。色は左上が淡く右下が濃い斜めのグラデーション。光の帯はグラデーションの縞と同じ向き(右上から左下)に傾けて、左上から右下へ通し、リボンの形で切り抜く。
+ * id は同じページに複数置いても重ならないようにする */
+var U = 'rk' + Math.random().toString(36).slice(2, 8), nid = 0;
+var RIB = { 1: ['#8f6a00', '#f2d35a'], 2: ['#5f646a', '#cfd3d8'], 3: ['#6e3d00', '#d0914a'] };
+function ribbon(n){
+  var id = U + (nid++), P = '<path d="M0 0H22V27L11 22.4 0 27Z"/>';
+  return '<svg class="rb" viewBox="0 0 22 27" aria-hidden="true"><defs>'
+    + '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + RIB[n][1] + '"/><stop offset="1" stop-color="' + RIB[n][0] + '"/></linearGradient>'
+    + '<linearGradient id="' + id + 's" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>'
+    + '<clipPath id="' + id + 'c">' + P + '</clipPath></defs>'
+    + '<g fill="url(#' + id + 'g)">' + P + '</g>'
+    + '<g clip-path="url(#' + id + 'c)"><rect class="sh" x="-1" y="-10" width="24" height="9" fill="url(#' + id + 's)"/></g>'
+    + '<text x="11" y="14.5" text-anchor="middle">' + n + '</text>'
+    + (n === 1 ? '<path class="sp" d="M22 -5 22.9 -1.9 26 -1 22.9 -.1 22 3 21.1 -.1 18 -1 21.1 -1.9Z" fill="#f0c53c"/>' : '')
+    + '</svg>';
+}
+var s = '<div class="ti">' + esc(data.title || '') + '</div>';
+rows.forEach(function(r){
+  var mark = r.rank <= 3 ? ribbon(r.rank) : r.rank;
+  s += '<div class="row' + (r.rank <= 3 ? ' m' + r.rank : '') + '"><span class="rk">' + mark + '</span><span class="nm">' + esc(r.name) + '</span>'
+    + '<span class="tr"><i class="bar" data-w="' + (r.v / MAX) + '" style="width:0"></i><span class="vl">' + esc(r.v.toLocaleString(LOC, { maximumFractionDigits: 2 }) + unit) + '</span></span></div>';
+});
+R.innerHTML = s;
+
+/* 棒の長さ: 値の欄の幅を残して、1位がちょうど収まるようにする。幅が変わったら合わせ直す */
+function size(animate){
+  var bars = R.querySelectorAll('.bar'), vmax = 0;
+  [].forEach.call(R.querySelectorAll('.vl'), function(v){ vmax = Math.max(vmax, v.offsetWidth); });
+  var room = Math.max(0, R.querySelector('.tr').clientWidth - vmax - 6);
+  [].forEach.call(bars, function(b){
+    b.style.transition = animate ? '' : 'none';
+    b.style.width = Math.max(2, room * +b.dataset.w) + 'px';
+  });
+}
+var drawn = false;
+requestAnimationFrame(function(){ requestAnimationFrame(function(){ size(true); drawn = true; }); });
+if (window.ResizeObserver) new ResizeObserver(function(){ if (drawn) size(false); }).observe(R);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>

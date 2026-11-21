@@ -164,6 +164,7 @@ var TEMPLATES = [
   { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '6月から11月までの売上を、去年と並べました。月をタップすると値が出ます。' },
   { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '今日の3時間ごとの気温です。時刻をタップすると値が出ます。' },
   { id: 'pie', name: 'パイチャート', file: 'template/pie.html', user: '支出の内訳と、アンケートの男女比、部署別の人数を見せて', reply: '3つの内訳をパイチャートにしました。扇形か表の行をタップすると、その項目が目立ちます。', scenarios: PIE_SCENARIOS },
+  { id: 'ranking', name: 'ランキング', file: 'template/ranking.html', user: '好きなおにぎりの具のアンケート結果を順位で見せて', reply: '票の多い順に並べました。1〜3位にはリボンが付きます。' },
   { id: 'sheet', name: 'データシート', file: 'template/sheet.html', user: '都道府県の人口や出生数を一覧で見たい', reply: '47都道府県のデータです。見出しをタップすると並び替わり、右端の歯車で表示する列を選べます。' },
   { id: 'omikuji', name: 'おみくじ', file: 'template/omikuji.html', user: 'おみくじを引きたい', reply: 'おみくじを用意しました。箱をタップして引いてください。' },
   { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: '秘密のメッセージを作りました。パスコードは 123456 です。' }
@@ -182,6 +183,7 @@ var PROMPT_EXAMPLES = {
   bar: 'miwidgets.com/register.txt の棒グラフウィジェットで、都道府県の人口の上位5つを表示',
   line: 'miwidgets.com/register.txt の線グラフウィジェットで、この10年の日本の人口の移り変わりを表示',
   pie: 'miwidgets.com/register.txt のパイチャートウィジェットで、日本の発電量の電源別の割合を表示',
+  ranking: 'miwidgets.com/register.txt のランキングウィジェットで、都道府県の面積の上位10位を表示',
   sheet: 'miwidgets.com/register.txt のデータシートウィジェットで、都道府県の人口・面積・人口密度を一覧表示'
 };
 
@@ -308,6 +310,12 @@ var EN_PATCHES = {
     data.series[0].name = 'Tokyo';
     data.series[1].name = 'Osaka';
   },
+  ranking: function(data){
+    data.lang = 'en';
+    data.title = 'Favorite Onigiri Fillings';
+    data.unit = ' votes';
+    data.labels = ['Salmon', 'Tuna Mayo', 'Pickled Plum', 'Spicy Cod Roe', 'Kelp', 'Bonito Flakes', 'Salmon Roe', 'Mustard Greens'];
+  },
   sheet: function(data){
     var PREF = ['Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa'];
     var CAP = ['Sapporo', 'Aomori', 'Morioka', 'Sendai', 'Akita', 'Yamagata', 'Fukushima', 'Mito', 'Utsunomiya', 'Maebashi', 'Saitama', 'Chiba', 'Shinjuku', 'Yokohama', 'Niigata', 'Toyama', 'Kanazawa', 'Fukui', 'Kofu', 'Nagano', 'Gifu', 'Shizuoka', 'Nagoya', 'Tsu', 'Otsu', 'Kyoto', 'Osaka', 'Kobe', 'Nara', 'Wakayama', 'Tottori', 'Matsue', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Takamatsu', 'Matsuyama', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Naha'];
@@ -336,6 +344,7 @@ var EN_TEMPLATES = [
   { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are sales from June to November next to last year\u2019s. Tap a month to see the values.' },
   { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here\u2019s today\u2019s temperature every 3 hours. Tap a time to see the values.' },
   { id: 'pie', name: 'Pie Chart', user: 'Show me my spending breakdown, the gender split of the survey, and headcount by department', reply: 'Here are the three breakdowns as pie charts. Tap a slice or a table row to highlight it.', scenarios: EN_PIE_SCENARIOS },
+  { id: 'ranking', name: 'Ranking', user: 'Rank the results of our favorite onigiri filling survey', reply: 'Here they are from most to fewest votes. The top three get ribbons.' },
   { id: 'sheet', name: 'Data Sheet', user: 'Show me population and birth data for each prefecture in Japan', reply: 'Here\u2019s data for all 47 prefectures. Tap a header to sort, and use the gear at the right end to choose columns.' },
   { id: 'omikuji', name: 'Omikuji Fortune', user: 'I want to draw an omikuji fortune', reply: 'Your omikuji is ready. Tap the box to draw it.' },
   { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'Your secret message is ready. The passcode is 123456.' }
@@ -353,6 +362,7 @@ var EN_PROMPT_EXAMPLES = {
   bar: 'Use the miwidgets.com/register.txt bar chart widget to show the 5 most populous US states',
   line: 'Use the miwidgets.com/register.txt line chart widget to show how the US population changed over the last 10 years',
   pie: 'Use the miwidgets.com/register.txt pie chart widget to show the share of US electricity by source',
+  ranking: 'Use the miwidgets.com/register.txt ranking widget to show the 10 largest US states by area',
   sheet: 'Use the miwidgets.com/register.txt data sheet widget to list the 50 US states with population, area and density'
 };
 var UI_TEXT = LANG === 'en' ? {
