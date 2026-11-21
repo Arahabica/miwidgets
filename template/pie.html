@@ -1,0 +1,284 @@
+<!-- パイチャートテンプレート: 項目ごとの値の割合を円で表示。名前と割合は扇形の中に入れば中に、入らなければ円を小さくして引き出し線で外に書く。下に値・割合の表。項目ごとに色を指定できる。表示内容は data で変更できる。 -->
+<div id="pie-w"></div>
+<style>
+#pie-w{box-sizing:border-box;width:100%;padding:14px 12px 12px;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#pie-w *{box-sizing:border-box;}
+#pie-w .hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 10px;}
+#pie-w .ti{min-width:0;overflow-wrap:anywhere;font-size:17px;font-weight:800;}
+#pie-w svg{display:block;width:min(400px,100%);margin:0 auto 12px;overflow:visible;-webkit-tap-highlight-color:transparent;}
+#pie-w svg.solo{width:min(230px,76%);}
+#pie-w .sg{cursor:pointer;transition:transform .2s,opacity .2s;}
+/* 扇形の中のラベル。描き終わってから出す */
+#pie-w .lb{font-size:10px;font-weight:600;pointer-events:none;font-variant-numeric:tabular-nums;opacity:0;transition:opacity .3s;}
+#pie-w .lb .ln{font-size:11px;font-weight:700;}
+#pie-w svg.show .lb{opacity:1;}
+#pie-w.has-sel [data-i]:not(.on){opacity:.3;}
+/* 外に出したラベル */
+#pie-w .co{cursor:pointer;transition:opacity .2s;}
+#pie-w .co polyline{fill:none;stroke:var(--hatch-widget-muted,#6e6e73);stroke-width:.8;}
+#pie-w .co text{font-size:12px;fill:currentColor;font-variant-numeric:tabular-nums;}
+#pie-w .co tspan{font-weight:700;}
+/* 凡例: 色・名前・値・割合 */
+#pie-w .lg{display:flex;flex-direction:column;}
+#pie-w .lr{display:grid;grid-template-columns:10px minmax(0,1fr) auto 46px;align-items:center;gap:8px;width:100%;padding:8px 2px;border:0;border-top:1px solid var(--hatch-widget-border,#d1d1d6);background:none;color:inherit;font:inherit;font-size:13px;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .2s;}
+#pie-w .lr:first-child{border-top:0;}
+#pie-w .lr:focus:not(:focus-visible){outline:none;}
+#pie-w .sw{width:10px;height:10px;border-radius:2px;}
+#pie-w .nm{min-width:0;overflow-wrap:anywhere;}
+#pie-w .vl{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+#pie-w .pt{text-align:right;font-size:12px;color:var(--hatch-widget-muted,#6e6e73);font-variant-numeric:tabular-nums;}
+#pie-w .lr.on .nm{font-weight:700;}
+</style>
+<script>
+(function(){
+var R = document.getElementById("pie-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',            // 'ja' | 'en': 数値の書式の言語
+  title: '支出の内訳',   // string: グラフのタイトル
+  unit: '円',            // string: 値の単位。値の後ろに付けて表示する。無ければ ''
+  /* 項目。12時の位置から時計回りに、書いた順で並べる。value は0以上の数値で、割合は合計から自動で計算する。
+   * color で色を指定できる(省略すると下の PALETTE の順) */
+  items: [
+    { name: '食費',   value: 42000 },
+    { name: '住居費', value: 85000 },
+    { name: '交通費', value: 12000 },
+    { name: 'その他', value: 21000 }
+  ]
+};
+
+/* color を省略した項目の色(この順に使い、足りなければ色相をずらして作る) */
+var PALETTE = ['#3a5ad1', '#f0883e', '#20a46b', '#e5484d', '#9b6dff'];
+var EN = data.lang === 'en';
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
+  badItems: 'items must be an array of one or more { name, value } items',
+  badName: function(k){ return 'items[' + k + ']: name must be a string'; },
+  badVal: function(n, v){ return n + ': value ' + JSON.stringify(v) + ' must be a number, 0 or more'; },
+  badColor: function(n){ return n + ': color must be a CSS color string (e.g. \'#3a5ad1\')'; },
+  zero: 'the values add up to 0. At least one item needs a value above 0'
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ---- data を確かめる ---- */
+var items = data.items;
+if (!Array.isArray(items) || !items.length) throw new Error(E.badItems);
+items.forEach(function(it, k){
+  if (!it || typeof it.name !== 'string') throw new Error(E.badName(k));
+  if (typeof it.value !== 'number' || !isFinite(it.value) || it.value < 0) throw new Error(E.badVal(it.name, it.value));
+  if (it.color != null && (typeof it.color !== 'string' || !it.color)) throw new Error(E.badColor(it.name));
+});
+var TOTAL = items.reduce(function(a, it){ return a + it.value; }, 0);
+if (!(TOTAL > 0)) throw new Error(E.zero);
+var COLORS = items.map(function(it, k){ return esc(it.color || PALETTE[k] || 'hsl(' + Math.round(k * 137.5 % 360) + ',62%,52%)'); });
+var unit = data.unit == null ? '' : String(data.unit);
+var LOC = EN ? 'en-US' : 'ja-JP';
+function fmt(v){ return v.toLocaleString(LOC, { maximumFractionDigits: 2 }) + unit; }
+/* 割合: 10% 以上は整数、それ未満は小数1桁 */
+function pct(v){ var p = v / TOTAL * 100; return (p >= 10 || p === 0 ? Math.round(p) : Math.round(p * 10) / 10) + '%'; }
+function f2(n){ return Math.round(n * 100) / 100; }
+
+/* ---- 扇形の形(12時から時計回り。ラジアン) ---- */
+var C = 100, RAD = 96, FULL = 2 * Math.PI - 1e-6;   // RAD: 円の半径。外にラベルを書くときは小さくする
+var SHOWN = items.filter(function(it){ return it.value > 0; }).length;
+/* 扇形の辺を内側へ寄せる幅。隣との隙間はこの2倍になる。
+ * 割合が3%以下の項目があるときは、細い扇形が隙間で削られて中心から浮いて見えるので、隙間をあけない */
+var SMALL = items.some(function(it){ return it.value > 0 && it.value / TOTAL <= .03; });
+var INS = SHOWN > 1 && !SMALL ? 1.25 : 0;
+var acc = 0;
+var SLICES = items.map(function(it){ var a0 = acc / TOTAL * 2 * Math.PI; acc += it.value; return { a0: a0, a1: acc / TOTAL * 2 * Math.PI }; });
+function pt(a, r){ return [C + r * Math.sin(a), C - r * Math.cos(a)]; }
+/* 辺を INS だけ平行に内側へ寄せた扇形の path。隙間の幅が中心から外までそろう */
+function sector(a0, a1){
+  var th = a1 - a0;
+  if (th >= FULL) return 'M' + C + ',' + (C - RAD) + 'A' + RAD + ',' + RAD + ' 0 1 1 ' + C + ',' + (C + RAD) + 'A' + RAD + ',' + RAD + ' 0 1 1 ' + C + ',' + (C - RAD) + 'Z';
+  var d = Math.asin(INS / RAD), b0 = a0 + d, b1 = a1 - d;
+  if (b1 - b0 < .004) return '';
+  var ap = INS / Math.sin(th / 2);   // 寄せた2辺が交わる点の、中心からの距離
+  if (ap > RAD * .9) return '';
+  var q = pt((a0 + a1) / 2, ap), p0 = pt(b0, RAD), p1 = pt(b1, RAD);
+  return 'M' + f2(q[0]) + ',' + f2(q[1]) + 'L' + f2(p0[0]) + ',' + f2(p0[1]) + 'A' + RAD + ',' + RAD + ' 0 ' + (b1 - b0 > Math.PI ? 1 : 0) + ' 1 ' + f2(p1[0]) + ',' + f2(p1[1]) + 'Z';
+}
+/* 点 (x, y) が k 番目の扇形の内側に、余白 P を残して入るか */
+function inSlice(x, y, k){
+  var a = SLICES[k], th = a.a1 - a.a0, dx = x - C, dy = y - C, r = Math.sqrt(dx * dx + dy * dy), P = 2.5;
+  if (r > RAD - P) return false;
+  if (th >= FULL) return true;
+  var phi = Math.atan2(dx, -dy); if (phi < 0) phi += 2 * Math.PI;
+  var rel = phi - a.a0; if (rel < 0) rel += 2 * Math.PI;
+  if (rel > th) return false;
+  function edge(t){ return t >= Math.PI / 2 ? r : r * Math.sin(t); }   // 辺までの距離
+  return edge(rel) >= INS + P && edge(th - rel) >= INS + P;
+}
+/* 文字の枠(四隅・辺の中点・中心)がすべて扇形に入るか */
+function boxIn(b, p, k){
+  for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++)
+    if (!inSlice(p[0] + b.x + b.width * i / 2, p[1] + b.y + b.height * j / 2, k)) return false;
+  return true;
+}
+
+/* ---- 見出し・円・凡例 ---- */
+var s = '<div class="hd"><span class="ti">' + esc(data.title || '') + '</span></div>';
+s += '<svg role="img" aria-label="' + esc(data.title || '') + '"></svg><div class="lg">';
+items.forEach(function(it, k){
+  s += '<button type="button" class="lr" data-i="' + k + '"><i class="sw" style="background:' + COLORS[k] + '"></i><span class="nm">' + esc(it.name) + '</span><span class="vl">' + esc(fmt(it.value)) + '</span><span class="pt">' + pct(it.value) + '</span></button>';
+});
+R.innerHTML = s + '</div>';
+var svg = R.querySelector('svg');
+
+/* ---- 扇形の中のラベル。名前と割合が入る扇形にだけ書く。書けたら true ---- */
+var NS = 'http://www.w3.org/2000/svg', LH = 12.5;
+/* 扇形の色が明るいときは暗い文字にする */
+function ink(el){
+  var m = /^rgba?\(/.test(getComputedStyle(el).fill) && getComputedStyle(el).fill.match(/[\d.]+/g);
+  return m && (.299 * m[0] + .587 * m[1] + .114 * m[2]) / 255 > .66 ? '#1c1c1e' : '#fff';
+}
+function label(k){
+  var it = items[k], a = SLICES[k], m = (a.a0 + a.a1) / 2;
+  var g = svg.querySelector('.sg[data-i="' + k + '"]');
+  var t = document.createElementNS(NS, 'text');
+  t.setAttribute('class', 'lb'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('fill', ink(g.firstChild));
+  g.appendChild(t);
+  var opts = [[it.name, pct(it.value)]];
+  /* 置く位置: 中心からの距離を何通りか試す(1項目だけのときは真ん中) */
+  var rs = a.a1 - a.a0 >= FULL ? [0] : [.62, .54, .7, .46, .78];
+  for (var o = 0; o < opts.length; o++) {
+    t.textContent = '';
+    opts[o].forEach(function(line, j, L){
+      var sp = document.createElementNS(NS, 'tspan');
+      sp.setAttribute('x', 0); sp.setAttribute('y', f2((j - (L.length - 1) / 2) * LH + 3.8));
+      if (j === 0 && L.length > 1) sp.setAttribute('class', 'ln');
+      sp.textContent = line; t.appendChild(sp);
+    });
+    var b = t.getBBox();
+    if (!b.width) break;   // 画面に出ていないと測れない
+    for (var q = 0; q < rs.length; q++) {
+      var p = pt(m, RAD * rs[q]);
+      if (boxIn(b, p, k)) { t.setAttribute('transform', 'translate(' + f2(p[0]) + ',' + f2(p[1]) + ')'); return true; }
+    }
+  }
+  g.removeChild(t);
+  return false;
+}
+/* 扇形を作り直して中のラベルを書き、中に入らなかった項目の番号を返す。
+ * big: 外のラベル用の余白を取らずに、円を大きく出す */
+function layout(big){
+  RAD = big ? 96 : 84;
+  svg.classList.toggle('solo', big);
+  svg.setAttribute('viewBox', big ? '0 0 200 200' : '-90 0 380 200');
+  svg.innerHTML = '';
+  items.forEach(function(it, k){
+    if (!it.value) return;
+    var g = document.createElementNS(NS, 'g'), path = document.createElementNS(NS, 'path');
+    g.setAttribute('class', 'sg'); g.dataset.i = k;
+    path.setAttribute('fill', COLORS[k]); path.setAttribute('d', '');
+    g.appendChild(path); svg.appendChild(g);
+  });
+  var out = [];
+  items.forEach(function(it, k){ if (it.value && !label(k)) out.push(k); });
+  return out;
+}
+/* まず大きい円で全部を中に書いてみて、入らない項目があれば外に書く形に切り替える */
+var OUTS = layout(true);
+if (OUTS.length) OUTS = layout(false);
+
+/* ---- 中に入らなかった項目は、引き出し線で左右の外に書く(Highcharts の円グラフと同じやり方) ----
+ * 1. ラベルの元の位置は、扇形の真ん中の向きに、円から DIST だけ外(半径 RAD+DIST の円の上)
+ * 2. 左右それぞれで、重なるラベルをまとめて、まとまりの真ん中が元の位置の真ん中に来るように上下へ広げる
+ * 3. ラベルの横の位置は、その高さで半径 RAD+DIST の円に沿わせる
+ * 4. 線は扇形 → 少し外 → (ずらしたラベルだけ)扇形の向きの線とラベルの高さが交わる点で曲げて横へ → ラベル。
+ *    ずらしていないラベルへの線は、扇形の向きの真っすぐな1本になる */
+var DIST = 14, OL = 14, PAD = 4, top = 0, bottom = 200, VX0 = -90, VX1 = 290;
+function mid(k){ return (SLICES[k].a0 + SLICES[k].a1) / 2; }
+[1, -1].forEach(function(side){
+  var L = OUTS.filter(function(k){ return (Math.sin(mid(k)) >= -1e-9) === (side > 0); })   // 右半分か左半分か
+    .map(function(k){ return { k: k, t: pt(mid(k), RAD + DIST)[1] }; })
+    .sort(function(a, b){ return a.t - b.t; });
+  /* 重なりをなくす: 重なるラベルはひとまとまりにし、まとまりの元の位置の上端と下端の真ん中に、まとまりの真ん中を合わせる */
+  var G = L.map(function(o){ return { list: [o], lo: o.t, hi: o.t }; });
+  function place(g){ g.pos = (g.lo + g.hi) / 2 - g.list.length * OL / 2; }
+  G.forEach(place);
+  for (var i = 1; i < G.length; ) {
+    if (G[i].pos < G[i - 1].pos + G[i - 1].list.length * OL) {
+      G[i - 1] = { list: G[i - 1].list.concat(G[i].list), lo: G[i - 1].lo, hi: G[i].hi };
+      place(G[i - 1]); G.splice(i, 1); i = Math.max(1, i - 1);
+    } else i++;
+  }
+  G.forEach(function(g){ g.list.forEach(function(o, j){ o.y = g.pos + j * OL + OL / 2; }); });
+
+  L.forEach(function(o){
+    var m = mid(o.k), y = o.y, RD = RAD + DIST, dy = y - C;
+    var x = C + side * Math.sqrt(Math.max(0, RD * RD - dy * dy));   // ラベルの高さで、半径 RD の円に沿う位置
+    var touch = pt(m, RAD), brk = pt(m, RAD + 3);
+    var pts = [[x, y]];
+    /* 扇形の向きの線と、ラベルの高さの横線が交わる点。ラベルと brk の間にあるときだけ、そこで曲げる */
+    if (Math.abs(Math.cos(m)) > 1e-6) {
+      var cx = C + (C - y) * Math.tan(m);
+      if (side > 0 ? cx <= x && cx >= brk[0] : cx >= x && cx <= brk[0]) pts.push([cx, y]);
+    }
+    pts.push(brk, touch);
+    var g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'co'); g.dataset.i = o.k;
+    var tx = x + side * PAD;
+    g.innerHTML = '<polyline points="' + pts.map(function(q){ return f2(q[0]) + ',' + f2(q[1]); }).join(' ') + '"/>'
+      + '<text x="' + f2(tx) + '" y="' + f2(y + 3.8) + '" text-anchor="' + (side > 0 ? 'start' : 'end') + '"></text>';
+    svg.appendChild(g);
+    /* 名前が長くて枠からはみ出すときは、後ろを「…」で詰める */
+    var t = g.lastChild, nm = items[o.k].name, room = side > 0 ? VX1 - 2 - tx : tx - VX0 - 2;
+    function put(n){ t.innerHTML = esc(n) + ' <tspan>' + pct(items[o.k].value) + '</tspan>'; }
+    put(nm);
+    while (t.getComputedTextLength() > room && nm.length > 1) { nm = nm.slice(0, -1); put(nm + '…'); }
+    top = Math.min(top, y - 10); bottom = Math.max(bottom, y + 8);
+  });
+});
+if (OUTS.length) svg.setAttribute('viewBox', VX0 + ' ' + f2(top) + ' ' + (VX1 - VX0) + ' ' + f2(bottom - top));
+
+
+
+/* ---- 描く。12時から時計回りに広がる(動きを減らす設定では一度に描く) ---- */
+function paint(f){
+  var end = f * 2 * Math.PI;
+  [].forEach.call(svg.querySelectorAll('.sg'), function(g){
+    var a = SLICES[+g.dataset.i];
+    g.firstChild.setAttribute('d', a.a0 >= end ? '' : sector(a.a0, Math.min(a.a1, end)));
+  });
+}
+var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reduce || !window.requestAnimationFrame) { paint(1); svg.classList.add('show'); }
+else {
+  var t0 = null;
+  requestAnimationFrame(function step(t){
+    if (t0 === null) t0 = t;
+    var f = Math.min(1, (t - t0) / 700);
+    paint(1 - Math.pow(1 - f, 3));
+    if (f < 1) requestAnimationFrame(step); else svg.classList.add('show');
+  });
+}
+
+/* ---- 扇形・外のラベル・凡例をタップすると、その項目を目立たせる。もう一度か外側のタップで戻す ---- */
+var sel = -1;
+function select(i){
+  sel = i;
+  R.classList.toggle('has-sel', i >= 0);
+  [].forEach.call(R.querySelectorAll('[data-i]'), function(el){
+    var on = +el.dataset.i === i;
+    el.classList.toggle('on', on);
+    if (el.classList.contains('sg')) {
+      /* 選んだ扇形は中心から外へ少しずらす */
+      var a = SLICES[+el.dataset.i], m = (a.a0 + a.a1) / 2, d = on && a.a1 - a.a0 < FULL ? 6 : 0;
+      el.style.transform = 'translate(' + f2(d * Math.sin(m)) + 'px,' + f2(-d * Math.cos(m)) + 'px)';
+    }
+  });
+}
+R.addEventListener('click', function(e){
+  var t = e.target.closest('.sg,.co,.lr');
+  if (t) { var i = +t.dataset.i; select(sel === i ? -1 : i); return; }
+  if (sel >= 0) select(-1);
+});
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>

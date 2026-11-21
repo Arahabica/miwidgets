@@ -46,6 +46,9 @@ https://miwidgets.com/template/bar.html
 Line chart — a title and values over time as lines, any number of series, each with an optional color; tap a point to see its values
 https://miwidgets.com/template/line.html
 
+Pie chart — a title and values per item as slices of a circle, each with an optional color; shares are worked out from the total; names and shares go inside the slices or on leader lines, with a table of values below; tap a slice to highlight it
+https://miwidgets.com/template/pie.html
+
 Data sheet — rows and columns as a table or a two-column list; viewers can sort by a column and choose which columns to show
 https://miwidgets.com/template/sheet.html
 
