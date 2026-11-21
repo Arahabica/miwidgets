@@ -106,37 +106,29 @@ var data = {
 const en = data.lang === 'en';
 const limit = Math.min(15, Math.max(1, Math.trunc(data.limit ?? 10)));
 if (!Number.isFinite(limit)) throw new Error('limit must be a number');
-function framesFromSeries(times, series) {
-  if (!Array.isArray(times) || !times.length || !Array.isArray(series)) throw new Error('Provide times and series');
-  const frames = times.map(time => ({time, items: []}));
-  const labels = new Set();
-  for (const {label, image, values} of series) {
-    if (typeof label !== 'string' || !label.trim() || labels.has(label)) throw new Error('Use unique labels');
-    if (!Array.isArray(values) || values.length !== times.length) throw new Error('Provide one value per time for ' + label);
-    labels.add(label);
-    values.forEach((value, i) => {
-      if (value !== null) frames[i].items.push({label, value, image});
-    });
-  }
-  return frames;
+const {times, series} = data;
+if (!Array.isArray(times) || !times.length || !Array.isArray(series)) throw new Error('Provide times and series');
+const labels = new Set();
+for (const {label, values} of series) {
+  if (typeof label !== 'string' || !label.trim() || labels.has(label)) throw new Error('Use unique labels');
+  if (!Array.isArray(values) || values.length !== times.length) throw new Error('Provide one value per time for ' + label);
+  labels.add(label);
 }
-const observations = data.frames ?? framesFromSeries(data.times, data.series);
-if (!Array.isArray(observations) || !observations.length) throw new Error('Provide at least one frame');
 const identities = new Map();
 let capacity = 0;
-const frames = observations.map((frame, i) => {
-  if (frame.time == null || !Array.isArray(frame.items)) throw new Error('Expected time and items in frame ' + (i + 1));
-  const items = new Map();
-  for (const item of frame.items) {
-    if (typeof item.label !== 'string' || !item.label.trim() || items.has(item.label)) throw new Error('Use unique labels in each frame');
-    if (!Number.isFinite(item.value) || item.value < 0) throw new Error('Expected a non-negative number for ' + item.label);
-    if (!identities.has(item.label)) identities.set(item.label, identities.size);
-    items.set(item.label, item);
+for (const [i, time] of times.entries()) {
+  if (time == null) throw new Error('Missing time at position ' + (i + 1));
+  let count = 0;
+  for (const {label, values} of series) {
+    const value = values[i];
+    if (value === null) continue;
+    if (!Number.isFinite(value) || value < 0) throw new Error('Expected a non-negative number for ' + label);
+    if (!identities.has(label)) identities.set(label, identities.size);
+    count++;
   }
-  capacity = Math.max(capacity, Math.min(limit, items.size));
-  return { time: String(frame.time), items };
-});
-const last = frames.length - 1;
+  capacity = Math.max(capacity, Math.min(limit, count));
+}
+const last = times.length - 1;
 const plot = find('.plot'), rows = find('.rows'), play = find('.play'), restart = find('.restart');
 const step = parseFloat(getComputedStyle(root).getPropertyValue('--step'));
 const locale = en ? 'en-US' : 'ja-JP';
@@ -186,8 +178,7 @@ function updateAxis(max) {
 
 // Resolve optional, bounded raster images before displaying them. Never request a remote URL.
 const icons = new Map();
-function iconSource(key) {
-  const src = data.images && Object.prototype.hasOwnProperty.call(data.images,key) ? data.images[key] : key;
+function iconSource(src) {
   if (typeof src !== 'string' || src.length > 11000) return Promise.resolve(null);
   if (!icons.has(src)) {
     icons.set(src, new Promise(resolve => {
@@ -239,29 +230,22 @@ function makeRow(label) {
   return {row, bar, tip, value:row.querySelector('.value'), icon:row.querySelector('img'), y:capacity};
 }
 
-// Combine neighbouring observations once. Missing participants enter/leave from zero between points.
-const segments = frames.map((a,i) => {
-  const b = frames[Math.min(last,i+1)];
-  return Array.from(new Set([...a.items.keys(), ...b.items.keys()]), label => ({
-    label, order:identities.get(label), a:a.items.get(label), b:b.items.get(label)
-  }));
-});
 const duration = 500;
 let elapsed = 0, playing = false, previous = null, request = 0;
 function draw(delta, snap) {
   const position = elapsed / duration, index = Math.min(last, Math.floor(position));
   const t = reduced.matches ? 0 : Math.max(0, (position - index - .2) / .8);
-  const point = t >= .5 ? Math.min(index + 1,last) : index;
-  const time = frames[point].time;
-  find('.period').textContent = time;
+  const next = Math.min(index + 1, last);
+  find('.period').textContent = times[t >= .5 ? next : index];
 
   const values = [];
-  for (const item of segments[index]) {
-    if (!t && !item.a) continue;
-    const start = item.a?.value ?? 0, end = item.b?.value ?? 0;
-    values.push({item, value:start + (end-start)*t});
+  for (const item of series) {
+    const a = item.values[index], b = item.values[next];
+    if (a === null && (!t || b === null)) continue;
+    const start = a ?? 0, end = b ?? 0;
+    values.push({item, value: start + (end - start) * t});
   }
-  values.sort((a,b) => b.value-a.value || a.item.order-b.item.order);
+  values.sort((a,b) => b.value-a.value || identities.get(a.item.label)-identities.get(b.item.label));
   values.length = Math.min(capacity,values.length);
   const axisMax = values[0]?.value || 1;
   updateAxis(axisMax);
@@ -283,15 +267,14 @@ function draw(delta, snap) {
     node.row.style.transform = 'translateY('+(node.y*step).toFixed(2)+'px)';
     node.row.style.zIndex = limit-i;
     node.bar.style.width = (value/axisMax*100)+'%';
-    const observation = (t >= .5 ? item.b || item.a : item.a || item.b);
-    const display = t && Number.isInteger(item.a?.value ?? 0) && Number.isInteger(item.b?.value ?? 0) ? Math.round(value) : value;
+    const display = t && Number.isInteger(item.values[index] ?? 0) && Number.isInteger(item.values[next] ?? 0) ? Math.round(value) : value;
     const full = format.format(display);
     node.value.textContent = full.length > 7 ? compact.format(display) : full;
     node.row.title = rank+' · '+item.label+' · '+full+' '+(data.unit || '');
     node.row.setAttribute('aria-label',node.row.title);
     node.row.setAttribute('aria-posinset',i+1);
     node.row.setAttribute('aria-setsize',values.length);
-    setIcon(node,observation.image);
+    setIcon(node,item.image);
   });
 }
 function controls() {

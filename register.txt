@@ -13,7 +13,7 @@ that persists across sessions.
 
 - Copy the template source as is. Change only the values inside `var data = {...}`.
 - Do not change the HTML, CSS, JavaScript or design.
-- The sample images in `IMAGES` are 30px placeholders. Never show them. Replace them with the user's images, or remove the image from `data` if there are none.
+- For Quiz and Secret Message, put the user's images in `data.images` as base64 data URIs. Reference each image by its key in `data.questions[].image` or `data.message.image`. Replace the 30px placeholders. If no image is supplied, omit the image reference.
 - The templates are in Japanese by default. When the user writes in English, set `lang` to 'en' in `data` if it has one, and write every string in `data` in English.
 - Before each use, fetch https://miwidgets.com/version.txt. If the number has changed since you last fetched the templates, fetch them again.
 

@@ -197,12 +197,22 @@ async function refresh(force){
   render();
 }
 
-/* 見本の data のファイル(playground/samples/<名前>.js)を読む。無ければ '' */
+/* 見本が無いと分かった名前は、次のページ読み込みまで再取得しない。 */
+var missingSamples = new Set();
 async function loadSamples(t){
-  try {
-    var res = await fetch('samples/' + t.id.split('_')[0] + '.js', { cache: 'no-store' });
-    return res.ok ? await res.text() : '';
-  } catch (e) { return ''; }
+  var names = [t.id];
+  var variant = t.draft && /^(.+?)_\d+(?:_|$)/.exec(t.id);
+  if (variant) names.push(variant[1]);
+  for (var name of names) {
+    if (missingSamples.has(name)) continue;
+    try {
+      var res = await fetch('samples/' + name + '.js', { cache: 'no-store' });
+      if (res.ok) return await res.text();
+      if (res.status !== 404) return '';
+      missingSamples.add(name);
+    } catch (e) { return ''; }
+  }
+  return '';
 }
 /* ファイルは SAMPLES({ '見出し': { ...data... }, ... }); の形。書き方の誤りは画面上部に出す */
 function readSamples(src){

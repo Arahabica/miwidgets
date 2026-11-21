@@ -518,8 +518,8 @@ async function loadTemplateSource(t){
     var imageData = await fetch(SITE_ROOT + imageFile);
     if (!imageData.ok) throw new Error(imageFile + ': HTTP ' + imageData.status);
     var images = await imageData.json();
-    source = source.replace(/^var IMAGES = \{[\s\S]*?^\};/m, function(){
-      return 'var IMAGES = ' + JSON.stringify(images).replace(/</g, '\\u003c') + ';';
+    source = source.replace(/^(var\s+data\s*=\s*\{[\s\S]*?^\};)/m, function(block){
+      return block + '\ndata.images = ' + JSON.stringify(images).replace(/</g, '\\u003c') + ';';
     });
   }
   return source;
