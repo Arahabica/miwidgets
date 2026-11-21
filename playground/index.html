@@ -11,6 +11,8 @@
   - template/*.html を保存すると、1秒以内に自動で描き直す
   - data をその場で書き換えられる(テンプレートのファイルは変えない)
   - 複数の幅・ライト/ダーク・英語(data.lang = 'en')で同時に確認できる
+  - playground/samples/<名前>.js に見本の data を書いておくと、テンプレートの data の下に並べて描く。
+    <名前> はテンプレート名の最初の '_' より前(pie_2_callout → pie)なので、同じテンプレートの案どうしで共有する
 -->
 <style>
 :root{
@@ -39,6 +41,8 @@ textarea{flex:1;width:100%;border:0;padding:12px;resize:none;font:12px/1.55 ui-m
 main{height:100vh;overflow:auto;padding:16px;}
 .status{font-size:11px;color:var(--muted);margin-bottom:12px;}
 .frames{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;}
+.group + .group{margin-top:28px;}
+.group h3{font-size:12px;font-weight:600;margin:0 0 8px;color:var(--muted);}
 .phone{border-radius:22px;padding:12px;box-shadow:0 2px 12px #0000001a;}
 .phone.light{background:#fff;--bubble:#f2f2f7;}
 .phone.dark{background:#000;--bubble:#2c2c2e;}
@@ -68,7 +72,7 @@ main{height:100vh;overflow:auto;padding:16px;}
 </section>
 <main>
   <div class="status" id="status"></div>
-  <div class="frames" id="frames"></div>
+  <div id="frames"></div>
 </main>
 <script>
 (function(){
@@ -86,6 +90,7 @@ var store = {
   set: function(k, v){ try { localStorage.setItem('playground:' + k, JSON.stringify(v)); } catch (e) {} }
 };
 var templates = [], current = null, source = '', original = '', edited = {}, timer = 0;
+var samples = [], samplesSrc = '';   // 見本の data([{ name, data }]。data は 'var data = {...};' の文字列)
 
 /* テンプレートの data ブロック('var data = {' から、行頭の '};' まで)を取り出す */
 function splitData(src){
@@ -98,9 +103,9 @@ function splitData(src){
   return { before: src.slice(0, m.index), data: src.slice(m.index, end), after: src.slice(end) };
 }
 
-function build(theme){
+function build(theme, sample){
   var parts = splitData(source);
-  var data = edited[current.file] != null ? edited[current.file] : original;
+  var data = sample != null ? sample : edited[current.file] != null ? edited[current.file] : original;
   var body = parts ? parts.before + data + ($('en').checked ? "\ndata.lang = 'en';" : '') + parts.after : source;
   /* テンプレートが投げた例外や構文エラーを親に伝える */
   var hook = '<script>window.onerror=function(m,s,l,c){parent.postMessage({pg:1,id:frameElement.dataset.id,msg:m+(l?" (line "+l+")":"")},"*");};<\/script>';
@@ -121,20 +126,30 @@ function render(){
   var box = $('frames'), widths = store.get('widths', [375]);
   var themes = ['light', 'dark'].filter(function(t){ return $(t).checked; });
   box.innerHTML = '';
-  themes.forEach(function(theme){
-    widths.forEach(function(w){
-      var id = theme + w;
-      var ph = document.createElement('div');
-      ph.className = 'phone ' + theme;
-      ph.style.width = w + 'px';
-      ph.innerHTML = '<div class="cap">' + w + 'px · ' + theme + '</div><div class="bubble"><iframe data-id="' + id + '"></iframe></div><div class="errs" data-errs="' + id + '"></div>';
-      box.appendChild(ph);
-      var fr = ph.querySelector('iframe');
-      fr.addEventListener('load', function(){
-        fit(fr);
-        try { new fr.contentWindow.ResizeObserver(function(){ fit(fr); }).observe(fr.contentDocument.documentElement); } catch (e) {}
+  /* テンプレートの data(左で書き換えたもの)と、見本の data をそれぞれ1段ずつ並べる */
+  var groups = [{ name: samples.length ? 'テンプレートの data' : '', data: null }].concat(samples);
+  groups.forEach(function(gr, gi){
+    var sec = document.createElement('div');
+    sec.className = 'group';
+    sec.innerHTML = (gr.name ? '<h3></h3>' : '') + '<div class="frames"></div>';
+    if (gr.name) sec.querySelector('h3').textContent = gr.name;
+    box.appendChild(sec);
+    if (gr.err) { sec.querySelector('h3').style.color = 'var(--err)'; return; }
+    themes.forEach(function(theme){
+      widths.forEach(function(w){
+        var id = theme + w + '-' + gi;
+        var ph = document.createElement('div');
+        ph.className = 'phone ' + theme;
+        ph.style.width = w + 'px';
+        ph.innerHTML = '<div class="cap">' + w + 'px · ' + theme + '</div><div class="bubble"><iframe data-id="' + id + '"></iframe></div><div class="errs" data-errs="' + id + '"></div>';
+        sec.lastChild.appendChild(ph);
+        var fr = ph.querySelector('iframe');
+        fr.addEventListener('load', function(){
+          fit(fr);
+          try { new fr.contentWindow.ResizeObserver(function(){ fit(fr); }).observe(fr.contentDocument.documentElement); } catch (e) {}
+        });
+        fr.srcdoc = build(theme, gr.data);
       });
-      fr.srcdoc = build(theme);
     });
   });
   $('status').textContent = current.file + ' · ' + new Date().toLocaleTimeString() + ' に描画';
@@ -170,14 +185,35 @@ async function refresh(force){
   if (!current) return;
   var t = current, src;
   try { src = await (await fetch('/' + t.file, { cache: 'no-store' })).text(); } catch (e) { return; }
-  if (t !== current || (!force && src === source)) return;
+  var ss = await loadSamples(t);
+  if (t !== current || (!force && src === source && ss === samplesSrc)) return;
   source = src;
+  readSamples(ss);
   var parts = splitData(src);
   original = parts ? parts.data : '';
   $('data').disabled = !parts;
   if (!parts) $('note').textContent = 'data ブロックが見つからないので、テンプレートをそのまま表示しています';
   else showEditor();
   render();
+}
+
+/* 見本の data のファイル(playground/samples/<名前>.js)を読む。無ければ '' */
+async function loadSamples(t){
+  try {
+    var res = await fetch('samples/' + t.id.split('_')[0] + '.js', { cache: 'no-store' });
+    return res.ok ? await res.text() : '';
+  } catch (e) { return ''; }
+}
+/* ファイルは SAMPLES({ '見出し': { ...data... }, ... }); の形。書き方の誤りは画面上部に出す */
+function readSamples(src){
+  samplesSrc = src;
+  samples = [];
+  if (!src) return;
+  try {
+    new Function('SAMPLES', src)(function(o){
+      Object.keys(o).forEach(function(k){ samples.push({ name: '見本: ' + k, data: 'var data = ' + JSON.stringify(o[k], null, 2) + ';' }); });
+    });
+  } catch (e) { samples = [{ name: '見本のファイル(playground/samples/)の誤り: ' + e.message, err: true }]; }
 }
 
 $('data').addEventListener('input', function(){
