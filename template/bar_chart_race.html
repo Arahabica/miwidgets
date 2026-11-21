@@ -65,6 +65,7 @@ var data = {
   lang: 'ja', title: '国別名目GDP（2022–2025年）', unit: '兆米ドル',
   note: '', // 任意の注釈。文字列を指定するとグラフ下部に表示。省略・空欄なら非表示。
   limit: 10, // 表示件数は1〜15、省略時は10
+  order: 'desc', // 'desc' は高い順（既定）、'asc' は低い順
   times: [2022, 2023, 2024, 2025],
   // 各項目の values は times 順。欠測は null、0 は数値として扱う。
   // image は省略可。埋め込み画像は縦横128px以下、8192バイト以下。
@@ -104,6 +105,9 @@ var data = {
 };
 
 const en = data.lang === 'en';
+const order = data.order ?? 'desc';
+if (order !== 'asc' && order !== 'desc') throw new Error('order must be asc or desc');
+const ascending = order === 'asc';
 const limit = Math.min(15, Math.max(1, Math.trunc(data.limit ?? 10)));
 if (!Number.isFinite(limit)) throw new Error('limit must be a number');
 const {times, series} = data;
@@ -241,13 +245,19 @@ function draw(delta, snap) {
   const values = [];
   for (const item of series) {
     const a = item.values[index], b = item.values[next];
+    // In a lowest-first ranking, fading missing values toward zero would give them a false lead.
+    if (ascending && (a === null || b === null)) {
+      const known = t >= .5 ? b : a;
+      if (known !== null) values.push({item, value: known});
+      continue;
+    }
     if (a === null && (!t || b === null)) continue;
     const start = a ?? 0, end = b ?? 0;
     values.push({item, value: start + (end - start) * t});
   }
-  values.sort((a,b) => b.value-a.value || identities.get(a.item.label)-identities.get(b.item.label));
+  values.sort((a,b) => (ascending ? a.value-b.value : b.value-a.value) || identities.get(a.item.label)-identities.get(b.item.label));
   values.length = Math.min(capacity,values.length);
-  const axisMax = values[0]?.value || 1;
+  const axisMax = values[ascending ? values.length - 1 : 0]?.value || 1;
   updateAxis(axisMax);
   const visible = new Set(values.map(r => r.item.label));
   for (const [label,node] of nodes) {

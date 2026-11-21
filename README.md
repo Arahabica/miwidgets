@@ -27,7 +27,7 @@ Muse は [register.txt](register.txt) を読み、各テンプレートのソー
 | [線グラフ](template/line.html) | タイトルつきの線グラフ。系列をいくつでも重ねられ(色は系列ごとに指定可)、項目をタップすると値を表示 |
 | [パイチャート](template/pie.html) | タイトルつきのパイチャート。項目ごとの値から割合を計算して円に分け(色は項目ごとに指定可)、名前と割合を扇形の中か引き出し線で表示。下に値の表。扇形をタップすると目立たせる |
 | [ランキング](template/ranking.html) | タイトルつきのランキング。項目ごとの値を大きい順に並べて横棒で表示。1〜3位は金・銀・銅のリボンで目立たせ、同じ値は同じ順位 |
-| [バーチャートレース](template/bar_chart_race.html) | 時系列の順位を横棒で再生。標準はGDPの上位10件。[サンプル](https://miwidgets.com/ja/#bar-chart-race)は名目GDP・出生率・自殺死亡率の3例 |
+| [バーチャートレース](template/bar_chart_race.html) | 時系列の順位を横棒で再生。標準はGDPの上位10件。[サンプル](https://miwidgets.com/ja/#bar-chart-race)は名目GDP・G20各国の合計特殊出生率（低い順）・自殺死亡率の3例 |
 | [データシート](template/sheet.html) | 行と項目のデータを表か2列で表示。見る人が項目で並び替え、表示する項目を選べる |
 | [おみくじ](template/omikuji.html) | 箱をタップして引くおみくじ |
 | [秘密のメッセージ](template/secret.html) | 6桁のパスコードで開くメッセージ |

@@ -156,9 +156,8 @@ var RACE_TEMPLATE = 'template/bar_chart_race.html';
 var RACE_SCENARIOS = [
   { sample: 'gdp', name: LANG === 'en' ? 'Nominal GDP by country (1990–2025)' : '国別名目GDP（1990–2025年）',
     unit: LANG === 'en' ? 'US$ trillions' : '兆米ドル', source: 'https://data.worldbank.org/indicator/NY.GDP.MKTP.CD', sourceLabel: LANG === 'en' ? 'GDP data' : 'GDP出典' },
-  { sample: 'birth-rate', name: LANG === 'en' ? 'Birth rates by country (2000–2025)' : '各国の出生率（2000–2025年）',
-    note: LANG === 'en' ? 'The birth rates for 2024 and 2025 (*) are UN projections.' : '＊の付いた2024年と2025年の出生率は、国連の予測値です。',
-    unit: LANG === 'en' ? 'per 1,000' : '人口千人当たり', source: 'https://population.un.org/wpp/', sourceLabel: LANG === 'en' ? 'Birth rate data' : '出生率出典' },
+  { sample: 'total-fertility-rate', order: 'asc', name: LANG === 'en' ? 'Lowest total fertility rates in the G20 (2000–2023)' : 'G20各国の合計特殊出生率（低い順・2000–2023年）',
+    unit: LANG === 'en' ? 'births per woman' : '女性1人当たり（人）', source: 'https://population.un.org/wpp/', sourceLabel: LANG === 'en' ? 'Total fertility rate data' : '合計特殊出生率出典' },
   { sample: 'suicide-rate', name: LANG === 'en' ? 'Suicide rates by country (2000–2021)' : '各国の自殺死亡率（2000–2021年）',
     note: LANG === 'en' ? 'WHO estimates for 185 countries and areas, all ages and both sexes, without age adjustment.' : '185の国・地域のWHO推計値。男女計・全年齢、年齢調整前。',
     unit: LANG === 'en' ? 'per 100,000' : '人口10万人当たり', source: 'https://data.worldbank.org/indicator/SH.STA.SUIC.P5', sourceLabel: LANG === 'en' ? 'Suicide rate data' : '自殺死亡率出典' }
@@ -176,8 +175,8 @@ var TEMPLATES = [
   { id: 'pie', name: 'パイチャート', file: 'template/pie.html', user: '支出の内訳と、アンケートの男女比、部署別の人数を見せて', reply: '3つの内訳をパイチャートにしました。', scenarios: PIE_SCENARIOS },
   { id: 'ranking', name: 'ランキング', file: 'template/ranking.html', user: '好きなおにぎりの具のアンケート結果を順位で見せて', reply: '好きなおにぎりの具のランキングです。' },
   { id: 'bar-chart-race', name: 'バーチャートレース', file: RACE_TEMPLATE, scenarios: RACE_SCENARIOS,
-    user: 'GDP、出生率、自殺死亡率で上位に入る国の移り変わりを見せて',
-    reply: '各国のGDP・出生率・自殺死亡率の推移です。' },
+    user: 'GDPや自殺死亡率が高い国と、合計特殊出生率が低い国の推移を見せて',
+    reply: '各国のGDP・合計特殊出生率・自殺死亡率の推移です。' },
   { id: 'sheet', name: 'データシート', file: 'template/sheet.html', user: '都道府県の人口や出生数を一覧で見たい', reply: '47都道府県の人口と出生数です。' },
   { id: 'omikuji', name: 'おみくじ', file: 'template/omikuji.html', user: 'おみくじを引きたい', reply: '今日のおみくじです。' },
   { id: 'secret', name: '秘密のメッセージ', file: 'template/secret.html', user: '秘密のメッセージを送りたい', reply: 'パスコードは123456です。' }
@@ -360,8 +359,8 @@ var EN_TEMPLATES = [
   { id: 'pie', name: 'Pie Chart', user: 'Show me my spending breakdown, the gender split of the survey, and headcount by department', reply: 'Here are the three breakdowns as pie charts.', scenarios: EN_PIE_SCENARIOS },
   { id: 'ranking', name: 'Ranking', user: 'Rank the results of our favorite onigiri filling survey', reply: 'Here’s how the onigiri fillings ranked.' },
   { id: 'bar-chart-race', name: 'Bar chart race', file: RACE_TEMPLATE, scenarios: RACE_SCENARIOS,
-    user: 'Which countries ranked highest over time for GDP, birth rates and suicide rates?',
-    reply: 'Here’s how countries ranked in GDP, birth rates and suicide rates.' },
+    user: 'Which countries had the highest GDP and suicide rates, and which had the lowest total fertility rates?',
+    reply: 'Here’s how countries ranked in GDP, total fertility rates and suicide rates.' },
   { id: 'sheet', name: 'Data Sheet', user: 'Show me population and birth data for each prefecture in Japan', reply: 'Here are population and birth counts for all 47 prefectures.' },
   { id: 'omikuji', name: 'Omikuji Fortune', user: 'I want to draw an omikuji fortune', reply: 'Here’s your fortune for today.' },
   { id: 'secret', name: 'Secret Message', user: 'I want to send a secret message', reply: 'The passcode is 123456.' }
@@ -551,15 +550,13 @@ async function loadRaceSample(sc){
   var sample = await response.json();
   var names = new Intl.DisplayNames([LANG], {type: 'region'});
   var times = sample.series[0].values.map(function(_, i){
-    var year = sample.startYear + i;
-    var projected = sample.projectionFrom != null && year >= sample.projectionFrom;
-    return String(year) + (projected ? (LANG === 'ja' ? '＊' : '*') : '');
+    return String(sample.startYear + i);
   });
   var series = sample.series.map(function(country){
     var label = LANG === 'ja' && country.label || names.of(country.code.toUpperCase());
     return {label: label, image: country.image, values: country.values};
   });
-  return {lang: LANG, title: sc.name, unit: sc.unit, note: sc.note, times: times, series: series};
+  return {lang: LANG, title: sc.name, unit: sc.unit, order: sc.order, note: sc.note, times: times, series: series};
 }
 
 /* テンプレートに各サンプルのデータを当てる。 */
