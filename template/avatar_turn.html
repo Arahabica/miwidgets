@@ -11,7 +11,7 @@
 #avatar-turn button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 #avatar-turn .sprite{display:block;width:100%;aspect-ratio:1;background-size:400% 300%;background-repeat:no-repeat}
 #avatar-turn .hint{display:block;margin-top:16px;color:#767676;font-size:14px;text-align:center}
-#avatar-turn .turning{animation:avatar-turn-cycle 1s steps(1,end) 2}
+#avatar-turn .turning{animation:avatar-turn-cycle 1s steps(1,end) 1}
 @keyframes avatar-turn-cycle{
   0%,100%{background-position:0% 0%}
   8.3333%{background-position:33.333333% 0%}
@@ -38,7 +38,7 @@ var data = {
 var button = document.querySelector('#avatar-turn button');
 var sprite = button.querySelector('.sprite');
 if (data.lang === 'en') button.querySelector('.hint').textContent = 'Tap to spin';
-var label = data.lang === 'en' ? 'Spin ' + data.name : data.name + 'を2回転させる';
+var label = data.lang === 'en' ? 'Spin ' + data.name : data.name + 'を一回転させる';
 button.setAttribute('aria-label', label);
 button.title = label;
 function turn(){

@@ -168,7 +168,7 @@ var TEMPLATES = [
   { id: 'assets', name: '株価チャート', file: 'template/assets.html', user: '11月10日から16日までの運用損益を見せて', reply: '11月10日から16日までの損益です。' },
   { id: 'quiz', name: 'クイズ', file: 'template/quiz.html', user: 'クイズを出して', reply: '生き物と歴史のクイズです。' },
   { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
-  { id: 'avatar_turn', name: 'キャラの一回転', file: 'template/avatar_turn.html', user: '一回転して', reply: 'くるっと2回転！' },
+  { id: 'avatar_turn', name: 'キャラの一回転', file: 'template/avatar_turn.html', user: '一回転して', reply: 'くるっと一回転！' },
   { id: 'calendar', name: 'カレンダー', file: 'template/calendar.html', user: '11月の予約の空き状況を見せて', reply: '11月の予約状況です。' },
   { id: 'timetable', name: '予約枠', file: 'template/timetable.html', user: '11月23日から1週間の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。' },
   { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '今年と去年の月別売上です。' },
@@ -186,7 +186,7 @@ var TEMPLATES = [
 var PROMPT_EXAMPLES = {
   weather: 'miwidgets.com/register.txt の天気ウィジェットで明日の新宿の天気を表示',
   route: 'miwidgets.com/register.txt の乗り換え案内ウィジェットで明日の朝9時に新宿から羽田空港に着く経路を表示',
-  avatar_turn: '一回転して',
+  avatar_turn: 'miwidgets.com/register.txt でアバターを一回転させて',
   omikuji: 'miwidgets.com/register.txt のおみくじウィジェットで今日の運勢を占って',
   assets: 'miwidgets.com/register.txt の株価チャートウィジェットでサンプルデータを使って1週間の損益を表示',
   quiz: 'miwidgets.com/register.txt のクイズウィジェットで日本の地理のクイズを5問出して',
@@ -355,7 +355,7 @@ var EN_TEMPLATES = [
   { id: 'assets', name: 'Stock Chart', user: 'Show me how my portfolio did from November 10 to 16', reply: 'Here’s your portfolio’s profit and loss for November 10–16.' },
   { id: 'quiz', name: 'Quiz', user: 'Give me a quiz', reply: 'Here’s a nature and history quiz.' },
   { id: 'clock', name: 'Analog Clock', user: 'Show me the time', reply: 'Here’s the current time.' },
-  { id: 'avatar_turn', name: 'Avatar Turn', user: 'Spin around', reply: 'Two full turns!' },
+  { id: 'avatar_turn', name: 'Avatar Turn', user: 'Spin around', reply: 'One full turn!' },
   { id: 'calendar', name: 'Calendar', user: 'Show me the availability for November', reply: 'Here’s the booking availability for November.' },
   { id: 'timetable', name: 'Time Slots', user: 'Show me the open slots for the week of November 23', reply: 'Here are the open slots for the week of November 23.' },
   { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are monthly sales for this year and last year.' },
@@ -372,7 +372,7 @@ var EN_TEMPLATES = [
 var EN_PROMPT_EXAMPLES = {
   weather: 'Show tomorrow\u2019s weather in London with the miwidgets.com/register.txt weather widget',
   route: 'Use the miwidgets.com/register.txt transit widget to show a route from Shinjuku to Haneda Airport arriving by 9 AM tomorrow',
-  avatar_turn: 'Spin around',
+  avatar_turn: 'Spin my avatar with miwidgets.com/register.txt',
   omikuji: 'Draw today\u2019s fortune with the miwidgets.com/register.txt omikuji widget',
   assets: 'Use the miwidgets.com/register.txt stock chart widget to show a week of P/L with sample data',
   quiz: 'Give me a 5-question world geography quiz with the miwidgets.com/register.txt quiz widget',
@@ -411,14 +411,21 @@ if (location.protocol === 'file:') {
   main.innerHTML = '<div class="err">' + UI_TEXT.fileError + '<br><code>python3 -m http.server 8000</code> → <code>http://localhost:8000/</code></div>';
 } else {
   /* プレビュー枠が画面に近づいたら iframe を作って読み込む。 */
-  var previewObserver = window.IntersectionObserver ? new IntersectionObserver(function(entries){
+  function createPreviewObserver(margin){
+    if (!window.IntersectionObserver) return null;
+    return new IntersectionObserver(loadVisiblePreviews, {rootMargin: margin + 'px 0px'});
+  }
+  function loadVisiblePreviews(entries, observer){
     entries.forEach(function(e){
       if (!e.isIntersecting) return;
-      previewObserver.unobserve(e.target);
+      observer.unobserve(e.target);
       e.target.loadPreview();
     });
-  }, {rootMargin: '200px 0px'}) : null;
+  }
+  var defaultObserver = createPreviewObserver(200);
+  var avatarTurnObserver = createPreviewObserver(80);
   TEMPLATES.forEach(function(t){
+    var previewObserver = t.id === 'avatar_turn' ? avatarTurnObserver : defaultObserver;
     var sec = document.createElement('section');
     sec.id = t.id;
     sec.className = 'widget-preview is-collapsed';
