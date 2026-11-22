@@ -154,6 +154,11 @@ var PIE_SCENARIOS = [
     { name: 'マーケティング', value: 22 }, { name: '品質管理', value: 18 }, { name: '研究', value: 15 }, { name: '経理', value: 11 },
     { name: '人事', value: 9 }, { name: '総務', value: 8 }, { name: '広報', value: 6 }, { name: '法務', value: 4 }] } }
 ];
+var STACKED_AREA_SCENARIOS = [
+  {},
+  { data: { lang: 'ja', title: '時間帯別のアクセス数', unit: '件', labels: ['0時', '1時', '2時', '3時', '4時', '5時', '6時', '7時', '8時', '9時', '10時', '11時', '12時', '13時', '14時', '15時', '16時', '17時', '18時', '19時', '20時', '21時', '22時', '23時'],
+    series: [{ name: 'アクセス', values: [120, 80, 50, 40, 35, 60, 140, 300, 520, 610, 580, 560, 640, 600, 570, 550, 580, 620, 700, 820, 900, 760, 480, 260] }] } }
+];
 var SCATTER_SCENARIOS = [
   {},
   { data: { lang: 'ja', title: '都道府県の人口密度と平均年齢', x: { name: '人口密度', unit: '人/km²' }, y: { name: '平均年齢', unit: '歳' }, groups: [{ points: [
@@ -192,6 +197,7 @@ var TEMPLATES = [
   { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '今年と去年の月別売上です。' },
   { id: 'horizontal_bar', name: '棒グラフ(横)', file: 'template/horizontal_bar.html', user: '店舗ごとの来店者数を10月と11月で比べたい', reply: '店舗別の10月と11月の来店者数です。' },
   { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '東京と大阪の今日の気温です。' },
+  { id: 'stacked_area', name: '積み上げ面グラフ', file: 'template/stacked_area.html', user: '地域別の売上の推移と、時間帯別のアクセス数を見せて', reply: '地域別の売上と時間帯別のアクセス数です。', scenarios: STACKED_AREA_SCENARIOS },
   { id: 'pie', name: 'パイチャート', file: 'template/pie.html', user: '支出の内訳と、アンケートの男女比、部署別の人数を見せて', reply: '3つの内訳をパイチャートにしました。', scenarios: PIE_SCENARIOS },
   { id: 'scatter', name: '散布図', file: 'template/scatter.html', user: '広告費と売上、都道府県の人口密度と平均年齢の関係を見せて', reply: '2つの関係を散布図にしました。', scenarios: SCATTER_SCENARIOS },
   { id: 'position_map', name: 'ポジショニングマップ', file: 'template/position_map.html', user: '旅行プランと社内ツールの位置づけを図にして', reply: '旅行プランと社内ツールのポジショニングマップです。', scenarios: POSITION_SCENARIOS },
@@ -218,6 +224,7 @@ var PROMPT_EXAMPLES = {
   bar: 'miwidgets.com/register.txt の棒グラフウィジェットで、都道府県の人口の上位5つを表示',
   horizontal_bar: 'miwidgets.com/register.txt の棒グラフ(横)ウィジェットで、世界の人口の多い国の上位8か国を表示',
   line: 'miwidgets.com/register.txt の線グラフウィジェットで、この10年の日本の人口の移り変わりを表示',
+  stacked_area: 'miwidgets.com/register.txt の積み上げ面グラフウィジェットで、日本の電源別の発電量の推移を表示',
   pie: 'miwidgets.com/register.txt のパイチャートウィジェットで、日本の発電量の電源別の割合を表示',
   scatter: 'miwidgets.com/register.txt の散布図ウィジェットで、都道府県の人口と面積の関係を、名前つきで表示',
   position_map: 'miwidgets.com/register.txt のポジショニングマップウィジェットで、国内の主なカフェチェーンを価格と居心地の2軸で表示',
@@ -381,6 +388,14 @@ var EN_PIE_SCENARIOS = [
     { name: 'Marketing', value: 22 }, { name: 'Quality Assurance', value: 18 }, { name: 'Research', value: 15 }, { name: 'Accounting', value: 11 },
     { name: 'HR', value: 9 }, { name: 'General Affairs', value: 8 }, { name: 'PR', value: 6 }, { name: 'Legal', value: 4 }] } }
 ];
+var EN_STACKED_AREA_SCENARIOS = [
+  { data: { lang: 'en', title: 'Sales by Region', unit: 'K', labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'], series: [
+    { name: 'East', values: [120, 132, 128, 150, 162, 170, 168, 185] },
+    { name: 'West', values: [80, 86, 95, 98, 110, 118, 125, 130] },
+    { name: 'South', values: [30, 34, 33, 40, 44, 52, 55, 60] }] } },
+  { data: { lang: 'en', title: 'Site Visits by Hour', unit: '', labels: ['12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'],
+    series: [{ name: 'Visits', values: [120, 80, 50, 40, 35, 60, 140, 300, 520, 610, 580, 560, 640, 600, 570, 550, 580, 620, 700, 820, 900, 760, 480, 260] }] } }
+];
 var EN_SCATTER_SCENARIOS = [
   { data: { lang: 'en', title: 'Ad Spend vs. Sales', x: { name: 'Ad spend', unit: 'K' }, y: { name: 'Sales', unit: 'K' }, groups: [
     { name: 'Online ads', points: [[12, 180], [18, 230], [25, 260], [30, 310], [34, 330], [41, 390], [47, 410], [52, 470], [58, 480]] },
@@ -414,6 +429,7 @@ var EN_TEMPLATES = [
   { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are monthly sales for this year and last year.' },
   { id: 'horizontal_bar', name: 'Horizontal Bar Chart', user: 'Compare store visitors in October and November', reply: 'Here are visitors by store for October and November.' },
   { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here are today’s temperatures in Tokyo and Osaka.' },
+  { id: 'stacked_area', name: 'Stacked Area Chart', user: 'Show sales by region over time, and site visits by hour', reply: 'Here are sales by region and site visits by hour.', scenarios: EN_STACKED_AREA_SCENARIOS },
   { id: 'pie', name: 'Pie Chart', user: 'Show me my spending breakdown, the gender split of the survey, and headcount by department', reply: 'Here are the three breakdowns as pie charts.', scenarios: EN_PIE_SCENARIOS },
   { id: 'scatter', name: 'Scatter Plot', user: 'Show how ad spend relates to sales, and population density to average age by prefecture', reply: 'Here are both relationships as scatter plots.', scenarios: EN_SCATTER_SCENARIOS },
   { id: 'position_map', name: 'Positioning Map', user: 'Map out our travel plans and workplace tools', reply: 'Here are positioning maps of the travel plans and the workplace tools.', scenarios: EN_POSITION_SCENARIOS },
@@ -439,6 +455,7 @@ var EN_PROMPT_EXAMPLES = {
   bar: 'Use the miwidgets.com/register.txt bar chart widget to show the 5 most populous US states',
   horizontal_bar: 'Use the miwidgets.com/register.txt horizontal bar chart widget to show the 8 most populous countries',
   line: 'Use the miwidgets.com/register.txt line chart widget to show how the US population changed over the last 10 years',
+  stacked_area: 'Use the miwidgets.com/register.txt stacked area chart widget to show US electricity generation by source over the last 10 years',
   pie: 'Use the miwidgets.com/register.txt pie chart widget to show the share of US electricity by source',
   scatter: 'Use the miwidgets.com/register.txt scatter plot widget to show US states by population and area, with their names',
   position_map: 'Use the miwidgets.com/register.txt positioning map widget to place the major coffee chains by price and atmosphere',

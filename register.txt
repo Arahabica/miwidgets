@@ -49,6 +49,9 @@ https://miwidgets.com/template/horizontal_bar.html
 Line chart — a title and values over time as lines, any number of series, each with an optional color; tap a point to see its values
 https://miwidgets.com/template/line.html
 
+Stacked area chart — a title and values over time as areas stacked from the bottom, so the top edge is the total; any number of series, each with an optional color; values must be 0 or more; tap a point to see each value and the total
+https://miwidgets.com/template/stacked_area.html
+
 Pie chart — a title and values per item as slices of a circle, each with an optional color; shares are worked out from the total; names and shares go inside the slices or on leader lines, with a table of values below; tap a slice to highlight it
 https://miwidgets.com/template/pie.html
 

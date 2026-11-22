@@ -1,0 +1,193 @@
+<!-- 積み上げ面グラフ: 系列の値を下から積み上げ、上端が合計になる。下に凡例、タップでその時点の内訳と合計を出す。表示内容は data で変更できる。 -->
+<div id="sarea-w"></div>
+<style>
+#sarea-w{box-sizing:border-box;width:100%;padding:14px 12px 12px;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#sarea-w *{box-sizing:border-box;}
+#sarea-w .hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 10px;}
+#sarea-w .ti{min-width:0;overflow-wrap:anywhere;font-size:17px;font-weight:800;}
+#sarea-w .un{flex:none;font-size:11px;color:var(--hatch-widget-muted,#6e6e73);}
+#sarea-w .cv{position:relative;-webkit-tap-highlight-color:transparent;}
+#sarea-w svg{display:block;overflow:visible;}
+#sarea-w .gl{stroke:var(--hatch-widget-border,#d1d1d6);stroke-width:1;opacity:.6;}
+#sarea-w .gl.z{opacity:1;}
+#sarea-w .tk,#sarea-w .xl{font-size:10px;font-variant-numeric:tabular-nums;fill:var(--hatch-widget-muted,#6e6e73);}
+#sarea-w .hit{cursor:pointer;}
+#sarea-w .gd{display:none;stroke:var(--hatch-widget-text,#1c1c1e);stroke-width:1;opacity:.45;}
+#sarea-w .lg{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 2px 0;font-size:11px;font-weight:600;color:var(--hatch-widget-muted,#6e6e73);}
+#sarea-w .lg span{display:inline-flex;align-items:center;gap:5px;}
+#sarea-w .sw{display:inline-block;flex:none;width:9px;height:9px;border-radius:2px;}
+#sarea-w .tip{position:absolute;z-index:2;pointer-events:none;white-space:nowrap;font-size:11px;line-height:1.5;background:#1c1c1e;color:#fff;border-radius:10px;padding:7px 10px;box-shadow:0 6px 18px rgba(0,0,0,.25);}
+#sarea-w .tip b{display:block;color:rgba(255,255,255,.7);font-weight:500;}
+#sarea-w .tip .tr{display:flex;align-items:center;gap:6px;}
+#sarea-w .tip .tv{margin-left:auto;padding-left:8px;font-weight:600;font-variant-numeric:tabular-nums;}
+#sarea-w .tip .tt{margin-top:3px;padding-top:3px;border-top:1px solid rgba(255,255,255,.2);}
+/* アニメーション: 面は左から右へ現れる(SVG の clipPath の幅を広げる)。それ以外は動かさない */
+</style>
+<script>
+(function(){
+var R = document.getElementById("sarea-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',              // 'ja' | 'en': 画面の文言と数値の書式の言語
+  title: '地域別の売上',   // string: グラフのタイトル
+  unit: '万円',            // string: 値の単位。値の後ろに付けて表示する。無ければ ''
+  labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'],   // 横軸の項目
+  /* 系列。先頭の系列をいちばん下に置き、順に上へ積む。values は labels と同じ数の 0 以上の数値。
+   * color で色を指定できる(省略すると下の PALETTE の順) */
+  series: [
+    { name: '東日本', values: [120, 132, 128, 150, 162, 170, 168, 185] },
+    { name: '西日本', values: [80, 86, 95, 98, 110, 118, 125, 130] },
+    { name: '九州', values: [30, 34, 33, 40, 44, 52, 55, 60] }
+  ]
+};
+
+/* color を省略した系列の色(この順に使い、足りなければ色相をずらして作る) */
+var PALETTE = ['#3a5ad1', '#f0883e', '#20a46b', '#e5484d', '#9b6dff'];
+var EN = data.lang === 'en';
+var T = EN ? { series: 'Series ', total: 'Total' } : { series: '系列', total: '合計' };
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
+  badLabels: "labels must be an array of two or more x-axis items (e.g. ['Jan', 'Feb'])",
+  badSeries: 'series must be an array of one or more series',
+  badColor: function(s){ return s + ': color must be a CSS color string (e.g. \'#3a5ad1\')'; },
+  badLen: function(s, m, n){ return s + ': values has ' + m + ' items but labels has ' + n + '. Make them the same length'; },
+  badVal: function(s, l, v){ return s + ', ' + l + ': ' + JSON.stringify(v) + ' must be a number of 0 or more (a stacked area chart cannot stack negative values)'; }
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ---- data を確かめる ---- */
+var labels = data.labels, series = data.series;
+if (!Array.isArray(labels) || labels.length < 2) throw new Error(E.badLabels);
+if (!Array.isArray(series) || !series.length) throw new Error(E.badSeries);
+var NAMES = series.map(function(s, k){ return s && s.name != null ? String(s.name) : T.series + (k + 1); });
+series.forEach(function(s, k){
+  var n = s && Array.isArray(s.values) ? s.values.length : 0;
+  if (n !== labels.length) throw new Error(E.badLen(NAMES[k], n, labels.length));
+  s.values.forEach(function(v, i){ if (typeof v !== 'number' || !isFinite(v) || v < 0) throw new Error(E.badVal(NAMES[k], labels[i], v)); });
+  if (s.color != null && (typeof s.color !== 'string' || !s.color)) throw new Error(E.badColor(NAMES[k]));
+});
+var COLORS = series.map(function(s, k){ return esc(s.color || PALETTE[k] || 'hsl(' + Math.round(k * 137.5 % 360) + ',62%,52%)'); });
+var N = labels.length, M = series.length;
+var unit = data.unit == null ? '' : String(data.unit);
+var LOC = EN ? 'en-US' : 'ja-JP';
+function num(v){ return v.toLocaleString(LOC, { maximumFractionDigits: 2 }); }
+function fmt(v){ return num(v) + unit; }
+
+/* ---- 積み上げ。TOP[k][i] は系列 k の上端、BOT[k][i] は下端 ---- */
+var BOT = [], TOP = [], acc = labels.map(function(){ return 0; });
+series.forEach(function(s, k){
+  BOT[k] = acc.slice();
+  acc = acc.map(function(a, i){ return a + s.values[i]; });
+  TOP[k] = acc.slice();
+});
+var TOTAL = acc;
+
+/* ---- 縦軸の目盛り(0 から合計の最大まで、きりのよい値で4区間ほど) ---- */
+var vmax = Math.max.apply(null, TOTAL) || 1;
+var raw = vmax / 4, mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), r = raw / mag;
+var step = (r > 7.5 ? 10 : r > 3.5 ? 5 : r > 1.5 ? 2 : 1) * mag;
+var TICKS = [];
+for (var t = 0; t <= Math.ceil(vmax / step - 1e-9); t++) TICKS.push(+(t * step).toPrecision(12));
+var hi = TICKS[TICKS.length - 1];
+
+/* ---- 見出しと凡例(凡例は積んだ順と同じく、上の系列を先に並べる) ---- */
+function swatch(k){ return '<i class="sw" style="background:' + COLORS[k] + '"></i>'; }
+var ORDER = series.map(function(s, k){ return M - 1 - k; });
+R.innerHTML = '<div class="hd"><span class="ti">' + esc(data.title || '') + '</span>' + (unit ? '<span class="un">' + esc(unit) + '</span>' : '') + '</div>' +
+  '<div class="cv"></div>' +
+  (M > 1 ? '<div class="lg">' + ORDER.map(function(k){ return '<span>' + swatch(k) + esc(NAMES[k]) + '</span>'; }).join('') + '</div>' : '');
+var box = R.querySelector('.cv');
+
+function textW(s, size){ var w = 0; String(s).split('').forEach(function(c){ w += c.charCodeAt(0) < 128 ? .6 : 1; }); return w * size; }
+function f1(n){ return Math.round(n * 10) / 10; }
+var REDUCE = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+var G = null, sel = -1;
+/* グラフを描く。anim が false のとき(幅が変わったときの描き直し)はアニメーションしない */
+function draw(anim){
+  var W = Math.max(220, Math.round(box.clientWidth || 320));
+  var H = Math.round(Math.max(170, Math.min(260, W * .62)));
+  var tick = TICKS.map(num);
+  /* 左端の項目名も中央揃えで置くので、その半分の幅は空ける */
+  var x0 = Math.max(Math.ceil(Math.max.apply(null, tick.map(function(t){ return textW(t, 10); }))) + 8, Math.ceil(textW(labels[0], 10) / 2) + 2);
+  /* 両端の項目名がはみ出さないよう、右端は項目名の半分ほど空ける */
+  var x1 = W - Math.max(6, Math.ceil(textW(labels[N - 1], 10) / 2));
+  var y0 = 10, y1 = H - 22;
+  function Y(v){ return y1 - v / hi * (y1 - y0); }
+  var gw = (x1 - x0) / (N - 1);
+  function X(i){ return x0 + gw * i; }
+  var s = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">';
+  s += '<defs><clipPath id="sarea-clip"><rect x="' + (x0 - 2) + '" y="0" height="' + H + '" width="' + (anim && !REDUCE ? 0 : f1(x1 - x0 + 4)) + '">' +
+    (anim && !REDUCE ? '<animate attributeName="width" from="0" to="' + f1(x1 - x0 + 4) + '" dur="1s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines=".4 0 .2 1"/>' : '') +
+    '</rect></clipPath></defs>';
+
+  /* 目盛り線と縦軸の値 */
+  TICKS.forEach(function(t, j){
+    var y = f1(Y(t));
+    s += '<line class="gl' + (t === 0 ? ' z' : '') + '" x1="' + x0 + '" x2="' + f1(x1) + '" y1="' + y + '" y2="' + y + '"/>';
+    s += '<text class="tk" x="' + (x0 - 6) + '" y="' + f1(y + 3.5) + '" text-anchor="end">' + tick[j] + '</text>';
+  });
+  /* 横軸の項目。入りきらないときは間引く */
+  var lw = Math.max.apply(null, labels.map(function(l){ return textW(l, 10); })) + 8;
+  var every = Math.max(1, Math.ceil(lw / gw));
+  labels.forEach(function(l, i){
+    if (i % every) return;
+    s += '<text class="xl" x="' + f1(X(i)) + '" y="' + (H - 6) + '" text-anchor="middle">' + esc(l) + '</text>';
+  });
+
+  /* 面。各系列の上端を左から、下端を右から結ぶ。上端には同じ色の線を引く */
+  s += '<g clip-path="url(#sarea-clip)">';
+  series.forEach(function(se, k){
+    var up = TOP[k].map(function(v, i){ return f1(X(i)) + ' ' + f1(Y(v)); });
+    var dn = BOT[k].map(function(v, i){ return f1(X(i)) + ' ' + f1(Y(v)); }).reverse();
+    s += '<path d="M' + up.join('L') + 'L' + dn.join('L') + 'Z" fill="' + COLORS[k] + '" fill-opacity=".72"/>';
+    s += '<path d="M' + up.join('L') + '" fill="none" stroke="' + COLORS[k] + '" stroke-width="1.6" stroke-linejoin="round"/>';
+  });
+  s += '</g>';
+  s += '<line class="gd" y1="' + y0 + '" y2="' + y1 + '" x1="0" x2="0"/><g class="sd"></g>';
+  /* タップの当たり判定(項目ごとの縦長の帯) */
+  labels.forEach(function(l, i){
+    var a = i ? X(i) - gw / 2 : x0 - 4, b = i < N - 1 ? X(i) + gw / 2 : x1 + 4;
+    s += '<rect class="hit" data-i="' + i + '" x="' + f1(a) + '" y="0" width="' + f1(b - a) + '" height="' + H + '" fill="transparent"/>';
+  });
+  box.innerHTML = s + '</svg><div class="tip" hidden></div>';
+  G = { W: W, Y: Y, X: X, y0: y0, y1: y1 };
+  if (sel >= 0) select(sel);
+}
+
+/* ---- タップした項目に縦の線と点を出し、内訳と合計を吹き出しで出す ---- */
+function select(i){
+  sel = i;
+  var sv = box.querySelector('svg'), tip = box.querySelector('.tip');
+  var gd = sv.querySelector('.gd'), sd = sv.querySelector('.sd');
+  if (i < 0) { tip.hidden = true; gd.style.display = 'none'; sd.innerHTML = ''; return; }
+  var x = G.X(i);
+  gd.setAttribute('x1', f1(x)); gd.setAttribute('x2', f1(x)); gd.style.display = 'inline';
+  sd.innerHTML = series.map(function(se, k){ return '<circle cx="' + f1(x) + '" cy="' + f1(G.Y(TOP[k][i])) + '" r="3.6" fill="' + COLORS[k] + '" stroke="#fff" stroke-width="1.6"/>'; }).join('');
+  tip.innerHTML = '<b>' + esc(labels[i]) + '</b>' + ORDER.map(function(k){
+    return '<span class="tr">' + swatch(k) + '<span>' + esc(NAMES[k]) + '</span><span class="tv">' + esc(fmt(series[k].values[i])) + '</span></span>';
+  }).join('') + (M > 1 ? '<span class="tr tt"><span>' + T.total + '</span><span class="tv">' + esc(fmt(TOTAL[i])) + '</span></span>' : '');
+  tip.hidden = false;
+  /* 吹き出しは縦の線の横(右、入らなければ左)に出す */
+  var tw = tip.offsetWidth, th = tip.offsetHeight, left = x + 10;
+  if (left + tw > G.W) left = Math.max(0, x - 10 - tw);
+  tip.style.left = Math.round(left) + 'px';
+  tip.style.top = Math.round(Math.max(0, Math.min(G.y1 - th, G.Y(TOTAL[i]) - th / 2))) + 'px';
+}
+R.addEventListener('click', function(e){
+  var h = e.target.closest('.hit');
+  if (h) { var i = +h.dataset.i; select(sel === i ? -1 : i); return; }
+  if (!e.target.closest('.tip') && sel >= 0) select(-1);
+});
+
+draw(true);
+/* 幅が変わったら描き直す(アニメーションはしない) */
+var lastW = box.clientWidth;
+if (window.ResizeObserver) new ResizeObserver(function(){ if (box.clientWidth !== lastW) { lastW = box.clientWidth; draw(false); } }).observe(box);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>
