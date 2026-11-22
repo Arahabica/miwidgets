@@ -41,6 +41,9 @@ Calendar (events) — one month with a small dot under each day that has events,
 https://miwidgets.com/template/calendar_events.html
 
 Time slots — 7 days × times (every 15, 30 or 60 minutes), with a mark (◯ △ x -) or up to 2 characters in each slot
+https://miwidgets.com/template/time_slots.html
+
+Timetable — one day of events on an hourly timeline like Google Calendar's day view; up to 2 events can overlap and are shown side by side; all-day events go above the timeline; times up to '29:00' (5 AM the next day); the range fits the events by the hour unless from and to are set; tap an event to see its name and time
 https://miwidgets.com/template/timetable.html
 
 Bar chart — a title and values per item as bars, any number of series side by side, each with an optional color; tap an item to see its values

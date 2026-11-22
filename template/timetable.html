@@ -1,31 +1,37 @@
-<!-- 予約枠テンプレート: 開始日から7日間×時刻の表。各枠に記号(◯ △ x -)か文字を表示。表示内容は data で変更できる。 -->
+<!-- タイムテーブルテンプレート: 1日の予定を時間の目盛りの上に表示。予定をタップすると名前と時刻を表示。表示内容は data で変更できる。 -->
 <div id="timetable-w"></div>
 <style>
 #timetable-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
 #timetable-w *{box-sizing:border-box;}
 
 #timetable-w{padding:16px 14px 14px;background:#fff;color:#1c1c1e;}
-#timetable-w .hd{display:flex;align-items:flex-end;gap:8px;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid #1c1c1e;}
-#timetable-w .mn{font-size:44px;line-height:.9;font-weight:200;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;}
+#timetable-w .hd{display:flex;align-items:flex-end;gap:8px;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid #1c1c1e;}
+#timetable-w .mn{font-size:44px;line-height:.9;font-weight:200;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+#timetable-w .mn,#timetable-w .yr{flex:none;}
 #timetable-w .yr{display:flex;flex-direction:column;font-size:12px;line-height:1.4;letter-spacing:.1em;}
 #timetable-w .yr b{font-size:15px;font-weight:500;}
-/* 1列目が時刻、残り7列が日付 */
-#timetable-w .gr{display:grid;grid-template-columns:auto repeat(7,minmax(0,1fr));}
-#timetable-w .dh{padding:2px 0 6px;text-align:center;line-height:1.3;}
-#timetable-w .dh .w{display:block;font-size:10px;letter-spacing:.1em;color:#8e8e93;}
-#timetable-w .dh .d{display:block;font-size:14px;font-variant-numeric:tabular-nums;}
-#timetable-w .dh.sun .w,#timetable-w .dh.sun .d{color:#d64545;}
-#timetable-w .dh.sat .w,#timetable-w .dh.sat .d{color:#2f6fd6;}
-#timetable-w .tm{padding:0 8px 0 0;height:30px;display:flex;align-items:center;justify-content:flex-end;font-size:11px;color:#8e8e93;font-variant-numeric:tabular-nums;border-top:1px dashed #e0e0e5;}
-#timetable-w .c{position:relative;height:30px;border-top:1px dashed #e0e0e5;}
-#timetable-w .mk{position:absolute;left:50%;top:50%;width:60%;max-width:20px;aspect-ratio:1;transform:translate(-50%,-50%);}
-#timetable-w .mk svg{display:block;width:100%;height:100%;overflow:visible;}
-/* マークの色(m-o: ◯, m-t: △, m-x: x, m-h: -, m-n: 記号以外の文字) */
-#timetable-w .m-o{color:#d64545;}
-#timetable-w .m-t{color:#e08a00;}
-#timetable-w .m-x{color:#545458;}
-#timetable-w .m-h{color:#8e8e93;}
-#timetable-w .m-n{color:#2f6fd6;}
+/* 終日の予定は、見出しの右端に色の点+予定名で並べる(点は縦に揃える) */
+#timetable-w .ad{flex:0 1 auto;min-width:0;margin-left:auto;display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
+#timetable-w .ad button{display:flex;align-items:center;gap:6px;max-width:100%;margin:0;padding:0;border:0;background:none;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;color:#1c1c1e;font-size:13px;line-height:1.5;}
+#timetable-w .ad button i{flex:none;width:7px;height:7px;border-radius:50%;}
+#timetable-w .ad button span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 時間の目盛りと予定 */
+#timetable-w .tl{position:relative;margin-left:44px;}
+#timetable-w .hl{position:absolute;left:0;right:0;border-top:1px solid #e5e5ea;}
+#timetable-w .hl.nx{border-top:1px solid #1c1c1e;}
+#timetable-w .lb{position:absolute;left:-44px;width:38px;margin-top:-7px;font-size:11px;line-height:14px;text-align:right;color:#8e8e93;font-variant-numeric:tabular-nums;}
+#timetable-w .ev{position:absolute;margin:0;padding:3px 6px;border:0;border-radius:5px;color:#fff;font:inherit;text-align:left;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#timetable-w .ev b{display:block;font-size:12px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#timetable-w .ev small{display:block;font-size:11px;line-height:1.3;opacity:.85;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 短い予定は、予定名と時刻を1行にして上下の真ん中に置く */
+#timetable-w .ev.one{display:flex;align-items:center;gap:5px;padding-top:0;padding-bottom:0;}
+#timetable-w .ev.one b{flex:0 1 auto;min-width:0;}
+#timetable-w .ev.one small{flex:none;}
+#timetable-w .ev:focus,#timetable-w .ad button:focus{outline:none;}
+#timetable-w .ev:focus-visible,#timetable-w .ad button:focus-visible{outline:2px solid #1c1c1e;outline-offset:1px;}
+#timetable-w .tip{position:absolute;z-index:3;max-width:240px;pointer-events:none;font-size:12px;line-height:1.5;background:#1c1c1e;color:#fff;border-radius:10px;padding:7px 10px;box-shadow:0 6px 18px rgba(0,0,0,.25);}
+#timetable-w .tip b{display:block;font-size:13px;overflow-wrap:anywhere;}
+#timetable-w .tip span{color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;}
 </style>
 <script>
 (function(){
@@ -34,142 +40,159 @@ try {
 
 /* ===== data: 表示内容はすべてここで変える ===== */
 var data = {
-  lang: 'ja',           // 'ja' | 'en': 曜日・月・エラーの文言の言語
-  start: '2026-11-23',  // string: 表の最初の日('YYYY-MM-DD')。この日から7日間を表示する
-  from: '10:00',        // string: 最初の枠の開始時刻('H:MM')
-  to: '16:00',          // string: 最後の枠の終了時刻('H:MM')。この時刻の行は出ない
-  step: 30,             // 15 | 30 | 60: 枠の間隔(分)
-  /* 時刻ごとの枠。キーは枠の開始時刻('H:MM')、値は7日分の値の配列(start の日から順に)。
-   * 値は2文字までの文字か数値。何も描かないマスは ''。枠の無い時刻は書かなくてよい(空の行になる)。
-   * '◯' '△' 'x' '-' は線で描く記号になる(○ 〇 × ✕ ー − も同じ)。それ以外は文字のまま描き、2文字の言葉は小さく描く */
-  slots: {
-    '10:00': ['◯', '◯', 'x', '-', '◯', 'x', 'x'],
-    '10:30': ['◯', '△', 'x', '-', '◯', 'x', 'x'],
-    '11:00': ['△', '◯', '◯', '-', '△', 'x', '△'],
-    '11:30': ['x', '◯', '◯', '-', '◯', '△', '◯'],
-    '12:00': ['-', '-', '-', '-', '-', '-', '-'],
-    '12:30': ['-', '-', '-', '-', '-', '-', '-'],
-    '13:00': ['◯', 'x', '△', '-', '◯', 'x', '◯'],
-    '13:30': ['◯', 'x', '◯', '-', 2, 'x', '◯'],
-    '14:00': ['△', '◯', '◯', '-', 1, '△', '◯'],
-    '14:30': ['◯', '◯', 'x', '-', '◯', '◯', '△'],
-    '15:00': ['◯', '△', 'x', '-', '◯', '◯', 'x'],
-    '15:30': ['◯', '◯', '△', '-', '◯', '◯', 'x']
-  },
-  /* 祝日('YYYY-MM-DD')。日曜と同じ赤で表示する。表の7日間に入らない日付は無視する。型: string[] ・無ければ [] */
-  holidays: ['2026-11-23']
+  lang: 'ja',            // 'ja' | 'en': 曜日・月・エラーの文言の言語
+  date: '2026-11-27',    // string: 表示する日('YYYY-MM-DD')
+  /* 表示する時間の範囲('9:00' のような時刻)。省くと、予定がちょうど収まる1時間単位の範囲にする */
+  // from: '9:00', to: '18:00',
+  /* カレンダーの名前と色。予定の calendar に名前を書くと、その色で描く。型: { [名前]: CSS の色 } ・色分けしないなら {} */
+  calendars: { '仕事': '#3a5ad1', 'プライベート': '#20a46b', '家族': '#f0883e' },
+  /* 予定。start と end は '10:00' のような時刻で、翌日の朝5時までは '25:30' のように24時以降で書く。
+   * 終日の予定は start と end を省く。end を省くと1時間の予定にする。同じ時間に重なる予定は2件まで。
+   * calendar は calendars の名前(省くと灰色) */
+  events: [
+    { title: '子どもの誕生日', calendar: '家族' },
+    { start: '9:30', end: '10:30', title: '定例ミーティング', calendar: '仕事' },
+    { start: '10:00', end: '11:00', title: '採用面接', calendar: '仕事' },
+    { start: '12:00', end: '13:00', title: 'ランチ', calendar: 'プライベート' },
+    { start: '14:00', end: '14:30', title: '面談', calendar: '仕事' },
+    { start: '15:00', end: '17:00', title: '企画レビュー', calendar: '仕事' },
+    { start: '19:00', end: '21:00', title: '誕生日の食事会', calendar: '家族' },
+    { start: '23:30', end: '25:00', title: '映画', calendar: 'プライベート' }
+  ]
 };
 
 var EN = data.lang === 'en';
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var NO_CAL = '#8e8e93', HH = 48, LAST = 29 * 60;
 /* 画面とエラーの文言 */
 var T = EN ? {
-  wd: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-  monthLabel: function(a, b){ return a === b ? MONTHS[a - 1] : MONTHS[a - 1].slice(0, 3) + ' – ' + MONTHS[b - 1].slice(0, 3); }
+  wd: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  ym: function(y, m){ return MONTHS[m - 1] + ' ' + y; },
+  hour: function(h){ return (h % 12 || 12) + (h % 24 < 12 ? ' AM' : ' PM'); },
+  allDay: 'All day', nextMark: ' (next day)'
 } : {
-  wd: ['日', '月', '火', '水', '木', '金', '土'],
-  monthLabel: function(){ return '月'; }
+  wd: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+  ym: function(y, m){ return y + '年' + m + '月'; },
+  hour: function(h){ return (h === 24 ? '翌' : '') + (h % 24) + '時'; },
+  allDay: '終日', nextMark: '(翌日)'
 };
 /* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
 var E = {
-  badStart: "start must be a date like '2026-11-23'",
-  badTime: function(name){ return name + " must be a time like '10:00'"; },
-  badStep: 'step must be 15, 30 or 60',
-  badRange: function(s){ return 'to must be later than from, a multiple of ' + s + ' minutes after it'; },
-  notShown: function(k){ return k + ' is not one of the times shown (from, to and step)'; },
-  badRow: function(k){ return k + ': write 7 values, one for each day'; },
-  badType: function(k){ return k + ': write each value as a string or a number'; },
-  tooLong: function(k, v){ return k + ': ' + JSON.stringify(v) + ' is too long. Each slot fits up to 2 characters'; },
-  badHolidays: "holidays must be an array of dates (e.g. ['2026-11-23'])"
+  badDate: "date must look like '2026-12-01'",
+  badEvents: "events must be an array of { start, end, title, calendar } (e.g. [{ start: '10:00', end: '11:00', title: 'Dentist' }])",
+  badTitle: function(i){ return 'events[' + i + ']: each event needs a title'; },
+  badTime: function(w, t){ return w + ': ' + JSON.stringify(t) + " is not a time. Write it like '10:00' (up to '29:00' for the early hours of the next day)"; },
+  endOnly: function(i){ return 'events[' + i + ']: end needs a start'; },
+  badOrder: function(i){ return 'events[' + i + ']: end must be after start'; },
+  badRange: 'to must be after from',
+  outside: function(i){ return 'events[' + i + ']: the event is outside from and to. Widen the range or leave from and to out'; },
+  tooMany: function(t){ return 'More than 2 events overlap at ' + t + '. Up to 2 events can overlap'; },
+  badCals: "calendars must be an object of names and colors (e.g. { Work: '#3a5ad1' })",
+  noCal: function(i, c){ return 'events[' + i + ']: ' + JSON.stringify(c) + ' is not in calendars'; }
 };
-/* ◯ △ x - は線で描く記号として特別扱いする。似た文字はこれらに寄せる */
-var ALIAS = { '○': '◯', '〇': '◯', '×': 'x', '✕': 'x', 'ー': '-', '−': '-' };
-var MARK_CLASS = { '◯': 'm-o', '△': 'm-t', 'x': 'm-x', '-': 'm-h' };
-/* 2文字の言葉(漢字・かななど)は字を小さくしてマスに収める。2桁の数字や英字はそのままの大きさ */
-function textSize(m, n){ return Array.from(m).length > 1 && /[^\x00-\x7f]/.test(m) ? Math.round(n * .58) : n; }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function p2(n){ return (n < 10 ? '0' : '') + n; }
-function iso(dt){ return dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-' + p2(dt.getDate()); }
 
-/* 7日分の日付 */
-var sd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(data.start));
-var first = sd && new Date(+sd[1], +sd[2] - 1, +sd[3]);
-if (!first || iso(first) !== data.start) throw new Error(E.badStart);
-var DAYS = [];
-for (var i = 0; i < 7; i++) {
-  var dt = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i);
-  DAYS.push(dt);
-}
-
-/* 時刻は 0:00 からの分で扱う */
-function minutes(v, name){
-  var t = /^(\d{1,2}):(\d{2})$/.exec(String(v).trim());
-  if (!t || +t[1] > 24 || +t[2] > 59) throw new Error(E.badTime(name));
-  return +t[1] * 60 + +t[2];
-}
-function hm(n){ return Math.floor(n / 60) + ':' + p2(n % 60); }
-var step = data.step;
-if ([15, 30, 60].indexOf(step) < 0) throw new Error(E.badStep);
-var from = minutes(data.from, 'from'), to = minutes(data.to, 'to');
-if (to <= from || (to - from) % step) throw new Error(E.badRange(step));
-var TIMES = [];
-for (var t = from; t < to; t += step) TIMES.push(t);
-
-/* 値を確かめる。使えない値は描かずにエラーにする */
-function mark(v, k){
-  if (v === '' || v === null || v === undefined) return '';
-  if (typeof v === 'number') v = String(v);
-  if (typeof v !== 'string') throw new Error(E.badType(k));
-  v = v.trim();
-  v = ALIAS[v] || v;
-  if (Array.from(v).length > 2) throw new Error(E.tooLong(k, v));
+/* ---- data を確かめる ---- */
+var dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(data.date));
+if (!dm) throw new Error(E.badDate);
+var DAY = new Date(+dm[1], +dm[2] - 1, +dm[3]);
+if (DAY.getDate() !== +dm[3]) throw new Error(E.badDate);
+/* 時刻を分にする('9:30' → 570、'25:30' → 1530)。29:00 まで */
+function minutes(t, where){
+  var m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim());
+  var v = m ? +m[1] * 60 + +m[2] : -1;
+  if (!m || +m[2] > 59 || v > LAST) throw new Error(E.badTime(where, t));
   return v;
 }
-var rows = {};
-Object.keys(data.slots || {}).forEach(function(k){
-  var n = minutes(k, k);
-  if (TIMES.indexOf(n) < 0) throw new Error(E.notShown(k));
-  var row = data.slots[k];
-  if (!Array.isArray(row) || row.length !== 7) throw new Error(E.badRow(k));
-  rows[n] = row.map(function(v){ return mark(v, k); });
-});
-var hol = {};
-if (!Array.isArray(data.holidays || [])) throw new Error(E.badHolidays);
-/* 表の7日間に入らない祝日は無視する(start だけ変えて holidays を残しても表示できるように) */
-(data.holidays || []).forEach(function(k){ hol[k] = true; });
-
-/* 記号の SVG(viewBox 0 0 24 24、単色)。色は currentColor */
-function markSvg(m){
-  var a = '<svg viewBox="0 0 24 24" aria-hidden="true">', z = '</svg>';
-  if (m === '◯') return a + '<circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.6"/>' + z;
-  if (m === '△') return a + '<path d="M12 3.8 21 19.4H3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' + z;
-  if (m === 'x') return a + '<path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>' + z;
-  if (m === '-') return a + '<path d="M5.5 12H18.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' + z;
-  return a + '<text x="12" y="12" text-anchor="middle" dominant-baseline="central" font-size="' + textSize(m, 19) + '" font-weight="300" fill="currentColor" style="font-variant-numeric:tabular-nums">' + esc(m) + '</text>' + z;
-}
-
-/* 見出し: 月(7日間が月をまたぐときは両方)と年 */
-var last = DAYS[6];
-var m1 = first.getMonth() + 1, m2 = last.getMonth() + 1, y1 = first.getFullYear(), y2 = last.getFullYear();
-var h = '<div class="hd"><span class="mn">' + m1 + (m2 !== m1 ? '–' + m2 : '') + '</span><span class="yr"><b>' + T.monthLabel(m1, m2) + '</b>' + y1 + (y2 !== y1 ? '–' + y2 : '') + '</span></div><div class="gr"><div></div>';
-/* 日付の行。日曜と祝日は赤、土曜は青。途中で月が変わる日は 'M/D' で書く */
-DAYS.forEach(function(dt, i){
-  var w = dt.getDay(), key = iso(dt);
-  var cls = 'dh' + (w === 0 || hol[key] ? ' sun' : w === 6 ? ' sat' : '');
-  var d = i > 0 && dt.getDate() === 1 ? (dt.getMonth() + 1) + '/1' : dt.getDate();
-  h += '<div class="' + cls + '"><span class="w">' + T.wd[w] + '</span><span class="d">' + d + '</span></div>';
-});
-/* 時刻の行 */
-TIMES.forEach(function(n){
-  var row = rows[n] || [];
-  h += '<div class="tm">' + hm(n) + '</div>';
-  for (var i = 0; i < 7; i++) {
-    var m = row[i] || '';
-    h += '<div class="c">' + (m ? '<span class="mk ' + (MARK_CLASS[m] || 'm-n') + '" aria-label="' + esc(m) + '">' + markSvg(m) + '</span>' : '') + '</div>';
+/* 分を表示用の時刻にする(1530 → '1:30'。24時以降は翌日の時刻) */
+function clock(v){ var h = Math.floor(v / 60), m = v % 60; return (h % 24) + ':' + (m < 10 ? '0' : '') + m; }
+function span(e){ return clock(e.s) + (e.s >= 1440 ? T.nextMark : '') + ' – ' + clock(e.e) + (e.e > 1440 ? T.nextMark : ''); }
+var CALS = data.calendars || {};
+if (typeof CALS !== 'object' || Array.isArray(CALS)) throw new Error(E.badCals);
+if (!Array.isArray(data.events)) throw new Error(E.badEvents);
+var ALL = [], TIMED = [];
+data.events.forEach(function(e, i){
+  if (!e || typeof e !== 'object') throw new Error(E.badEvents);
+  if (typeof e.title !== 'string' || !e.title) throw new Error(E.badTitle(i));
+  if (e.calendar != null && !(e.calendar in CALS)) throw new Error(E.noCal(i, e.calendar));
+  var ev = { i: i, title: e.title, cal: e.calendar == null ? '' : String(e.calendar), color: e.calendar == null ? NO_CAL : String(CALS[e.calendar]) };
+  if (e.start == null || e.start === '') {
+    if (e.end != null && e.end !== '') throw new Error(E.endOnly(i));
+    ALL.push(ev); return;
   }
+  ev.s = minutes(e.start, 'events[' + i + ']');
+  ev.e = e.end == null || e.end === '' ? Math.min(LAST, ev.s + 60) : minutes(e.end, 'events[' + i + ']');
+  if (ev.e <= ev.s) throw new Error(E.badOrder(i));
+  TIMED.push(ev);
 });
-h += '</div>';
+
+/* ---- 表示する範囲。指定が無ければ、予定がちょうど収まる1時間単位(予定が無ければ 9時〜18時) ---- */
+var FROM, TO;
+if (data.from != null || data.to != null) {
+  FROM = data.from != null ? minutes(data.from, 'from') : 9 * 60;
+  TO = data.to != null ? minutes(data.to, 'to') : 18 * 60;
+  if (TO <= FROM) throw new Error(E.badRange);
+  TIMED.forEach(function(e){ if (e.s < FROM || e.e > TO) throw new Error(E.outside(e.i)); });
+} else if (TIMED.length) {
+  FROM = Math.floor(Math.min.apply(null, TIMED.map(function(e){ return e.s; })) / 60) * 60;
+  TO = Math.ceil(Math.max.apply(null, TIMED.map(function(e){ return e.e; })) / 60) * 60;
+} else { FROM = 9 * 60; TO = 18 * 60; }
+
+/* ---- 重なった予定を2列に分ける。重なりのつながったまとまり(cl)ごとに、列が2つ要るかを記録する ---- */
+TIMED.sort(function(a, b){ return a.s - b.s || b.e - a.e || a.i - b.i; });
+var active = [], cl = null;
+TIMED.forEach(function(e){
+  active = active.filter(function(a){ return a.e > e.s; });
+  if (!active.length) cl = { cols: 1 };
+  if (active.length >= 2) throw new Error(E.tooMany(clock(e.s)));
+  e.col = active.length && active[0].col === 0 ? 1 : 0;
+  e.cl = cl;
+  if (active.length) cl.cols = 2;
+  active.push(e);
+});
+
+/* ---- 描く ---- */
+var h = '<div class="hd"><span class="mn">' + DAY.getDate() + '</span><span class="yr"><b>' + T.wd[DAY.getDay()] + '</b>' + T.ym(DAY.getFullYear(), DAY.getMonth() + 1) + '</span>' +
+  (ALL.length ? '<div class="ad">' + ALL.map(function(e, k){ return '<button type="button" data-a="' + k + '"><i style="background:' + esc(e.color) + '"></i><span>' + esc(e.title) + '</span></button>'; }).join('') + '</div>' : '') + '</div>';
+var H = (TO - FROM) / 60 * HH;
+function Y(v){ return (v - FROM) / 60 * HH; }
+h += '<div class="tl" style="height:' + Math.round(H) + 'px">';
+/* 1時間ごとの線と時刻。24時の線は濃くする */
+for (var t = Math.ceil(FROM / 60) * 60; t <= TO; t += 60) {
+  var y = Math.round(Y(t));
+  h += '<div class="hl' + (t === 1440 ? ' nx' : '') + '" style="top:' + y + 'px"></div><span class="lb" style="top:' + y + 'px">' + T.hour(t / 60) + '</span>';
+}
+/* 予定。重なりのあるまとまりでは幅を半分にして横に並べる */
+TIMED.forEach(function(e, k){
+  var top = Y(e.s) + 1, hgt = Math.max(18, Y(e.e) - Y(e.s) - 2);
+  var w = e.cl.cols === 2 ? 50 : 100, left = e.col * 50;
+  h += '<button type="button" class="ev' + (hgt < 34 ? ' one' : '') + '" data-t="' + k + '" style="top:' + top.toFixed(1) + 'px;height:' + hgt.toFixed(1) + 'px;left:calc(' + left + '% + ' + (e.col ? 1 : 0) + 'px);width:calc(' + w + '% - ' + (w < 100 ? 2 : 1) + 'px);background:' + esc(e.color) + '">' +
+    '<b>' + esc(e.title) + '</b><small>' + esc(clock(e.s) + ' – ' + clock(e.e)) + '</small></button>';
+});
+h += '<div class="tip" hidden></div></div>';
 R.innerHTML = h;
+
+/* ---- タップした予定の名前と時刻を出す ---- */
+var TL = R.querySelector('.tl'), TIP = R.querySelector('.tip'), cur = null;
+function show(btn, e){
+  if (cur === btn) { hide(); return; }
+  cur = btn;
+  TIP.innerHTML = '<b>' + esc(e.title) + '</b><span>' + esc(e.s == null ? T.allDay : span(e)) + (e.cal ? ' · ' + esc(e.cal) : '') + '</span>';
+  TIP.hidden = false;
+  var tr = TL.getBoundingClientRect(), br = btn.getBoundingClientRect();
+  /* 予定の下に出す。目盛りの下端からはみ出すときは上に出す */
+  var top = br.bottom - tr.top + 6;
+  if (top + TIP.offsetHeight > TL.offsetHeight) top = br.top - tr.top - TIP.offsetHeight - 6;
+  TIP.style.top = Math.round(top) + 'px';
+  TIP.style.left = Math.round(Math.max(-44, Math.min(TL.offsetWidth - TIP.offsetWidth, br.left - tr.left))) + 'px';
+}
+function hide(){ cur = null; TIP.hidden = true; }
+R.addEventListener('click', function(ev){
+  var b = ev.target.closest('.ev'), a = ev.target.closest('.ad button');
+  if (b) show(b, TIMED[+b.dataset.t]);
+  else if (a) show(a, ALL[+a.dataset.a]);
+  else hide();
+});
 
 } catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
 function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}

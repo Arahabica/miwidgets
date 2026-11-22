@@ -1,0 +1,177 @@
+<!-- 予約枠テンプレート: 開始日から7日間×時刻の表。各枠に記号(◯ △ x -)か文字を表示。表示内容は data で変更できる。 -->
+<div id="time-slots-w"></div>
+<style>
+#time-slots-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#time-slots-w *{box-sizing:border-box;}
+
+#time-slots-w{padding:16px 14px 14px;background:#fff;color:#1c1c1e;}
+#time-slots-w .hd{display:flex;align-items:flex-end;gap:8px;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid #1c1c1e;}
+#time-slots-w .mn{font-size:44px;line-height:.9;font-weight:200;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;}
+#time-slots-w .yr{display:flex;flex-direction:column;font-size:12px;line-height:1.4;letter-spacing:.1em;}
+#time-slots-w .yr b{font-size:15px;font-weight:500;}
+/* 1列目が時刻、残り7列が日付 */
+#time-slots-w .gr{display:grid;grid-template-columns:auto repeat(7,minmax(0,1fr));}
+#time-slots-w .dh{padding:2px 0 6px;text-align:center;line-height:1.3;}
+#time-slots-w .dh .w{display:block;font-size:10px;letter-spacing:.1em;color:#8e8e93;}
+#time-slots-w .dh .d{display:block;font-size:14px;font-variant-numeric:tabular-nums;}
+#time-slots-w .dh.sun .w,#time-slots-w .dh.sun .d{color:#d64545;}
+#time-slots-w .dh.sat .w,#time-slots-w .dh.sat .d{color:#2f6fd6;}
+#time-slots-w .tm{padding:0 8px 0 0;height:30px;display:flex;align-items:center;justify-content:flex-end;font-size:11px;color:#8e8e93;font-variant-numeric:tabular-nums;border-top:1px dashed #e0e0e5;}
+#time-slots-w .c{position:relative;height:30px;border-top:1px dashed #e0e0e5;}
+#time-slots-w .mk{position:absolute;left:50%;top:50%;width:60%;max-width:20px;aspect-ratio:1;transform:translate(-50%,-50%);}
+#time-slots-w .mk svg{display:block;width:100%;height:100%;overflow:visible;}
+/* マークの色(m-o: ◯, m-t: △, m-x: x, m-h: -, m-n: 記号以外の文字) */
+#time-slots-w .m-o{color:#d64545;}
+#time-slots-w .m-t{color:#e08a00;}
+#time-slots-w .m-x{color:#545458;}
+#time-slots-w .m-h{color:#8e8e93;}
+#time-slots-w .m-n{color:#2f6fd6;}
+</style>
+<script>
+(function(){
+var R = document.getElementById("time-slots-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',           // 'ja' | 'en': 曜日・月・エラーの文言の言語
+  start: '2026-11-23',  // string: 表の最初の日('YYYY-MM-DD')。この日から7日間を表示する
+  from: '10:00',        // string: 最初の枠の開始時刻('H:MM')
+  to: '16:00',          // string: 最後の枠の終了時刻('H:MM')。この時刻の行は出ない
+  step: 30,             // 15 | 30 | 60: 枠の間隔(分)
+  /* 時刻ごとの枠。キーは枠の開始時刻('H:MM')、値は7日分の値の配列(start の日から順に)。
+   * 値は2文字までの文字か数値。何も描かないマスは ''。枠の無い時刻は書かなくてよい(空の行になる)。
+   * '◯' '△' 'x' '-' は線で描く記号になる(○ 〇 × ✕ ー − も同じ)。それ以外は文字のまま描き、2文字の言葉は小さく描く */
+  slots: {
+    '10:00': ['◯', '◯', 'x', '-', '◯', 'x', 'x'],
+    '10:30': ['◯', '△', 'x', '-', '◯', 'x', 'x'],
+    '11:00': ['△', '◯', '◯', '-', '△', 'x', '△'],
+    '11:30': ['x', '◯', '◯', '-', '◯', '△', '◯'],
+    '12:00': ['-', '-', '-', '-', '-', '-', '-'],
+    '12:30': ['-', '-', '-', '-', '-', '-', '-'],
+    '13:00': ['◯', 'x', '△', '-', '◯', 'x', '◯'],
+    '13:30': ['◯', 'x', '◯', '-', 2, 'x', '◯'],
+    '14:00': ['△', '◯', '◯', '-', 1, '△', '◯'],
+    '14:30': ['◯', '◯', 'x', '-', '◯', '◯', '△'],
+    '15:00': ['◯', '△', 'x', '-', '◯', '◯', 'x'],
+    '15:30': ['◯', '◯', '△', '-', '◯', '◯', 'x']
+  },
+  /* 祝日('YYYY-MM-DD')。日曜と同じ赤で表示する。表の7日間に入らない日付は無視する。型: string[] ・無ければ [] */
+  holidays: ['2026-11-23']
+};
+
+var EN = data.lang === 'en';
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+/* 画面とエラーの文言 */
+var T = EN ? {
+  wd: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  monthLabel: function(a, b){ return a === b ? MONTHS[a - 1] : MONTHS[a - 1].slice(0, 3) + ' – ' + MONTHS[b - 1].slice(0, 3); }
+} : {
+  wd: ['日', '月', '火', '水', '木', '金', '土'],
+  monthLabel: function(){ return '月'; }
+};
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
+  badStart: "start must be a date like '2026-11-23'",
+  badTime: function(name){ return name + " must be a time like '10:00'"; },
+  badStep: 'step must be 15, 30 or 60',
+  badRange: function(s){ return 'to must be later than from, a multiple of ' + s + ' minutes after it'; },
+  notShown: function(k){ return k + ' is not one of the times shown (from, to and step)'; },
+  badRow: function(k){ return k + ': write 7 values, one for each day'; },
+  badType: function(k){ return k + ': write each value as a string or a number'; },
+  tooLong: function(k, v){ return k + ': ' + JSON.stringify(v) + ' is too long. Each slot fits up to 2 characters'; },
+  badHolidays: "holidays must be an array of dates (e.g. ['2026-11-23'])"
+};
+/* ◯ △ x - は線で描く記号として特別扱いする。似た文字はこれらに寄せる */
+var ALIAS = { '○': '◯', '〇': '◯', '×': 'x', '✕': 'x', 'ー': '-', '−': '-' };
+var MARK_CLASS = { '◯': 'm-o', '△': 'm-t', 'x': 'm-x', '-': 'm-h' };
+/* 2文字の言葉(漢字・かななど)は字を小さくしてマスに収める。2桁の数字や英字はそのままの大きさ */
+function textSize(m, n){ return Array.from(m).length > 1 && /[^\x00-\x7f]/.test(m) ? Math.round(n * .58) : n; }
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function p2(n){ return (n < 10 ? '0' : '') + n; }
+function iso(dt){ return dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-' + p2(dt.getDate()); }
+
+/* 7日分の日付 */
+var sd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(data.start));
+var first = sd && new Date(+sd[1], +sd[2] - 1, +sd[3]);
+if (!first || iso(first) !== data.start) throw new Error(E.badStart);
+var DAYS = [];
+for (var i = 0; i < 7; i++) {
+  var dt = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i);
+  DAYS.push(dt);
+}
+
+/* 時刻は 0:00 からの分で扱う */
+function minutes(v, name){
+  var t = /^(\d{1,2}):(\d{2})$/.exec(String(v).trim());
+  if (!t || +t[1] > 24 || +t[2] > 59) throw new Error(E.badTime(name));
+  return +t[1] * 60 + +t[2];
+}
+function hm(n){ return Math.floor(n / 60) + ':' + p2(n % 60); }
+var step = data.step;
+if ([15, 30, 60].indexOf(step) < 0) throw new Error(E.badStep);
+var from = minutes(data.from, 'from'), to = minutes(data.to, 'to');
+if (to <= from || (to - from) % step) throw new Error(E.badRange(step));
+var TIMES = [];
+for (var t = from; t < to; t += step) TIMES.push(t);
+
+/* 値を確かめる。使えない値は描かずにエラーにする */
+function mark(v, k){
+  if (v === '' || v === null || v === undefined) return '';
+  if (typeof v === 'number') v = String(v);
+  if (typeof v !== 'string') throw new Error(E.badType(k));
+  v = v.trim();
+  v = ALIAS[v] || v;
+  if (Array.from(v).length > 2) throw new Error(E.tooLong(k, v));
+  return v;
+}
+var rows = {};
+Object.keys(data.slots || {}).forEach(function(k){
+  var n = minutes(k, k);
+  if (TIMES.indexOf(n) < 0) throw new Error(E.notShown(k));
+  var row = data.slots[k];
+  if (!Array.isArray(row) || row.length !== 7) throw new Error(E.badRow(k));
+  rows[n] = row.map(function(v){ return mark(v, k); });
+});
+var hol = {};
+if (!Array.isArray(data.holidays || [])) throw new Error(E.badHolidays);
+/* 表の7日間に入らない祝日は無視する(start だけ変えて holidays を残しても表示できるように) */
+(data.holidays || []).forEach(function(k){ hol[k] = true; });
+
+/* 記号の SVG(viewBox 0 0 24 24、単色)。色は currentColor */
+function markSvg(m){
+  var a = '<svg viewBox="0 0 24 24" aria-hidden="true">', z = '</svg>';
+  if (m === '◯') return a + '<circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.6"/>' + z;
+  if (m === '△') return a + '<path d="M12 3.8 21 19.4H3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' + z;
+  if (m === 'x') return a + '<path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>' + z;
+  if (m === '-') return a + '<path d="M5.5 12H18.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' + z;
+  return a + '<text x="12" y="12" text-anchor="middle" dominant-baseline="central" font-size="' + textSize(m, 19) + '" font-weight="300" fill="currentColor" style="font-variant-numeric:tabular-nums">' + esc(m) + '</text>' + z;
+}
+
+/* 見出し: 月(7日間が月をまたぐときは両方)と年 */
+var last = DAYS[6];
+var m1 = first.getMonth() + 1, m2 = last.getMonth() + 1, y1 = first.getFullYear(), y2 = last.getFullYear();
+var h = '<div class="hd"><span class="mn">' + m1 + (m2 !== m1 ? '–' + m2 : '') + '</span><span class="yr"><b>' + T.monthLabel(m1, m2) + '</b>' + y1 + (y2 !== y1 ? '–' + y2 : '') + '</span></div><div class="gr"><div></div>';
+/* 日付の行。日曜と祝日は赤、土曜は青。途中で月が変わる日は 'M/D' で書く */
+DAYS.forEach(function(dt, i){
+  var w = dt.getDay(), key = iso(dt);
+  var cls = 'dh' + (w === 0 || hol[key] ? ' sun' : w === 6 ? ' sat' : '');
+  var d = i > 0 && dt.getDate() === 1 ? (dt.getMonth() + 1) + '/1' : dt.getDate();
+  h += '<div class="' + cls + '"><span class="w">' + T.wd[w] + '</span><span class="d">' + d + '</span></div>';
+});
+/* 時刻の行 */
+TIMES.forEach(function(n){
+  var row = rows[n] || [];
+  h += '<div class="tm">' + hm(n) + '</div>';
+  for (var i = 0; i < 7; i++) {
+    var m = row[i] || '';
+    h += '<div class="c">' + (m ? '<span class="mk ' + (MARK_CLASS[m] || 'm-n') + '" aria-label="' + esc(m) + '">' + markSvg(m) + '</span>' : '') + '</div>';
+  }
+});
+h += '</div>';
+R.innerHTML = h;
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>

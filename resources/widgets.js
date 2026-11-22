@@ -194,7 +194,8 @@ var TEMPLATES = [
   { id: 'avatar_turn', name: 'キャラの一回転', file: 'template/avatar_turn.html', user: '一回転して', reply: 'くるっと一回転！' },
   { id: 'calendar', name: 'カレンダー（予約）', file: 'template/calendar.html', user: '11月の予約の空き状況を見せて', reply: '11月の予約状況です。' },
   { id: 'calendar_events', name: 'カレンダー（予定）', file: 'template/calendar_events.html', user: '11月の予定を見せて', reply: '11月の予定です。日付をタップすると、その日の予定が出ます。' },
-  { id: 'timetable', name: '予約枠', file: 'template/timetable.html', user: '11月23日から1週間の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。' },
+  { id: 'time_slots', name: '予約枠', file: 'template/time_slots.html', user: '11月23日から1週間の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。' },
+  { id: 'timetable', name: 'タイムテーブル', file: 'template/timetable.html', user: '11月27日の予定を時間ごとに見せて', reply: '11月27日のタイムテーブルです。' },
   { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '今年と去年の月別売上です。' },
   { id: 'horizontal_bar', name: '棒グラフ(横)', file: 'template/horizontal_bar.html', user: '店舗ごとの来店者数を10月と11月で比べたい', reply: '店舗別の10月と11月の来店者数です。' },
   { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '東京と大阪の今日の気温です。' },
@@ -222,7 +223,8 @@ var PROMPT_EXAMPLES = {
   secret: 'miwidgets.com/register.txt の秘密のメッセージウィジェットで、パスコード123456で開く「お誕生日おめでとう！」のメッセージを作成',
   calendar: 'miwidgets.com/register.txt のカレンダー（予約）ウィジェットで、12月の予約の空き状況を◯△xで表示',
   calendar_events: 'miwidgets.com/register.txt のカレンダー（予定）ウィジェットで、Google カレンダーの今月の予定を表示',
-  timetable: 'miwidgets.com/register.txt の予約枠ウィジェットで、来週の10時〜18時の空き枠を1時間ごとに表示',
+  time_slots: 'miwidgets.com/register.txt の予約枠ウィジェットで、来週の10時〜18時の空き枠を1時間ごとに表示',
+  timetable: 'miwidgets.com/register.txt のタイムテーブルウィジェットで、Google カレンダーの明日の予定を表示',
   bar: 'miwidgets.com/register.txt の棒グラフウィジェットで、都道府県の人口の上位5つを表示',
   horizontal_bar: 'miwidgets.com/register.txt の棒グラフ(横)ウィジェットで、世界の人口の多い国の上位8か国を表示',
   line: 'miwidgets.com/register.txt の線グラフウィジェットで、この10年の日本の人口の移り変わりを表示',
@@ -340,7 +342,7 @@ var EN_PATCHES = {
   calendar: function(data){
     data.lang = 'en';
   },
-  timetable: function(data){
+  time_slots: function(data){
     data.lang = 'en';
   },
   bar: function(data){
@@ -434,6 +436,17 @@ var EN_CALENDAR_EVENTS_SCENARIOS = [
     { date: '2026-11-28', title: 'Kid\u2019s birthday', calendar: 'Family' },
     { date: '2026-12-01', start: '10:00', title: 'Health checkup', calendar: 'Personal' }], holidays: ['2026-11-03', '2026-11-23'] } }
 ];
+var EN_TIMETABLE_SCENARIOS = [
+  { data: { lang: 'en', date: '2026-11-27', calendars: { Work: '#3a5ad1', Personal: '#20a46b', Family: '#f0883e' }, events: [
+    { title: 'Kid\u2019s birthday', calendar: 'Family' },
+    { start: '9:30', end: '10:30', title: 'Weekly meeting', calendar: 'Work' },
+    { start: '10:00', end: '11:00', title: 'Interview', calendar: 'Work' },
+    { start: '12:00', end: '13:00', title: 'Lunch', calendar: 'Personal' },
+    { start: '14:00', end: '14:30', title: '1:1 meeting', calendar: 'Work' },
+    { start: '15:00', end: '17:00', title: 'Project review', calendar: 'Work' },
+    { start: '19:00', end: '21:00', title: 'Birthday dinner', calendar: 'Family' },
+    { start: '23:30', end: '25:00', title: 'Movie', calendar: 'Personal' }] } }
+];
 var EN_TEMPLATES = [
   { id: 'weather', name: 'Weather', user: 'What\u2019s the weather like around Japan?', reply: 'Here’s today’s weather in each city.', scenarios: EN_WEATHER_SCENARIOS },
   { id: 'route', name: 'Transit Directions', user: 'How do I get from Shinjuku to Kokusaikaikan?', reply: 'Here’s the route from Shinjuku to Kokusaikaikan.', scenarios: ROUTE_SCENARIOS },
@@ -443,7 +456,8 @@ var EN_TEMPLATES = [
   { id: 'avatar_turn', name: 'Avatar Turn', user: 'Spin around', reply: 'One full turn!' },
   { id: 'calendar', name: 'Calendar (Bookings)', user: 'Show me the availability for November', reply: 'Here’s the booking availability for November.' },
   { id: 'calendar_events', name: 'Calendar (Events)', user: 'Show me my plans for November', reply: 'Here are your plans for November. Tap a date to see that day\u2019s events.', scenarios: EN_CALENDAR_EVENTS_SCENARIOS },
-  { id: 'timetable', name: 'Time Slots', user: 'Show me the open slots for the week of November 23', reply: 'Here are the open slots for the week of November 23.' },
+  { id: 'time_slots', name: 'Time Slots', user: 'Show me the open slots for the week of November 23', reply: 'Here are the open slots for the week of November 23.' },
+  { id: 'timetable', name: 'Timetable', user: 'Show my schedule for November 27 by the hour', reply: 'Here\u2019s your timetable for November 27.', scenarios: EN_TIMETABLE_SCENARIOS },
   { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are monthly sales for this year and last year.' },
   { id: 'horizontal_bar', name: 'Horizontal Bar Chart', user: 'Compare store visitors in October and November', reply: 'Here are visitors by store for October and November.' },
   { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here are today’s temperatures in Tokyo and Osaka.' },
@@ -470,7 +484,8 @@ var EN_PROMPT_EXAMPLES = {
   secret: 'Use the miwidgets.com/register.txt secret message widget to make a \u201cHappy Birthday!\u201d message that opens with passcode 123456',
   calendar: 'Use the miwidgets.com/register.txt calendar (bookings) widget to show December availability with \u25ef, \u25b3 and x',
   calendar_events: 'Use the miwidgets.com/register.txt calendar (events) widget to show this month\u2019s events from my Google Calendar',
-  timetable: 'Use the miwidgets.com/register.txt time slots widget to show next week\u2019s open slots from 10 AM to 6 PM, hourly',
+  time_slots: 'Use the miwidgets.com/register.txt time slots widget to show next week\u2019s open slots from 10 AM to 6 PM, hourly',
+  timetable: 'Use the miwidgets.com/register.txt timetable widget to show tomorrow\u2019s events from my Google Calendar',
   bar: 'Use the miwidgets.com/register.txt bar chart widget to show the 5 most populous US states',
   horizontal_bar: 'Use the miwidgets.com/register.txt horizontal bar chart widget to show the 8 most populous countries',
   line: 'Use the miwidgets.com/register.txt line chart widget to show how the US population changed over the last 10 years',
