@@ -1,0 +1,106 @@
+<!-- ニュースリストテンプレート: 記事のタイトル・要約・時刻と写真を一覧にし、タップで元の記事を開く。表示内容は data で変更できる。 -->
+<div id="news-w"></div>
+<style>
+#news-w{box-sizing:border-box;width:100%;padding:4px 0;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#news-w *{box-sizing:border-box;}
+#news-w a{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent;}
+#news-w a+a{border-top:1px solid var(--hatch-widget-border,rgba(0,0,0,.1));}
+#news-w a:active{background:rgba(127,127,127,.12);}
+#news-w .tt{font-size:15px;font-weight:700;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;}
+#news-w .sm{margin-top:4px;font-size:13px;line-height:1.5;color:var(--hatch-widget-muted,#6e6e73);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;}
+#news-w .mt{margin-top:6px;font-size:11px;color:var(--hatch-widget-muted,#6e6e73);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#news-w .mt span+span{margin-left:8px;}
+#news-w img{display:block;width:88px;height:88px;border-radius:8px;object-fit:cover;background:rgba(127,127,127,.15);}
+/* 先頭を大きく(data.large): 写真を上に横いっぱい */
+#news-w a.top{grid-template-columns:minmax(0,1fr);gap:10px;}
+#news-w a.top img{order:-1;width:100%;height:auto;aspect-ratio:16/9;border-radius:10px;}
+#news-w a.top .tt{font-size:18px;-webkit-line-clamp:3;}
+#news-w a.top .sm{-webkit-line-clamp:3;}
+</style>
+<script>
+(function(){
+var R = document.getElementById("news-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',   // 'ja' | 'en'
+  large: false, // true: 先頭の記事を、写真を上に大きくして出す(写真が無ければ他と同じ)
+  /* 写真(Base64 の data URI)。items[].image にキーを書く。
+   * 1枚 20KB まで、縦横 320px まで(large が true のとき、先頭の記事は 40KB・640px まで)。WebP / JPEG を推奨。
+   * 下のサンプル画像は書き方を示すための 30px の縮小版。そのまま表示しない。
+   * 記事の写真があれば差し替え、なければその記事の image と credit を省略する。 */
+  images: {
+    cygnus: 'data:image/webp;base64,UklGRs4AAABXRUJQVlA4IMIAAABQBQCdASoeABEAPrVInUmnJCKhMAgA4BaJQBOmUGdEz/7oAA4qBTaxq25DvfFrdQOXFgAA/tld0khy3frVOQ0LaRbrJHyLHaWmpL2w6IrkhFRVt2dnqvjg9pMg4v/MjRxYoBwUFrTi3srSAXG59PMdprrlA8ldIePVf369YiOU7okYF9a+5QTmjHLrQpwjgRCZ5wnRrqLxIMvYwU+ZSQmL2J+C+D5//6+A368UMVE0/EwjyXIPCZJ5stMXGEhRNEgAAA==',
+    chapea: 'data:image/webp;base64,UklGRhYBAABXRUJQVlA4IAoBAADwBgCdASoeABMAPrVMoEsnJCMhsBgIAOAWiWIAsR7VPRQZ9SoY4eU8gXrwXs46NXMLzc2G3lwsRa2pMs2CcAIAAP7cy0VUGHkQuQl18IhtpyJjI7jY00LL6b/nIgfdO6YBynoolzpdawkX1WB0sJm1rSktUKH/JgXm9Va15XVODgABLoy5sDthPLYUUiAIPc4dv37M0Xko0xt9Iv5GrPrlQBVqPhHI5im389DzkvKNBRNFrKR89E/yA+3nPvXN2kDnIMrd/549vxHxYbSo1AnKCgGJj3YdTQAgTmEWPDmxf3uXtNxodA2COGgkBtdiQIjZZQliitPSlXYX7E+4d2olCAH8YqEbYKjgAA==',
+    crew13: 'data:image/webp;base64,UklGRlgBAABXRUJQVlA4IEwBAABQBwCdASoeABgAPrVInUmnJCKhMAgA4BaJbACxHuN11wS6LhAOIEUBK926gxefdSqW/sHlBMU0U6iu6TvskdvgIF4gAP70tpvWPUKXZDeNTPc8jHprh9FOj/OGOWr2kGJ0pFIH30g3DU+FBC3QwKc0IeJevDAx5rwFF6AfdBNhyb+PX9PXD4kRxZThZxVe5C7XwxobKbz6epYVe1eywM/JqZv/AEXYT3Z256K2bJ/G+e8ecjWMghRPIS2dRpF6V0Zg/w/0uxL5zcONLMy7OopObXStiuafnRVTL6BG/FF1s7Tl7arjNwn1tdfg4kvx9aAeH+Cv/ELN3RsZ5VIfo0bpzed0h5jgnU2Jzz8uVcGmxXIg1WkY4tPV08DYNOw5+p66Mw/Dz3P2oPBIYSHMIv8CYxAmU5nkR+v5oTDSKbyepl6O2lfK3p8JUAAAAA==',
+    starliner: 'data:image/webp;base64,UklGRvIAAABXRUJQVlA4IOYAAADQBQCdASoeABQAPrVOn0snJCKhsBgIAOAWiWIAnTMv5ckL/i0hjRbPyJ1fELYDnk4Y8OcdhayAAP5BOCTSV5b2jDkiI101FP9d984XIYyf/n75AfM0PNUwkVdTB5EBLZMWipj6DX//KMYYRvjnkl3eD7gO6KW8Kuq7yGdgMKUSZIHMQYYwXpYYo5A+2zXhUHRe5oKzS7idK4xsecPvETKYNzEPnAj6cSAdFa9b9Mra3HpXxxNYjSrM91feGwXxrkYNAj2JAI9JwejlZApAJwo7TeC4hThqLQgjf+sluFDOwewLnl4AAA==',
+    dragon: 'data:image/webp;base64,UklGRtIAAABXRUJQVlA4IMYAAABQBQCdASoeABQAPrVQo0unJKMhqAqo4BaJQBWF+BNR4pvmukUxjO65/g5ti3DeAUjTYaAA3YZL/lzjC/B5oOAEsDGBsLe0IdgmwCCwE7j7RH562br971q8RWS1yvMVTD8l503lcJUq4l/4RS/aRWroOKjdv7cbHy1iJbng+TKP4aivmkF83evts7Yj5/xvOzalNDnyxSHO1dUk40LaTuxsaLI5+Rh5jxAJwwVEvkQHNrIYiBV0gAl+pG3IPDGaKm9kNQPBYAA='
+  },
+  /* 記事。上から順に並べる。
+   *   title:   タイトル(2行まで)
+   *   summary: 要約(2行まで。無ければ省略)
+   *   time:    配信日時 'YYYY-MM-DD HH:MM'。今の時刻から「2時間前」のように表示する
+   *   credit:  写真の提供元(写真が無ければ省略)
+   *   image:   data.images のキー(写真が無ければ省略)
+   *   url:     タップで開く記事の URL */
+  items: [
+    { title: '補給船シグナスXL、11月に宇宙ステーションへ打ち上げ', summary: 'ノースロップ・グラマンの補給ミッションCRS-25として、ファルコン9で打ち上げます。NASAは報道向けの取材受け付けを始めました。', time: '2026-11-03 02:33', credit: 'NASA', image: 'cygnus', url: 'https://www.nasa.gov/news-release/nasa-invites-media-to-northrop-grumman-crs-25-station-resupply-launch/' },
+    { title: '1年間の模擬火星生活が終了へ 4人が施設から退出', summary: 'ジョンソン宇宙センターの模擬火星施設で378日間を過ごした4人が、10月31日に退出します。集めた健康データは将来の火星探査に生かされます。', time: '2026-10-28 04:27', credit: 'NASA', image: 'chapea', url: 'https://www.nasa.gov/news-release/nasa-invites-media-to-crew-completion-of-yearlong-mars-simulation/' },
+    { title: 'クルー13の打ち上げとドッキングをNASAが生中継', summary: 'スペースXのクルー13ミッションについて、打ち上げ前の会見から宇宙ステーションへのドッキングまでを中継します。', time: '2026-09-30 03:57', credit: 'NASA/Bill Stafford', image: 'crew13', url: 'https://www.nasa.gov/news-release/nasa-sets-crew-13-launch-docking-coverage/' },
+    { title: 'NASAとボーイング、スターライナー開発の現状を説明へ', summary: '9月28日の記者会見で、スターライナーの開発状況と、宇宙ステーションへの定期的な有人飛行の計画を説明します。', time: '2026-09-26 07:06', credit: 'NASA', image: 'starliner', url: 'https://www.nasa.gov/news-release/nasa-boeing-to-provide-update-on-starliner-development/' },
+    { title: 'スペースX、35回目の補給ミッションを10月以降に打ち上げ', summary: 'ドラゴン補給船をファルコン9で国際宇宙ステーションへ送ります。NASAは報道向けの取材受け付けを始めました。', time: '2026-09-18 03:32', credit: 'NASA', image: 'dragon', url: 'https://www.nasa.gov/news-release/nasa-invites-media-to-spacexs-35th-resupply-launch-to-space-station/' }
+  ]
+};
+
+var EN = data.lang === 'en';
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
+  badItems: "items must be an array of one or more articles (e.g. [{ title: '...', time: '2026-11-22 21:10', url: 'https://...' }])",
+  badTitle: function(i){ return 'items[' + i + '].title must be a non-empty string'; },
+  badTime: function(i, v){ return 'items[' + i + '].time ' + JSON.stringify(v) + " must be 'YYYY-MM-DD HH:MM' (e.g. '2026-11-22 21:10')"; },
+  badUrl: function(i, v){ return 'items[' + i + '].url ' + JSON.stringify(v) + " must start with 'https://' or 'http://'"; },
+  noImage: function(i, v){ return 'items[' + i + '].image ' + JSON.stringify(v) + ' is not a key of data.images'; },
+  badImage: function(k){ return 'images.' + k + " must be a base64 'data:image/...' URI. External image URLs are not shown"; }
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+function parse(v, i){
+  var m = /^(\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{2})$/.exec(v);
+  if (!m) throw new Error(E.badTime(i, v));
+  return new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]);
+}
+/* 1分未満は「たった今」、1時間未満は分、1日未満は時間、4日未満は日。それより前は今年なら月/日、昨年より前は年/月/日 */
+function ago(d){
+  var min = Math.floor((Date.now() - d) / 60000), now = new Date();
+  if (min >= 0 && min < 1) return EN ? 'Just now' : 'たった今';
+  if (min >= 0 && min < 60) return EN ? min + ' min ago' : min + '分前';
+  if (min >= 0 && min < 1440) { var h = Math.floor(min / 60); return EN ? h + (h > 1 ? ' hours' : ' hour') + ' ago' : h + '時間前'; }
+  if (min >= 0 && min < 5760) { var n = Math.floor(min / 1440); return EN ? n + (n > 1 ? ' days' : ' day') + ' ago' : n + '日前'; }
+  var y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+  if (EN) return d.toLocaleDateString('en-US', y === now.getFullYear() ? { month: 'short', day: 'numeric' } : { year: 'numeric', month: 'short', day: 'numeric' });
+  return y === now.getFullYear() ? m + '/' + day : y + '/' + String(m).padStart(2, '0') + '/' + String(day).padStart(2, '0');
+}
+
+var imgs = data.images || {};
+Object.keys(imgs).forEach(function(k){ if (!/^data:image\//.test(imgs[k])) throw new Error(E.badImage(k)); });
+var items = data.items;
+if (!Array.isArray(items) || !items.length) throw new Error(E.badItems);
+var s = '';
+items.forEach(function(it, i){
+  if (typeof it.title !== 'string' || !it.title) throw new Error(E.badTitle(i));
+  if (!/^https?:\/\//.test(it.url || '')) throw new Error(E.badUrl(i, it.url));
+  if (it.image != null && !Object.hasOwn(imgs, it.image)) throw new Error(E.noImage(i, it.image));
+  var t = ago(parse(it.time, i));
+  s += '<a' + (data.large && i === 0 && it.image ? ' class="top"' : '') + ' href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer"><div>'
+    + '<div class="tt">' + esc(it.title) + '</div>'
+    + (it.summary ? '<div class="sm">' + esc(it.summary) + '</div>' : '')
+    + '<div class="mt"><span>' + esc(t) + '</span>' + (it.image && it.credit ? '<span>' + (EN ? 'Photo: ' : '写真: ') + esc(it.credit) + '</span>' : '') + '</div>'
+    + '</div>' + (it.image ? '<img alt="" src="' + esc(imgs[it.image]) + '">' : '') + '</a>';
+});
+R.innerHTML = s;
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>

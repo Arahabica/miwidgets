@@ -175,6 +175,15 @@ var POSITION_SCENARIOS = [
     { name: '顧客管理', x: 3.5, y: 3.4 }, { name: 'ワークフロー', x: 3, y: 2.6 }, { name: '電子契約', x: 1.2, y: -0.4 },
     { name: '翻訳', x: -2, y: -3 }, { name: '分析ダッシュボード', x: 3.8, y: -1.6 }, { name: 'パスワード管理', x: -0.6, y: -1.8 }] } }
 ];
+/* ニュースリストの写真は resources/samples/news-images.json から入れる */
+var NEWS_SCENARIOS = [
+  {},
+  { data: { large: true, items: [
+    {title: "アルテミス計画の前倒しへ NASAが今後の月探査を説明", summary: "2028年までにアメリカの宇宙飛行士を月面に戻す計画について、10月23日にケネディ宇宙センターで最新の状況を説明します。アルテミス3の詳細も含まれます。", time: "2026-10-14 22:32", credit: "NASA", image: "moon", url: "https://www.nasa.gov/news-release/nasa-to-discuss-artemis-acceleration-status-of-upcoming-moon-missions/"},
+    {title: "NASA長官がF-5で編隊飛行 NFLの試合開始を飾る", summary: "アイザックマン長官が3機のF-5の1機を操縦し、ジェッツ対ブラウンズ戦の開始に合わせてスタジアム上空を飛びます。会場ではファン向けの展示も行います。", time: "2026-10-10 23:18", credit: "NASA/Jordan Cochran", image: "flyover", url: "https://www.nasa.gov/news-release/nasa-to-conduct-flyover-engage-nfl-fans-at-metlife-stadium/"},
+    {title: "アルテミス2の4人に会える ヒューストンで公開イベント", summary: "オリオン宇宙船で月を回るアルテミス2の宇宙飛行士4人が、ヒューストン大学のイベントでミッションについて語ります。一般向けのチケット情報も公開されました。", time: "2026-09-29 01:16", image: "crew", url: "https://www.nasa.gov/news-release/meet-nasas-artemis-ii-crew-during-houston-public-event/"},
+    {title: "スウィフト衛星の軌道引き上げを断念 接近運用は続行", summary: "民間宇宙機LINKの姿勢制御の不具合により、NASAのスウィフト天文衛星を捕まえて高度を上げる計画は見送られました。衛星への接近運用は予定どおり試みます。", time: "2026-08-20 03:08", credit: "NASA’s Goddard Space Flight Center Conceptual Image Lab", image: "swift", url: "https://www.nasa.gov/news-release/nasa-updates-next-steps-for-commercial-swift-boost-mission/"}] } }
+];
 var RACE_TEMPLATE = 'template/bar_chart_race.html';
 var RACE_SCENARIOS = [
   { sample: 'gdp', name: LANG === 'en' ? 'Nominal GDP by country (1990–2025)' : '国別名目GDP（1990–2025年）',
@@ -190,12 +199,13 @@ var TEMPLATES = [
   { id: 'route', name: '乗り換え案内', file: 'template/route.html', user: '新宿から国際会館までの行き方を教えて', reply: '新宿から国際会館までの経路です。', scenarios: ROUTE_SCENARIOS },
   { id: 'assets', name: '株価チャート', file: 'template/assets.html', user: '11月10日から16日までの運用損益を見せて', reply: '11月10日から16日までの損益です。' },
   { id: 'quiz', name: 'クイズ', file: 'template/quiz.html', user: 'クイズを出して', reply: '生き物と歴史のクイズです。' },
-  { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
+  { id: 'news', name: 'ニュースリスト', file: 'template/news.html', user: 'NASAの最近のニュースを見せて', reply: 'NASAの最近のニュースです。', scenarios: NEWS_SCENARIOS },
   { id: 'avatar_turn', name: 'キャラの一回転', file: 'template/avatar_turn.html', user: '一回転して', reply: 'くるっと一回転！' },
   { id: 'calendar', name: 'カレンダー（予約）', file: 'template/calendar.html', user: '11月の予約の空き状況を見せて', reply: '11月の予約状況です。' },
   { id: 'calendar_events', name: 'カレンダー（予定）', file: 'template/calendar_events.html', user: '11月の予定を見せて', reply: '11月の予定です。日付をタップすると、その日の予定が出ます。' },
   { id: 'time_slots', name: '予約枠', file: 'template/time_slots.html', user: '11月23日から1週間の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。' },
   { id: 'timetable', name: 'タイムテーブル', file: 'template/timetable.html', user: '11月27日の予定を時間ごとに見せて', reply: '11月27日のタイムテーブルです。' },
+  { id: 'clock', name: 'アナログ時計', file: 'template/clock.html', user: '今の時間を見せて', reply: '現在の時刻です。' },
   { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '今年と去年の月別売上です。' },
   { id: 'horizontal_bar', name: '棒グラフ(横)', file: 'template/horizontal_bar.html', user: '店舗ごとの来店者数を10月と11月で比べたい', reply: '店舗別の10月と11月の来店者数です。' },
   { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '東京と大阪の今日の気温です。' },
@@ -234,7 +244,8 @@ var PROMPT_EXAMPLES = {
   position_map: 'miwidgets.com/register.txt のポジショニングマップウィジェットで、国内の主なカフェチェーンを価格と居心地の2軸で表示',
   ranking: 'miwidgets.com/register.txt のランキングウィジェットで、都道府県の面積の上位10位を表示',
   'bar-chart-race': 'miwidgets.com/register.txt のバーチャートレースで、1990年から2025年までの各国の名目GDPの上位10件を年ごとに表示',
-  sheet: 'miwidgets.com/register.txt のデータシートウィジェットで、都道府県の人口・面積・人口密度を一覧表示'
+  sheet: 'miwidgets.com/register.txt のデータシートウィジェットで、都道府県の人口・面積・人口密度を一覧表示',
+  news: 'miwidgets.com/register.txt のニュースリストウィジェットで、今日の主要ニュースを5件表示'
 };
 
 /* ---- 英語ページ(<html lang="en">)用のサンプル。テンプレートの data を上書きする関数を dataPatch に書く ---- */
@@ -446,17 +457,31 @@ var EN_TIMETABLE_SCENARIOS = [
     { start: '15:00', end: '17:00', title: 'Project review', calendar: 'Work' },
     { start: '19:00', end: '21:00', title: 'Birthday dinner', calendar: 'Family' }] } }
 ];
+var EN_NEWS_SCENARIOS = [
+  { data: { lang: 'en', items: [
+    {title: "NASA Invites Media to Northrop Grumman CRS-25 Station Resupply Launch", summary: "A Cygnus XL cargo spacecraft will launch to the space station on a Falcon 9 in November. Media accreditation is now open.", time: "2026-11-03 02:33", credit: "NASA", image: "cygnus", url: "https://www.nasa.gov/news-release/nasa-invites-media-to-northrop-grumman-crs-25-station-resupply-launch/"},
+    {title: "NASA Invites Media to Crew Completion of Yearlong Mars Simulation", summary: "Four volunteers will leave a simulated Mars habitat at Johnson Space Center on Oct. 31 after 378 days. Their data will help plan future Mars missions.", time: "2026-10-28 04:27", credit: "NASA", image: "chapea", url: "https://www.nasa.gov/news-release/nasa-invites-media-to-crew-completion-of-yearlong-mars-simulation/"},
+    {title: "NASA Sets Crew-13 Launch, Docking Coverage", summary: "NASA will stream SpaceX Crew-13 live, from the prelaunch news conference to docking at the space station.", time: "2026-09-30 03:57", credit: "NASA/Bill Stafford", image: "crew13", url: "https://www.nasa.gov/news-release/nasa-sets-crew-13-launch-docking-coverage/"},
+    {title: "NASA, Boeing to Provide Update on Starliner Development", summary: "At a Sept. 28 news conference, leaders will discuss Starliner’s progress and plans for regular crew flights to the station.", time: "2026-09-26 07:06", credit: "NASA", image: "starliner", url: "https://www.nasa.gov/news-release/nasa-boeing-to-provide-update-on-starliner-development/"},
+    {title: "NASA Invites Media to SpaceX’s 35th Resupply Launch to Space Station", summary: "A Dragon cargo spacecraft will launch on a Falcon 9 no earlier than October. Media accreditation is now open.", time: "2026-09-18 03:32", credit: "NASA", image: "dragon", url: "https://www.nasa.gov/news-release/nasa-invites-media-to-spacexs-35th-resupply-launch-to-space-station/"}] } },
+  { data: { lang: 'en', large: true, items: [
+    {title: "NASA to Discuss Artemis Acceleration, Status of Upcoming Moon Missions", summary: "NASA will give an update on Oct. 23 on returning American astronauts to the Moon by 2028, including details on Artemis III.", time: "2026-10-14 22:32", credit: "NASA", image: "moon", url: "https://www.nasa.gov/news-release/nasa-to-discuss-artemis-acceleration-status-of-upcoming-moon-missions/"},
+    {title: "NASA to Conduct Flyover, Engage NFL Fans at MetLife Stadium", summary: "Administrator Jared Isaacman will fly one of three F-5 jets to kick off the Jets vs. Browns game, and NASA will meet fans at the stadium.", time: "2026-10-10 23:18", credit: "NASA/Jordan Cochran", image: "flyover", url: "https://www.nasa.gov/news-release/nasa-to-conduct-flyover-engage-nfl-fans-at-metlife-stadium/"},
+    {title: "Meet NASA’s Artemis II Crew During Houston Public Event", summary: "The four Artemis II astronauts will talk about their mission around the Moon at an event at the University of Houston.", time: "2026-09-29 01:16", image: "crew", url: "https://www.nasa.gov/news-release/meet-nasas-artemis-ii-crew-during-houston-public-event/"},
+    {title: "NASA Updates Next Steps for Commercial Swift Boost Mission", summary: "Due to an attitude control issue, the LINK spacecraft will not boost NASA’s Swift observatory, but it will still try to approach it.", time: "2026-08-20 03:08", credit: "NASA’s Goddard Space Flight Center Conceptual Image Lab", image: "swift", url: "https://www.nasa.gov/news-release/nasa-updates-next-steps-for-commercial-swift-boost-mission/"}] } }
+];
 var EN_TEMPLATES = [
   { id: 'weather', name: 'Weather', user: 'What\u2019s the weather like around Japan?', reply: 'Here’s today’s weather in each city.', scenarios: EN_WEATHER_SCENARIOS },
   { id: 'route', name: 'Transit Directions', user: 'How do I get from Shinjuku to Kokusaikaikan?', reply: 'Here’s the route from Shinjuku to Kokusaikaikan.', scenarios: ROUTE_SCENARIOS },
   { id: 'assets', name: 'Stock Chart', user: 'Show me how my portfolio did from November 10 to 16', reply: 'Here’s your portfolio’s profit and loss for November 10–16.' },
   { id: 'quiz', name: 'Quiz', user: 'Give me a quiz', reply: 'Here’s a nature and history quiz.' },
-  { id: 'clock', name: 'Analog Clock', user: 'Show me the time', reply: 'Here’s the current time.' },
+  { id: 'news', name: 'News List', user: 'Show me NASA\u2019s latest news', reply: 'Here\u2019s the latest news from NASA.', scenarios: EN_NEWS_SCENARIOS },
   { id: 'avatar_turn', name: 'Avatar Turn', user: 'Spin around', reply: 'One full turn!' },
   { id: 'calendar', name: 'Calendar (Bookings)', user: 'Show me the availability for November', reply: 'Here’s the booking availability for November.' },
   { id: 'calendar_events', name: 'Calendar (Events)', user: 'Show me my plans for November', reply: 'Here are your plans for November. Tap a date to see that day\u2019s events.', scenarios: EN_CALENDAR_EVENTS_SCENARIOS },
   { id: 'time_slots', name: 'Time Slots', user: 'Show me the open slots for the week of November 23', reply: 'Here are the open slots for the week of November 23.' },
   { id: 'timetable', name: 'Timetable', user: 'Show my schedule for November 27 by the hour', reply: 'Here\u2019s your timetable for November 27.', scenarios: EN_TIMETABLE_SCENARIOS },
+  { id: 'clock', name: 'Analog Clock', user: 'Show me the time', reply: 'Here’s the current time.' },
   { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are monthly sales for this year and last year.' },
   { id: 'horizontal_bar', name: 'Horizontal Bar Chart', user: 'Compare store visitors in October and November', reply: 'Here are visitors by store for October and November.' },
   { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here are today’s temperatures in Tokyo and Osaka.' },
@@ -494,7 +519,8 @@ var EN_PROMPT_EXAMPLES = {
   position_map: 'Use the miwidgets.com/register.txt positioning map widget to place the major coffee chains by price and atmosphere',
   ranking: 'Use the miwidgets.com/register.txt ranking widget to show the 10 largest US states by area',
   'bar-chart-race': 'Use the miwidgets.com/register.txt bar chart race to show the top 10 countries by nominal GDP each year from 1990 to 2025',
-  sheet: 'Use the miwidgets.com/register.txt data sheet widget to list the 50 US states with population, area and density'
+  sheet: 'Use the miwidgets.com/register.txt data sheet widget to list the 50 US states with population, area and density',
+  news: 'Use the miwidgets.com/register.txt news list widget to show today\u2019s top 5 news stories'
 };
 var UI_TEXT = LANG === 'en' ? {
   copy: 'Copy prompt', copyContext: function(n){ return ' for ' + n; },
@@ -636,7 +662,8 @@ async function loadTemplateSource(t){
   var imageSamples = {
     quiz: ['quiz-images', 'images'],
     secret: ['secret-images', 'images'],
-    avatar_turn: ['avatar-turn-sheet', 'sheet']
+    avatar_turn: ['avatar-turn-sheet', 'sheet'],
+    news: ['news-images', 'images']
   };
   var sample = imageSamples[t.id];
   if (sample) {
