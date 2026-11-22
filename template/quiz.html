@@ -3,7 +3,7 @@
 <style>
 #quiz-w{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
 #quiz-w *{box-sizing:border-box;}
-#quiz-w button{font:inherit;color:inherit;}
+#quiz-w button{height:40px;font:inherit;color:inherit;}
 
 #quiz-w{padding:14px 14px 16px;}
 #quiz-w .top{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
@@ -15,7 +15,7 @@
 #quiz-w .q{font-size:17px;font-weight:800;line-height:1.45;margin:0 0 12px;}
 #quiz-w .im{display:block;width:100%;max-height:220px;object-fit:contain;border-radius:14px;margin:0 0 14px;}
 #quiz-w .cs{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 10px;margin:6px 0 4px;}
-#quiz-w .c{display:inline-flex;align-items:center;gap:6px;max-width:100%;cursor:pointer;font-size:15px;font-weight:700;padding:8px 16px;transition:transform .08s,box-shadow .08s;}
+#quiz-w .c{display:inline-flex;align-items:center;gap:6px;max-width:100%;cursor:pointer;font-size:15px;font-weight:700;padding:0 16px;transition:transform .08s,box-shadow .08s;}
 #quiz-w .c .t{min-width:0;}
 #quiz-w .c .ic{width:18px;height:18px;flex:none;}
 #quiz-w .c:disabled{cursor:default;}
@@ -26,7 +26,7 @@
 #quiz-w .fh .ic{width:26px;height:26px;}
 #quiz-w .fa{margin-top:6px;font-size:14px;}
 #quiz-w .fx{margin-top:6px;font-size:13px;line-height:1.6;opacity:.9;}
-#quiz-w .go{display:block;width:100%;margin-top:16px;padding:11px 14px;font-size:15px;font-weight:800;letter-spacing:.06em;cursor:pointer;transition:transform .08s,box-shadow .08s;}
+#quiz-w .go{display:block;width:100%;margin-top:16px;padding:0 14px;font-size:15px;font-weight:800;letter-spacing:.06em;cursor:pointer;transition:transform .08s,box-shadow .08s;}
 #quiz-w .go:disabled{cursor:default;}
 #quiz-w .rv{display:inline-block;font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:10px;}
 #quiz-w .res{text-align:center;animation:qzUp .35s ease-out;}
@@ -52,7 +52,7 @@
 #quiz-w .q{flex:none;}
 #quiz-w .rv{align-self:flex-start;flex:none;}
 #quiz-w .im{flex:1 1 0;min-height:90px;max-height:none;height:0;}
-#quiz-w .cs{flex:none;margin-top:auto;padding:12px 0 16px;}
+#quiz-w .cs{flex:none;margin-top:auto;padding:8px 0 12px;}
 #quiz-w .ft{flex:none;margin:0;padding:0;border-radius:16px;}
 #quiz-w .ft.ok,#quiz-w .ft.ng{padding:14px;} #quiz-w .ft.ok{background:#d7ffb8;} #quiz-w .ft.ng{background:#ffdfe0;}
 #quiz-w .fb{margin:0 0 12px;padding:0;background:none !important;}
@@ -70,7 +70,6 @@
 #quiz-w .bar{background:#e5e5e5;} #quiz-w .bar i{background:#58cc02;}
 #quiz-w.review .bar i{background:#ff9600;}
 #quiz-w .cnt{color:#afafaf;}
-#quiz-w .im{border:2px solid #e5e5e5;}
 #quiz-w .c{background:#fff;color:#4b4b4b;border:2px solid #e5e5e5;border-radius:14px;box-shadow:0 4px 0 #e5e5e5;}
 #quiz-w .c:not(:disabled):active{transform:translateY(4px);box-shadow:0 0 0 #e5e5e5;}
 #quiz-w .c.sel{background:#ddf4ff;border-color:#84d8ff;box-shadow:0 4px 0 #84d8ff;color:#1899d6;}
