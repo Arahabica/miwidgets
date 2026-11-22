@@ -7,7 +7,8 @@
 </div>
 <style>
 #avatar-turn{display:grid;place-items:center;padding:12px}
-#avatar-turn button{display:block;width:min(100%,256px);padding:0;border:0;background:transparent;cursor:pointer}
+#avatar-turn button{display:block;width:min(100%,256px);padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#avatar-turn button:focus{outline:none}
 #avatar-turn button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 #avatar-turn .sprite{display:block;width:100%;aspect-ratio:1;background-size:400% 300%;background-repeat:no-repeat}
 #avatar-turn .hint{display:block;margin-top:16px;color:#767676;font-size:14px;text-align:center}
