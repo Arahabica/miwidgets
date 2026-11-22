@@ -1,0 +1,194 @@
+<!-- 散布図: 2つの数値の組を点で打つ。点はグループに分けられ、グループが2つ以上なら色を分けて凡例を出す。{ name, x, y } と書いた点は横に名前を書く(右・左・上・下の順に、ほかの名前や点と重ならない所に置き、置けない名前はタップで出す)。軸は 0 を含めず、データのある範囲に合わせる。点をタップすると値を出す。表示内容は data で変更できる。 -->
+<div id="scat-w"></div>
+<style>
+#scat-w{box-sizing:border-box;width:100%;padding:14px 12px 12px;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#scat-w *{box-sizing:border-box;}
+#scat-w .ti{margin:0 2px 10px;overflow-wrap:anywhere;font-size:17px;font-weight:800;}
+#scat-w .cv{position:relative;-webkit-tap-highlight-color:transparent;cursor:pointer;}
+#scat-w svg{display:block;overflow:visible;}
+#scat-w .gl{stroke:var(--hatch-widget-border,#d1d1d6);stroke-width:1;opacity:.6;}
+#scat-w .tk{font-size:10px;font-variant-numeric:tabular-nums;fill:var(--hatch-widget-muted,#6e6e73);}
+#scat-w .at{font-size:11px;font-weight:600;fill:var(--hatch-widget-muted,#6e6e73);}
+#scat-w .nm{font-size:10.5px;font-weight:600;fill:var(--hatch-widget-text,#1c1c1e);}
+#scat-w .p circle{stroke:#fff;stroke-width:1;}
+#scat-w .p{transition:opacity .2s;}
+#scat-w .has-sel .p{opacity:.25;}
+#scat-w .has-sel .p.on{opacity:1;}
+#scat-w .has-sel .p.on circle{stroke:var(--hatch-widget-text,#1c1c1e);stroke-width:2;}
+#scat-w .lg{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 2px 0;font-size:11px;font-weight:600;color:var(--hatch-widget-muted,#6e6e73);}
+#scat-w .lg span{display:inline-flex;align-items:center;gap:5px;}
+#scat-w .sw{display:inline-block;flex:none;width:9px;height:9px;border-radius:50%;}
+#scat-w .tip{position:absolute;z-index:2;pointer-events:none;white-space:nowrap;font-size:11px;line-height:1.5;background:#1c1c1e;color:#fff;border-radius:10px;padding:7px 10px;box-shadow:0 6px 18px rgba(0,0,0,.25);}
+#scat-w .tip b{display:block;font-size:12px;}
+#scat-w .tip .gn{display:flex;align-items:center;gap:5px;color:rgba(255,255,255,.7);}
+#scat-w .tip .tr{display:flex;gap:6px;color:rgba(255,255,255,.75);}
+#scat-w .tip .tv{margin-left:auto;padding-left:8px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums;}
+/* アニメーション: 点と名前は、その位置で同時に小さい状態から大きくなる */
+#scat-w .p circle,#scat-w .p text{transform-box:fill-box;transform-origin:50% 50%;animation:scat-pop .6s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes scat-pop{from{transform:scale(0);}to{transform:scale(1);}}
+#scat-w .still *{animation:none !important;}
+@media (prefers-reduced-motion:reduce){#scat-w svg *{animation:none !important;}}
+</style>
+<script>
+(function(){
+var R = document.getElementById("scat-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',                          // 'ja' | 'en': 画面の文言と数値の書式の言語
+  title: '広告費と売上の関係',         // string: グラフのタイトル
+  x: { name: '広告費', unit: '万円' },  // 横軸の名前と単位(単位が無ければ '')
+  y: { name: '売上', unit: '万円' },    // 縦軸の名前と単位(単位が無ければ '')
+  /* グループ。2つ以上あると色を分けて凡例を出す。name は凡例とタップ時の表示に使う(グループが1つなら省略できる)。
+   * color で色を指定できる(省略すると下の PALETTE の順)。
+   * points の点は [横の値, 縦の値] か { name, x, y } で書く。{ name, x, y } と書いた点だけ、横に名前を書く */
+  groups: [
+    { name: 'Web広告', points: [[12, 180], [18, 230], [25, 260], [30, 310], [34, 330], [41, 390], [47, 410], [52, 470], [58, 480]] },
+    { name: 'チラシ', points: [[10, 120], [15, 150], [22, 160], [28, 190], [33, 205], [40, 220], [46, 245], [55, 260]] }
+  ]
+};
+
+/* color を省略したグループの色(この順に使い、足りなければ色相をずらして作る) */
+var PALETTE = ['#3a5ad1', '#f0883e', '#20a46b', '#e5484d', '#9b6dff'];
+var EN = data.lang === 'en';
+var T = EN ? { group: 'Group ' } : { group: 'グループ' };
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
+  badAxis: function(a){ return a + " must be an object with the axis name and unit (e.g. { name: 'Height', unit: 'cm' })"; },
+  badGroups: 'groups must be an array of one or more groups',
+  badColor: function(g){ return g + ': color must be a CSS color string (e.g. \'#3a5ad1\')'; },
+  badPoints: function(g){ return g + ": points must be an array of [x, y] or { name, x, y } (e.g. [[1, 2], { name: 'A', x: 3, y: 4 }])"; },
+  badPt: function(g, j, p){ return g + ', points[' + j + ']: ' + JSON.stringify(p) + " must be [x, y] or { name, x, y } with x and y as numbers"; }
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function isNum(v){ return typeof v === 'number' && isFinite(v); }
+
+/* ---- data を確かめ、点を { k: グループの番号, x, y, name } の並びにする ---- */
+['x', 'y'].forEach(function(a){ if (!data[a] || typeof data[a] !== 'object') throw new Error(E.badAxis(a)); });
+var groups = data.groups;
+if (!Array.isArray(groups) || !groups.length) throw new Error(E.badGroups);
+var NAMES = groups.map(function(g, k){ return g && g.name != null ? String(g.name) : T.group + (k + 1); });
+var PTS = [];
+groups.forEach(function(g, k){
+  if (!g || !Array.isArray(g.points) || !g.points.length) throw new Error(E.badPoints(NAMES[k]));
+  g.points.forEach(function(p, j){
+    if (Array.isArray(p) && p.length === 2 && isNum(p[0]) && isNum(p[1])) PTS.push({ k: k, x: p[0], y: p[1] });
+    else if (p && !Array.isArray(p) && typeof p === 'object' && isNum(p.x) && isNum(p.y) && (p.name == null || typeof p.name === 'string')) PTS.push({ k: k, x: p.x, y: p.y, name: p.name || '' });
+    else throw new Error(E.badPt(NAMES[k], j, p));
+  });
+  if (g.color != null && (typeof g.color !== 'string' || !g.color)) throw new Error(E.badColor(NAMES[k]));
+});
+var COLORS = groups.map(function(g, k){ return esc(g.color || PALETTE[k] || 'hsl(' + Math.round(k * 137.5 % 360) + ',62%,52%)'); });
+var M = groups.length;
+var LOC = EN ? 'en-US' : 'ja-JP';
+function num(v){ return v.toLocaleString(LOC, { maximumFractionDigits: 2 }); }
+function axTitle(a){ var u = a.unit ? String(a.unit) : ''; return String(a.name || '') + (u ? (EN ? ' (' + u + ')' : '(' + u + ')') : ''); }
+
+/* ---- 軸の目盛り。データの最小〜最大を、きりのよい値で4区間ほどに分ける(0 は含めなくてよい) ---- */
+function axis(vs){
+  var a = Math.min.apply(null, vs), b = Math.max.apply(null, vs);
+  if (a === b) { var p = Math.abs(a) * .1 || 1; a -= p; b += p; }
+  var raw = (b - a) / 4, mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), r = raw / mag;
+  var step = (r > 7.5 ? 10 : r > 3.5 ? 5 : r > 1.5 ? 2 : 1) * mag, ts = [];
+  for (var t = Math.floor(a / step + 1e-9); t <= Math.ceil(b / step - 1e-9); t++) ts.push(+(t * step).toPrecision(12));
+  return ts;
+}
+var XT = axis(PTS.map(function(p){ return p.x; })), YT = axis(PTS.map(function(p){ return p.y; }));
+
+function swatch(k){ return '<i class="sw" style="background:' + COLORS[k] + '"></i>'; }
+R.innerHTML = '<div class="ti">' + esc(data.title || '') + '</div><div class="cv"></div>' +
+  (M > 1 ? '<div class="lg">' + NAMES.map(function(n, k){ return '<span>' + swatch(k) + esc(n) + '</span>'; }).join('') + '</div>' : '');
+var box = R.querySelector('.cv');
+function textW(s, size){ var w = 0; String(s).split('').forEach(function(c){ w += c.charCodeAt(0) < 128 ? .6 : 1; }); return w * size; }
+function f1(n){ return Math.round(n * 10) / 10; }
+function hit(a, b){ return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h; }
+
+var G = null, sel = -1;
+/* グラフを描く。anim が false のとき(幅が変わったときの描き直し)はアニメーションしない */
+function draw(anim){
+  var W = Math.max(220, Math.round(box.clientWidth || 320));
+  var H = Math.round(Math.max(200, Math.min(340, W * .85)));
+  var xl = XT[0], xh = XT[XT.length - 1], yl = YT[0], yh = YT[YT.length - 1];
+  /* 縦軸の名前は左上に横書きで、横軸の名前は右下に置く */
+  var x0 = Math.ceil(Math.max.apply(null, YT.map(function(t){ return textW(num(t), 10); }))) + 8;
+  var x1 = W - Math.max(6, Math.ceil(textW(num(xh), 10) / 2));
+  var y0 = 22, y1 = H - 36;
+  function X(v){ return x0 + (v - xl) / (xh - xl) * (x1 - x0); }
+  function Y(v){ return y1 - (v - yl) / (yh - yl) * (y1 - y0); }
+  var s = '<svg' + (anim ? '' : ' class="still"') + ' width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">';
+  YT.forEach(function(t){
+    var y = f1(Y(t));
+    s += '<line class="gl" x1="' + x0 + '" x2="' + f1(x1) + '" y1="' + y + '" y2="' + y + '"/>';
+    s += '<text class="tk" x="' + (x0 - 6) + '" y="' + f1(y + 3.5) + '" text-anchor="end">' + num(t) + '</text>';
+  });
+  XT.forEach(function(t){
+    var x = f1(X(t));
+    s += '<line class="gl" x1="' + x + '" x2="' + x + '" y1="' + y0 + '" y2="' + f1(y1) + '"/>';
+    s += '<text class="tk" x="' + x + '" y="' + f1(y1 + 14) + '" text-anchor="middle">' + num(t) + '</text>';
+  });
+  s += '<text class="at" x="0" y="11">' + esc(axTitle(data.y)) + '</text>';
+  s += '<text class="at" x="' + f1(x1) + '" y="' + (H - 4) + '" text-anchor="end">' + esc(axTitle(data.x)) + '</text>';
+
+  /* 点。点が多いときは少し小さくする */
+  var rad = PTS.length > 120 ? 3.2 : PTS.length > 50 ? 4 : 5;
+  /* 名前の置き場所を決める。点そのものと、すでに置いた名前に重ならず、グラフの枠内に収まる所を
+   * 右 → 左 → 上 → 下 の順に探す。data に書いた順に置いていく */
+  var fs = 10.5, placed = [];
+  PTS.forEach(function(p){ p.cx = X(p.x); p.cy = Y(p.y); placed.push({ x: p.cx - rad, y: p.cy - rad, w: rad * 2, h: rad * 2 }); });
+  PTS.forEach(function(p){
+    p.L = null;
+    if (!p.name) return;
+    var w = textW(p.name, fs), h = fs + 2, g = rad + 3;
+    [[p.cx + g, p.cy - h / 2, 'start', p.cx + g], [p.cx - g - w, p.cy - h / 2, 'end', p.cx - g],
+     [p.cx - w / 2, p.cy - g - h, 'middle', p.cx], [p.cx - w / 2, p.cy + g, 'middle', p.cx]].some(function(c){
+      var r = { x: c[0], y: c[1], w: w, h: h };
+      if (r.x < x0 || r.x + r.w > W || r.y < y0 - 8 || r.y + r.h > y1) return false;
+      if (placed.some(function(q){ return hit(r, q); })) return false;
+      p.L = { r: r, anchor: c[2], tx: c[3] };
+      return true;
+    });
+    if (p.L) placed.push(p.L.r);
+  });
+  PTS.forEach(function(p, j){
+    s += '<g class="p" data-j="' + j + '"><circle cx="' + f1(p.cx) + '" cy="' + f1(p.cy) + '" r="' + rad + '" fill="' + COLORS[p.k] + '" fill-opacity=".8"/>';
+    if (p.L) s += '<text class="nm" x="' + f1(p.L.tx) + '" y="' + f1(p.L.r.y + p.L.r.h - 3) + '" text-anchor="' + p.L.anchor + '">' + esc(p.name) + '</text>';
+    s += '</g>';
+  });
+  box.innerHTML = s + '</svg><div class="tip" hidden></div>';
+  G = { W: W };
+  if (sel >= 0) select(sel);
+}
+
+/* ---- タップした点(指から 24px 以内でいちばん近い点)の名前・グループと値を出す ---- */
+function select(j){
+  sel = j;
+  var sv = box.querySelector('svg'), tip = box.querySelector('.tip');
+  sv.classList.toggle('has-sel', j >= 0);
+  [].forEach.call(sv.querySelectorAll('.p'), function(c){ c.classList.toggle('on', +c.dataset.j === j); });
+  if (j < 0) { tip.hidden = true; return; }
+  var p = PTS[j];
+  tip.innerHTML = (p.name ? '<b>' + esc(p.name) + '</b>' : '') +
+    (M > 1 ? '<span class="gn">' + swatch(p.k) + esc(NAMES[p.k]) + '</span>' : '') +
+    [[data.x, p.x], [data.y, p.y]].map(function(a){ return '<span class="tr"><span>' + esc(a[0].name || '') + '</span><span class="tv">' + esc(num(a[1]) + (a[0].unit || '')) + '</span></span>'; }).join('');
+  tip.hidden = false;
+  var tw = tip.offsetWidth, th = tip.offsetHeight, top = p.cy - th - 12;
+  if (top < 0) top = p.cy + 12;
+  tip.style.left = Math.round(Math.max(0, Math.min(G.W - tw, p.cx - tw / 2))) + 'px';
+  tip.style.top = Math.round(top) + 'px';
+}
+box.addEventListener('click', function(e){
+  if (e.target.closest('.tip')) return;
+  var b = box.getBoundingClientRect(), mx = e.clientX - b.left, my = e.clientY - b.top, best = -1, bd = 24 * 24;
+  PTS.forEach(function(p, j){ var d = (p.cx - mx) * (p.cx - mx) + (p.cy - my) * (p.cy - my); if (d < bd) { bd = d; best = j; } });
+  select(best === sel ? -1 : best);
+});
+
+draw(true);
+var lastW = box.clientWidth;
+if (window.ResizeObserver) new ResizeObserver(function(){ if (box.clientWidth !== lastW) { lastW = box.clientWidth; draw(false); } }).observe(box);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>

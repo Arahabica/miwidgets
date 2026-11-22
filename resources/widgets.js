@@ -152,6 +152,13 @@ var PIE_SCENARIOS = [
     { name: 'マーケティング', value: 22 }, { name: '品質管理', value: 18 }, { name: '研究', value: 15 }, { name: '経理', value: 11 },
     { name: '人事', value: 9 }, { name: '総務', value: 8 }, { name: '広報', value: 6 }, { name: '法務', value: 4 }] } }
 ];
+var SCATTER_SCENARIOS = [
+  {},
+  { data: { lang: 'ja', title: '都道府県の人口密度と平均年齢', x: { name: '人口密度', unit: '人/km²' }, y: { name: '平均年齢', unit: '歳' }, groups: [{ points: [
+    { name: '東京', x: 6400, y: 45.0 }, { name: '神奈川', x: 3820, y: 47.0 }, { name: '大阪', x: 4610, y: 47.6 }, { name: '埼玉', x: 1930, y: 47.3 },
+    { name: '愛知', x: 1460, y: 46.4 }, { name: '福岡', x: 1020, y: 46.8 }, { name: '北海道', x: 66, y: 50.4 }, { name: '秋田', x: 81, y: 53.6 },
+    { name: '沖縄', x: 643, y: 43.9 }, { name: '島根', x: 99, y: 52.0 }] }] } }
+];
 var POSITION_SCENARIOS = [
   {},
   { data: { lang: 'ja', title: '社内ツールの位置づけ', x: ['導入が簡単', '導入が大変'], y: ['個人向け', 'チーム向け'], items: [
@@ -184,6 +191,7 @@ var TEMPLATES = [
   { id: 'horizontal_bar', name: '棒グラフ(横)', file: 'template/horizontal_bar.html', user: '店舗ごとの来店者数を10月と11月で比べたい', reply: '店舗別の10月と11月の来店者数です。' },
   { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '東京と大阪の今日の気温です。' },
   { id: 'pie', name: 'パイチャート', file: 'template/pie.html', user: '支出の内訳と、アンケートの男女比、部署別の人数を見せて', reply: '3つの内訳をパイチャートにしました。', scenarios: PIE_SCENARIOS },
+  { id: 'scatter', name: '散布図', file: 'template/scatter.html', user: '広告費と売上、都道府県の人口密度と平均年齢の関係を見せて', reply: '2つの関係を散布図にしました。', scenarios: SCATTER_SCENARIOS },
   { id: 'position_map', name: 'ポジショニングマップ', file: 'template/position_map.html', user: '旅行プランと社内ツールの位置づけを図にして', reply: '旅行プランと社内ツールのポジショニングマップです。', scenarios: POSITION_SCENARIOS },
   { id: 'ranking', name: 'ランキング', file: 'template/ranking.html', user: '好きなおにぎりの具のアンケート結果を順位で見せて', reply: '好きなおにぎりの具のランキングです。' },
   { id: 'bar-chart-race', name: 'バーチャートレース', file: RACE_TEMPLATE, scenarios: RACE_SCENARIOS,
@@ -209,6 +217,7 @@ var PROMPT_EXAMPLES = {
   horizontal_bar: 'miwidgets.com/register.txt の棒グラフ(横)ウィジェットで、世界の人口の多い国の上位8か国を表示',
   line: 'miwidgets.com/register.txt の線グラフウィジェットで、この10年の日本の人口の移り変わりを表示',
   pie: 'miwidgets.com/register.txt のパイチャートウィジェットで、日本の発電量の電源別の割合を表示',
+  scatter: 'miwidgets.com/register.txt の散布図ウィジェットで、都道府県の人口と面積の関係を、名前つきで表示',
   position_map: 'miwidgets.com/register.txt のポジショニングマップウィジェットで、国内の主なカフェチェーンを価格と居心地の2軸で表示',
   ranking: 'miwidgets.com/register.txt のランキングウィジェットで、都道府県の面積の上位10位を表示',
   'bar-chart-race': 'miwidgets.com/register.txt のバーチャートレースで、1990年から2025年までの各国の名目GDPの上位10件を年ごとに表示',
@@ -370,6 +379,15 @@ var EN_PIE_SCENARIOS = [
     { name: 'Marketing', value: 22 }, { name: 'Quality Assurance', value: 18 }, { name: 'Research', value: 15 }, { name: 'Accounting', value: 11 },
     { name: 'HR', value: 9 }, { name: 'General Affairs', value: 8 }, { name: 'PR', value: 6 }, { name: 'Legal', value: 4 }] } }
 ];
+var EN_SCATTER_SCENARIOS = [
+  { data: { lang: 'en', title: 'Ad Spend vs. Sales', x: { name: 'Ad spend', unit: 'K' }, y: { name: 'Sales', unit: 'K' }, groups: [
+    { name: 'Online ads', points: [[12, 180], [18, 230], [25, 260], [30, 310], [34, 330], [41, 390], [47, 410], [52, 470], [58, 480]] },
+    { name: 'Flyers', points: [[10, 120], [15, 150], [22, 160], [28, 190], [33, 205], [40, 220], [46, 245], [55, 260]] }] } },
+  { data: { lang: 'en', title: 'Population Density and Average Age by Prefecture', x: { name: 'Density', unit: '/km²' }, y: { name: 'Average age', unit: '' }, groups: [{ points: [
+    { name: 'Tokyo', x: 6400, y: 45.0 }, { name: 'Kanagawa', x: 3820, y: 47.0 }, { name: 'Osaka', x: 4610, y: 47.6 }, { name: 'Saitama', x: 1930, y: 47.3 },
+    { name: 'Aichi', x: 1460, y: 46.4 }, { name: 'Fukuoka', x: 1020, y: 46.8 }, { name: 'Hokkaido', x: 66, y: 50.4 }, { name: 'Akita', x: 81, y: 53.6 },
+    { name: 'Okinawa', x: 643, y: 43.9 }, { name: 'Shimane', x: 99, y: 52.0 }] }] } }
+];
 var EN_POSITION_SCENARIOS = [
   { data: { lang: 'en', title: 'Travel Plans Compared', x: ['Nearby', 'Far away'], y: ['Relaxing', 'Active'], items: [
     { name: 'Hot spring inn', x: -4, y: -4.5 }, { name: 'Beach resort abroad', x: 5, y: -2 }, { name: 'Hiking tour', x: -1, y: 5 },
@@ -395,6 +413,7 @@ var EN_TEMPLATES = [
   { id: 'horizontal_bar', name: 'Horizontal Bar Chart', user: 'Compare store visitors in October and November', reply: 'Here are visitors by store for October and November.' },
   { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here are today’s temperatures in Tokyo and Osaka.' },
   { id: 'pie', name: 'Pie Chart', user: 'Show me my spending breakdown, the gender split of the survey, and headcount by department', reply: 'Here are the three breakdowns as pie charts.', scenarios: EN_PIE_SCENARIOS },
+  { id: 'scatter', name: 'Scatter Plot', user: 'Show how ad spend relates to sales, and population density to average age by prefecture', reply: 'Here are both relationships as scatter plots.', scenarios: EN_SCATTER_SCENARIOS },
   { id: 'position_map', name: 'Positioning Map', user: 'Map out our travel plans and workplace tools', reply: 'Here are positioning maps of the travel plans and the workplace tools.', scenarios: EN_POSITION_SCENARIOS },
   { id: 'ranking', name: 'Ranking', user: 'Rank the results of our favorite onigiri filling survey', reply: 'Here’s how the onigiri fillings ranked.' },
   { id: 'bar-chart-race', name: 'Bar chart race', file: RACE_TEMPLATE, scenarios: RACE_SCENARIOS,
@@ -419,6 +438,7 @@ var EN_PROMPT_EXAMPLES = {
   horizontal_bar: 'Use the miwidgets.com/register.txt horizontal bar chart widget to show the 8 most populous countries',
   line: 'Use the miwidgets.com/register.txt line chart widget to show how the US population changed over the last 10 years',
   pie: 'Use the miwidgets.com/register.txt pie chart widget to show the share of US electricity by source',
+  scatter: 'Use the miwidgets.com/register.txt scatter plot widget to show US states by population and area, with their names',
   position_map: 'Use the miwidgets.com/register.txt positioning map widget to place the major coffee chains by price and atmosphere',
   ranking: 'Use the miwidgets.com/register.txt ranking widget to show the 10 largest US states by area',
   'bar-chart-race': 'Use the miwidgets.com/register.txt bar chart race to show the top 10 countries by nominal GDP each year from 1990 to 2025',
