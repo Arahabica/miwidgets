@@ -444,8 +444,7 @@ var EN_TIMETABLE_SCENARIOS = [
     { start: '12:00', end: '13:00', title: 'Lunch', calendar: 'Personal' },
     { start: '14:00', end: '14:30', title: '1:1 meeting', calendar: 'Work' },
     { start: '15:00', end: '17:00', title: 'Project review', calendar: 'Work' },
-    { start: '19:00', end: '21:00', title: 'Birthday dinner', calendar: 'Family' },
-    { start: '23:30', end: '25:00', title: 'Movie', calendar: 'Personal' }] } }
+    { start: '19:00', end: '21:00', title: 'Birthday dinner', calendar: 'Family' }] } }
 ];
 var EN_TEMPLATES = [
   { id: 'weather', name: 'Weather', user: 'What\u2019s the weather like around Japan?', reply: 'Here’s today’s weather in each city.', scenarios: EN_WEATHER_SCENARIOS },
