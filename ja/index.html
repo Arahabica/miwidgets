@@ -52,7 +52,8 @@
           <defs>
             <symbol id="weather-sun" viewBox="0 0 64 64">
               <path class="sun-rays" d="M32 13V6M45.4 18.6l5-5M51 32h7M45.4 45.4l5 5M32 51v7M18.6 45.4l-5 5M13 32H6M18.6 18.6l-5-5" fill="none" stroke="#ffc13a" stroke-width="3.5" stroke-linecap="round"/>
-              <circle cx="32" cy="32" r="12.5" fill="#ffbd49"/>
+              <linearGradient id="weather-sun-fill" x1="19.5" y1="19.5" x2="44.5" y2="44.5" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#ff9a1f"/></linearGradient>
+              <circle cx="32" cy="32" r="12.5" fill="url(#weather-sun-fill)"/>
             </symbol>
             <symbol id="weather-moon" viewBox="0 0 64 64">
               <path fill="#ffe6a0" d="M31 11a21 21 0 1 0 22 27 19 19 0 0 1-22-27Z"/>
