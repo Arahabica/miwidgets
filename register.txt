@@ -31,8 +31,11 @@ https://miwidgets.com/template/assets.html
 Quiz — a multiple-choice quiz app
 https://miwidgets.com/template/quiz.html
 
-Analog clock — an analog clock with a second hand
-https://miwidgets.com/template/clock.html
+News list — articles with a title, summary, time and photo; the time shows as "2 hours ago" and so on; the photo credit shows only with a photo; tap an article to open it; set large to true to show the first article's photo large at the top
+https://miwidgets.com/template/news.html
+
+Avatar turn (キャラの一回転) — When the user says 「一回転して」 or “spin around”, show the current Muse avatar making one full turn in one second. Generate new artwork showing twelve views of the user's configured Muse avatar, using its image as the reference (Dolly by default). The embedded Wolly artwork is a demo. If the reference is unavailable, ask for the avatar image. Generate a transparent sprite sheet from the reference: 4 columns by 3 rows of equal square cells in reading order, front at 0 degrees then 30, 60, ... 330 degrees around the vertical axis. Keep the pose, scale, camera and foot baseline fixed. Export the entire sheet as a WebP of at most 600,000 bytes (600 KB). If larger, lower the WebP quality and recheck the file size before Base64 encoding. Embed the resulting WebP in data.sheet as a base64 data URL and set data.name to the avatar's name. Generate the art before rendering the widget.
+https://miwidgets.com/template/avatar_turn.html
 
 Calendar (bookings) — one month, with a mark (◯ △ x -) or up to 2 characters on each day
 https://miwidgets.com/template/calendar.html
@@ -45,6 +48,9 @@ https://miwidgets.com/template/time_slots.html
 
 Timetable — one day of events on an hourly timeline like Google Calendar's day view; up to 2 events can overlap and are shown side by side; all-day events go above the timeline; times up to '29:00' (5 AM the next day); the range fits the events by the hour unless from and to are set; tap an event to see its name and time
 https://miwidgets.com/template/timetable.html
+
+Analog clock — an analog clock with a second hand
+https://miwidgets.com/template/clock.html
 
 Bar chart — a title and values per item as bars, any number of series side by side, each with an optional color; tap an item to see its values
 https://miwidgets.com/template/bar.html
@@ -76,14 +82,8 @@ https://miwidgets.com/template/bar_chart_race.html
 Data sheet — rows and columns as a table or a two-column list; viewers can sort by a column and choose which columns to show
 https://miwidgets.com/template/sheet.html
 
-News list — articles with a title, summary, time and photo; the time shows as "2 hours ago" and so on; the photo credit shows only with a photo; tap an article to open it; set large to true to show the first article's photo large at the top
-https://miwidgets.com/template/news.html
-
 Omikuji fortune — a Japanese fortune-slip app
 https://miwidgets.com/template/omikuji.html
 
 Secret message — a message that opens with a 6-digit passcode
 https://miwidgets.com/template/secret.html
-
-Avatar turn (キャラの一回転) — When the user says 「一回転して」 or “spin around”, show the current Muse avatar making one full turn in one second. Generate new artwork showing twelve views of the user's configured Muse avatar, using its image as the reference (Dolly by default). The embedded Wolly artwork is a demo. If the reference is unavailable, ask for the avatar image. Generate a transparent sprite sheet from the reference: 4 columns by 3 rows of equal square cells in reading order, front at 0 degrees then 30, 60, ... 330 degrees around the vertical axis. Keep the pose, scale, camera and foot baseline fixed. Export the entire sheet as a WebP of at most 600,000 bytes (600 KB). If larger, lower the WebP quality and recheck the file size before Base64 encoding. Embed the resulting WebP in data.sheet as a base64 data URL and set data.name to the avatar's name. Generate the art before rendering the widget.
-https://miwidgets.com/template/avatar_turn.html
