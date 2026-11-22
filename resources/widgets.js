@@ -1,6 +1,8 @@
 /* ウィジェットのサンプルと描画処理。 */
 /* iframe はテンプレート固有のスタイルとスクリプトだけを分離する。 */
 var PREVIEW_SHELL = `<style>
+  /* 親と揃えないと、ダークモードで角丸の外が白くなる */
+  :root{color-scheme:light dark}
   :root{--hatch-widget-text:#1c1c1e;--hatch-widget-muted:#6e6e73;--hatch-widget-border:#d1d1d6;--bubble-ai-bg:#f2f2f7}
   @media(prefers-color-scheme:dark){
     :root{--hatch-widget-text:#f2f2f7;--hatch-widget-muted:#98989f;--hatch-widget-border:#3a3a3c;--bubble-ai-bg:#2c2c2e}
