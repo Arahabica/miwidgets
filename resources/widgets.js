@@ -152,6 +152,15 @@ var PIE_SCENARIOS = [
     { name: 'マーケティング', value: 22 }, { name: '品質管理', value: 18 }, { name: '研究', value: 15 }, { name: '経理', value: 11 },
     { name: '人事', value: 9 }, { name: '総務', value: 8 }, { name: '広報', value: 6 }, { name: '法務', value: 4 }] } }
 ];
+var POSITION_SCENARIOS = [
+  {},
+  { data: { lang: 'ja', title: '社内ツールの位置づけ', x: ['導入が簡単', '導入が大変'], y: ['個人向け', 'チーム向け'], items: [
+    { name: 'チャット', x: -3.5, y: 3 }, { name: 'ビデオ会議', x: -2.8, y: 2.2 }, { name: 'タスク管理(カンバン方式)', x: -1, y: 3.8 },
+    { name: '勤怠', x: 1.5, y: 1 }, { name: '経費精算', x: 2, y: 0.4 }, { name: '基幹システム', x: 4.6, y: 4.5 },
+    { name: 'メモアプリ', x: -4.2, y: -3.8 }, { name: '表計算', x: -3, y: -1 }, { name: 'デザインツール', x: 0.8, y: -2.5 },
+    { name: '顧客管理', x: 3.5, y: 3.4 }, { name: 'ワークフロー', x: 3, y: 2.6 }, { name: '電子契約', x: 1.2, y: -0.4 },
+    { name: '翻訳', x: -2, y: -3 }, { name: '分析ダッシュボード', x: 3.8, y: -1.6 }, { name: 'パスワード管理', x: -0.6, y: -1.8 }] } }
+];
 var RACE_TEMPLATE = 'template/bar_chart_race.html';
 var RACE_SCENARIOS = [
   { sample: 'gdp', name: LANG === 'en' ? 'Nominal GDP by country (1990–2025)' : '国別名目GDP（1990–2025年）',
@@ -172,8 +181,10 @@ var TEMPLATES = [
   { id: 'calendar', name: 'カレンダー', file: 'template/calendar.html', user: '11月の予約の空き状況を見せて', reply: '11月の予約状況です。' },
   { id: 'timetable', name: '予約枠', file: 'template/timetable.html', user: '11月23日から1週間の予約の空き枠を見せて', reply: '11月23日からの1週間の空き枠です。' },
   { id: 'bar', name: '棒グラフ', file: 'template/bar.html', user: '今年と去年の売上を比べたい', reply: '今年と去年の月別売上です。' },
+  { id: 'horizontal_bar', name: '棒グラフ(横)', file: 'template/horizontal_bar.html', user: '店舗ごとの来店者数を10月と11月で比べたい', reply: '店舗別の10月と11月の来店者数です。' },
   { id: 'line', name: '線グラフ', file: 'template/line.html', user: '今日の東京と大阪の気温の変化を見せて', reply: '東京と大阪の今日の気温です。' },
   { id: 'pie', name: 'パイチャート', file: 'template/pie.html', user: '支出の内訳と、アンケートの男女比、部署別の人数を見せて', reply: '3つの内訳をパイチャートにしました。', scenarios: PIE_SCENARIOS },
+  { id: 'position_map', name: 'ポジショニングマップ', file: 'template/position_map.html', user: '旅行プランと社内ツールの位置づけを図にして', reply: '旅行プランと社内ツールのポジショニングマップです。', scenarios: POSITION_SCENARIOS },
   { id: 'ranking', name: 'ランキング', file: 'template/ranking.html', user: '好きなおにぎりの具のアンケート結果を順位で見せて', reply: '好きなおにぎりの具のランキングです。' },
   { id: 'bar-chart-race', name: 'バーチャートレース', file: RACE_TEMPLATE, scenarios: RACE_SCENARIOS,
     user: 'GDPや自殺死亡率が高い国と、合計特殊出生率が低い国の推移を見せて',
@@ -195,8 +206,10 @@ var PROMPT_EXAMPLES = {
   calendar: 'miwidgets.com/register.txt のカレンダーウィジェットで、12月の予定のある日に◯を付けて表示',
   timetable: 'miwidgets.com/register.txt の予約枠ウィジェットで、来週の10時〜18時の空き枠を1時間ごとに表示',
   bar: 'miwidgets.com/register.txt の棒グラフウィジェットで、都道府県の人口の上位5つを表示',
+  horizontal_bar: 'miwidgets.com/register.txt の棒グラフ(横)ウィジェットで、世界の人口の多い国の上位8か国を表示',
   line: 'miwidgets.com/register.txt の線グラフウィジェットで、この10年の日本の人口の移り変わりを表示',
   pie: 'miwidgets.com/register.txt のパイチャートウィジェットで、日本の発電量の電源別の割合を表示',
+  position_map: 'miwidgets.com/register.txt のポジショニングマップウィジェットで、国内の主なカフェチェーンを価格と居心地の2軸で表示',
   ranking: 'miwidgets.com/register.txt のランキングウィジェットで、都道府県の面積の上位10位を表示',
   'bar-chart-race': 'miwidgets.com/register.txt のバーチャートレースで、1990年から2025年までの各国の名目GDPの上位10件を年ごとに表示',
   sheet: 'miwidgets.com/register.txt のデータシートウィジェットで、都道府県の人口・面積・人口密度を一覧表示'
@@ -318,6 +331,14 @@ var EN_PATCHES = {
     data.series[0].name = '2026';
     data.series[1].name = '2025';
   },
+  horizontal_bar: function(data){
+    data.lang = 'en';
+    data.title = 'Visitors by Store';
+    data.unit = '';
+    data.labels = ['Shibuya', 'Shinjuku', 'Ikebukuro', 'Yokohama', 'Omiya'];
+    data.series[0].name = 'Oct';
+    data.series[1].name = 'Nov';
+  },
   line: function(data){
     data.lang = 'en';
     data.title = 'Today\u2019s Temperature';
@@ -349,6 +370,18 @@ var EN_PIE_SCENARIOS = [
     { name: 'Marketing', value: 22 }, { name: 'Quality Assurance', value: 18 }, { name: 'Research', value: 15 }, { name: 'Accounting', value: 11 },
     { name: 'HR', value: 9 }, { name: 'General Affairs', value: 8 }, { name: 'PR', value: 6 }, { name: 'Legal', value: 4 }] } }
 ];
+var EN_POSITION_SCENARIOS = [
+  { data: { lang: 'en', title: 'Travel Plans Compared', x: ['Nearby', 'Far away'], y: ['Relaxing', 'Active'], items: [
+    { name: 'Hot spring inn', x: -4, y: -4.5 }, { name: 'Beach resort abroad', x: 5, y: -2 }, { name: 'Hiking tour', x: -1, y: 5 },
+    { name: 'Round-the-world trip', x: 5, y: 5 }, { name: 'Day bus trip', x: -5, y: 0.5 }, { name: 'City sightseeing', x: 0.3, y: 0.4 },
+    { name: 'Camping', x: -2, y: 2.5 }] } },
+  { data: { lang: 'en', title: 'Workplace Tools Compared', x: ['Easy to roll out', 'Hard to roll out'], y: ['For individuals', 'For teams'], items: [
+    { name: 'Chat', x: -3.5, y: 3 }, { name: 'Video calls', x: -2.8, y: 2.2 }, { name: 'Task board (Kanban)', x: -1, y: 3.8 },
+    { name: 'Timesheets', x: 1.5, y: 1 }, { name: 'Expenses', x: 2, y: 0.4 }, { name: 'ERP system', x: 4.6, y: 4.5 },
+    { name: 'Notes app', x: -4.2, y: -3.8 }, { name: 'Spreadsheets', x: -3, y: -1 }, { name: 'Design tool', x: 0.8, y: -2.5 },
+    { name: 'CRM', x: 3.5, y: 3.4 }, { name: 'Workflow', x: 3, y: 2.6 }, { name: 'E-signature', x: 1.2, y: -0.4 },
+    { name: 'Translation', x: -2, y: -3 }, { name: 'Analytics dashboard', x: 3.8, y: -1.6 }, { name: 'Password manager', x: -0.6, y: -1.8 }] } }
+];
 var EN_TEMPLATES = [
   { id: 'weather', name: 'Weather', user: 'What\u2019s the weather like around Japan?', reply: 'Here’s today’s weather in each city.', scenarios: EN_WEATHER_SCENARIOS },
   { id: 'route', name: 'Transit Directions', user: 'How do I get from Shinjuku to Kokusaikaikan?', reply: 'Here’s the route from Shinjuku to Kokusaikaikan.', scenarios: ROUTE_SCENARIOS },
@@ -359,8 +392,10 @@ var EN_TEMPLATES = [
   { id: 'calendar', name: 'Calendar', user: 'Show me the availability for November', reply: 'Here’s the booking availability for November.' },
   { id: 'timetable', name: 'Time Slots', user: 'Show me the open slots for the week of November 23', reply: 'Here are the open slots for the week of November 23.' },
   { id: 'bar', name: 'Bar Chart', user: 'Compare this year\u2019s sales with last year\u2019s', reply: 'Here are monthly sales for this year and last year.' },
+  { id: 'horizontal_bar', name: 'Horizontal Bar Chart', user: 'Compare store visitors in October and November', reply: 'Here are visitors by store for October and November.' },
   { id: 'line', name: 'Line Chart', user: 'How did the temperature change in Tokyo and Osaka today?', reply: 'Here are today’s temperatures in Tokyo and Osaka.' },
   { id: 'pie', name: 'Pie Chart', user: 'Show me my spending breakdown, the gender split of the survey, and headcount by department', reply: 'Here are the three breakdowns as pie charts.', scenarios: EN_PIE_SCENARIOS },
+  { id: 'position_map', name: 'Positioning Map', user: 'Map out our travel plans and workplace tools', reply: 'Here are positioning maps of the travel plans and the workplace tools.', scenarios: EN_POSITION_SCENARIOS },
   { id: 'ranking', name: 'Ranking', user: 'Rank the results of our favorite onigiri filling survey', reply: 'Here’s how the onigiri fillings ranked.' },
   { id: 'bar-chart-race', name: 'Bar chart race', file: RACE_TEMPLATE, scenarios: RACE_SCENARIOS,
     user: 'Which countries had the highest GDP and suicide rates, and which had the lowest total fertility rates?',
@@ -381,8 +416,10 @@ var EN_PROMPT_EXAMPLES = {
   calendar: 'Use the miwidgets.com/register.txt calendar widget to show December with a \u25ef on the days I have plans',
   timetable: 'Use the miwidgets.com/register.txt time slots widget to show next week\u2019s open slots from 10 AM to 6 PM, hourly',
   bar: 'Use the miwidgets.com/register.txt bar chart widget to show the 5 most populous US states',
+  horizontal_bar: 'Use the miwidgets.com/register.txt horizontal bar chart widget to show the 8 most populous countries',
   line: 'Use the miwidgets.com/register.txt line chart widget to show how the US population changed over the last 10 years',
   pie: 'Use the miwidgets.com/register.txt pie chart widget to show the share of US electricity by source',
+  position_map: 'Use the miwidgets.com/register.txt positioning map widget to place the major coffee chains by price and atmosphere',
   ranking: 'Use the miwidgets.com/register.txt ranking widget to show the 10 largest US states by area',
   'bar-chart-race': 'Use the miwidgets.com/register.txt bar chart race to show the top 10 countries by nominal GDP each year from 1990 to 2025',
   sheet: 'Use the miwidgets.com/register.txt data sheet widget to list the 50 US states with population, area and density'
@@ -580,25 +617,17 @@ async function loadRaceSample(sc){
 /* テンプレートに各サンプルのデータを当てる。 */
 function templateHtml(source, t, sc){
   var html = source;
-  if (t.file === RACE_TEMPLATE && sc.data) {
-    html = html.replace(/^var data = \{[\s\S]*?^\};/m, function(){
-      return 'var data = ' + JSON.stringify(sc.data).replace(/</g, '\\u003c') + ';';
-    });
-  }
-  if (t.id === 'weather') {
-    if (sc && sc.data) {
-      html = html.replace(/(var data = \{[\s\S]*?\n\};)/, function(m){ return m + '\nObject.assign(data, ' + JSON.stringify(sc.data) + ');'; });
-    }
+  // 見本に data があれば、テンプレートの data の直後でそれを上書きする(どのテンプレートでも同じ)。
+  // 見本に書いていない項目はテンプレートの値のまま(天気の表示テキストなど)。</script> で切れないよう < はエスケープする。
+  // 以下の差し込みはどれも data の直後に入れるので、後に書いたものほど先に実行される。これは最後に実行され、英語の dataPatch より優先される
+  if (sc && sc.data) {
+    html = html.replace(/(\nvar data = \{[\s\S]*?\n\};)/, function(m){ return m + '\nObject.assign(data, ' + JSON.stringify(sc.data).replace(/</g, '\\u003c') + ');'; });
   }
   if (t.id === 'route') {
     if (sc && sc.now) html = html.replace('now: null', "now: '" + sc.now + "'");
     // 端末の時計で動かすシナリオでも経路が今日のものになるよう、日付を今日にする
     var d = new Date(), p2 = function(n){ return (n < 10 ? '0' : '') + n; };
     html = html.replace(/(\nvar data = \{[\s\S]*?\n\};)/, function(m){ return m + "\ndata.date = '" + d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + "';"; });
-  }
-  // パイチャートは2つ目以降の見本に data を差し替える
-  if (t.id === 'pie') {
-    if (sc && sc.data) html = html.replace(/(\nvar data = \{[\s\S]*?\n\};)/, function(m){ return m + '\ndata = ' + JSON.stringify(sc.data) + ';'; });
   }
   // 英語ページでは、テンプレートの data の直後で英語のサンプルに置き換える。
   if (t.dataPatch) {

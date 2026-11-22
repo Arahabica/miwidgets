@@ -1,0 +1,261 @@
+<!-- ポジショニングマップ: 2本の軸を中央で交差させ、軸の両端に意味(安い⇔高い など)を灰色の札で書く。項目は同じ大きさの色つきの円で打ち、名前は円の中に書く(長い名前は文字の種類が変わる所で2行に折り返し、それでも入らなければ文字を小さくする)。位置は目安として扱い、円どうしや軸の札と重ならないように少しずらす(同じ象限からは出さない)。タップすると名前を吹き出しで出す。表示内容は data で変更できる。 -->
+<div id="pmap-w"></div>
+<style>
+#pmap-w{box-sizing:border-box;width:100%;padding:14px 12px 12px;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#pmap-w *{box-sizing:border-box;}
+#pmap-w .ti{margin:0 2px 10px;overflow-wrap:anywhere;font-size:17px;font-weight:800;}
+#pmap-w .cv{position:relative;-webkit-tap-highlight-color:transparent;cursor:pointer;}
+#pmap-w svg{display:block;overflow:visible;}
+#pmap-w .ax{stroke:var(--hatch-widget-muted,#6e6e73);stroke-width:1.4;}
+#pmap-w .ah{fill:var(--hatch-widget-muted,#6e6e73);}
+#pmap-w .pl rect{fill:var(--hatch-widget-muted,#6e6e73);}
+#pmap-w .pl text{font-size:11px;font-weight:700;fill:#fff;}
+#pmap-w .p text{font-weight:700;fill:#fff;}
+#pmap-w .p{transition:opacity .2s;}
+#pmap-w .has-sel .p{opacity:.25;}
+#pmap-w .has-sel .p.on{opacity:1;}
+#pmap-w .tip{position:absolute;z-index:2;pointer-events:none;white-space:nowrap;font-size:12px;font-weight:700;background:#1c1c1e;color:#fff;border-radius:10px;padding:6px 10px;box-shadow:0 6px 18px rgba(0,0,0,.25);}
+/* アニメーション: 円は、中央(軸の交わる所)からそれぞれの位置へ同時に動く */
+#pmap-w .p{animation:pmap-move .9s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes pmap-move{from{transform:translate(var(--dx),var(--dy));}to{transform:translate(0,0);}}
+#pmap-w .still *{animation:none !important;}
+@media (prefers-reduced-motion:reduce){#pmap-w svg *{animation:none !important;}}
+</style>
+<script>
+(function(){
+var R = document.getElementById("pmap-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',                       // 'ja' | 'en': 画面の文言の言語
+  title: '旅行プランの比較',         // string: マップのタイトル
+  x: ['近場', '遠方'],              // 横軸の [左端, 右端] に書く言葉
+  y: ['のんびり', 'アクティブ'],    // 縦軸の [下端, 上端] に書く言葉
+  /* 項目。x と y は -5〜5 の数値で、0 が中央。x は大きいほど右、y は大きいほど上。
+   * 位置は目安で、円が重なるときは少しずらして描く。色は下の PALETTE の順 */
+  items: [
+    { name: '温泉宿', x: -4, y: -4.5 },
+    { name: '海外リゾート', x: 5, y: -2 },
+    { name: '登山ツアー', x: -1, y: 5 },
+    { name: '世界一周', x: 5, y: 5 },
+    { name: '日帰りバス', x: -5, y: 0.5 },
+    { name: '都市観光', x: 0.3, y: 0.4 },
+    { name: 'キャンプ', x: -2, y: 2.5 }
+  ]
+};
+
+/* 項目の色(この順に使い、足りなければ色相をずらして作る) */
+var PALETTE = ['#3a5ad1', '#f0883e', '#20a46b', '#e5484d', '#9b6dff', '#1f9fb4', '#c2572b', '#d6a21e'];
+var LIM = 5;
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
+  badAxis: function(a, e){ return a + " must be an array of two strings: the words for the " + e + " (e.g. ['Cheap', 'Expensive'])"; },
+  badItems: "items must be an array of one or more { name, x, y } (e.g. [{ name: 'A', x: -2, y: 3 }])",
+  badName: function(j){ return 'items[' + j + ']: name must be a string'; },
+  badVal: function(n, a, v){ return n + ': ' + a + ' ' + JSON.stringify(v) + ' must be a number from -5 to 5'; }
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ---- data を確かめる ---- */
+[['x', 'left and right ends'], ['y', 'bottom and top ends']].forEach(function(a){
+  var v = data[a[0]];
+  if (!Array.isArray(v) || v.length !== 2 || v.some(function(s){ return typeof s !== 'string'; })) throw new Error(E.badAxis(a[0], a[1]));
+});
+var IT = data.items;
+if (!Array.isArray(IT) || !IT.length) throw new Error(E.badItems);
+IT.forEach(function(p, j){
+  if (!p || typeof p.name !== 'string') throw new Error(E.badName(j));
+  ['x', 'y'].forEach(function(a){ if (typeof p[a] !== 'number' || !isFinite(p[a]) || Math.abs(p[a]) > LIM) throw new Error(E.badVal(p.name, a, p[a])); });
+});
+var COLORS = IT.map(function(p, k){ return PALETTE[k] || 'hsl(' + Math.round(k * 137.5 % 360) + ',58%,48%)'; });
+
+R.innerHTML = '<div class="ti">' + esc(data.title || '') + '</div><div class="cv"></div>';
+var box = R.querySelector('.cv');
+function textW(s, size){ var w = 0; String(s).split('').forEach(function(c){ w += c.charCodeAt(0) < 128 ? .6 : 1; }); return w * size; }
+function f1(n){ return Math.round(n * 10) / 10; }
+
+/* ---- 名前を円に入れる形を決める。1〜3行の分け方のうち、必要な円がいちばん小さい(= 文字をいちばん大きくできる)ものを選ぶ。
+ * 改行してよいのは、単語の区切り(Intl.Segmenter。「デザイン/ツール」「分析/ダッシュボード」)、文字の種類が変わる所(「C/コーヒー」)、
+ * 空白や「・」の後。ほぼ同じ大きさになるなら行の少ない分け方にする。
+ * 単語の区切りだけでは最小の文字(7px)でも円に収まらないときは、単語の途中でも改行する(LINES の all。使うかは draw で決める)。
+ * ただし英単語の途中では改行しない。
+ * r は文字の大きさ 1px あたりに必要な円の半径 ---- */
+var LH = 1.2;   // 行の高さ(文字の大きさに対する倍率)
+function fitR(ls){ var w = Math.max.apply(null, ls.map(function(l){ return textW(l, 1); })), h = ls.length * LH; return Math.sqrt(w * w / 4 + h * h / 4) + .25; }
+function kind(c){ return /[A-Za-z0-9&.'\-]/.test(c) ? 'a' : /[゠-ヿｦ-ﾟ]/.test(c) ? 'k' : /\s|・/.test(c) ? 's' : 'j'; }
+var SEG = null;
+try { if (window.Intl && Intl.Segmenter) SEG = new Intl.Segmenter(data.lang === 'en' ? 'en' : 'ja', { granularity: 'word' }); } catch (e) {}
+/* 行の頭に来てはいけない文字(閉じかっこ・句読点・長音・小さい仮名など)と、行の終わりに来てはいけない文字(開きかっこ) */
+var NO_HEAD = /[)）」』】、。,.!?！？ーぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ]/, NO_TAIL = /[(（「『【]/;
+/* 文字列 s を、位置の候補 cuts のうち 0〜2 か所で分けて、r がいちばん小さいものを返す */
+function bestSplit(s, cuts){
+  var best = { lines: [s], r: fitR([s]) };
+  function tryL(ls){
+    ls = ls.map(function(l){ return l.trim(); });
+    if (ls.some(function(l){ return !l; })) return;
+    var r = fitR(ls);
+    /* 行を増やすのは、必要な円が 5% 以上小さくなるときだけ */
+    if (r < best.r * (ls.length > best.lines.length ? .95 : 1)) best = { lines: ls, r: r };
+  }
+  cuts.forEach(function(i){ tryL([s.slice(0, i), s.slice(i)]); });
+  cuts.forEach(function(i){ cuts.forEach(function(j){ if (j > i) tryL([s.slice(0, i), s.slice(i, j), s.slice(j)]); }); });
+  return best;
+}
+var LINES = IT.map(function(p){
+  var s = p.name.trim(), nat = {}, any = [];
+  if (SEG) { var at = 0; for (var g of SEG.segment(s)) { if (at) nat[at] = 1; at += g.segment.length; } }
+  for (var i = 1; i < s.length; i++) {
+    var a = kind(s[i - 1]), b = kind(s[i]);
+    if (a === 's' || (a !== b && b !== 's')) nat[i] = 1;
+    if (NO_HEAD.test(s[i]) || NO_TAIL.test(s[i - 1])) { delete nat[i]; continue; }
+    /* 英字・数字が続く所(英単語の途中)では改行しない。収まらない英単語は、円から少しはみ出してもそのまま書く */
+    if (!nat[i] && /[A-Za-z0-9]/.test(s[i - 1]) && /[A-Za-z0-9]/.test(s[i])) continue;
+    any.push(i);
+  }
+  var n = bestSplit(s, Object.keys(nat).map(Number).filter(function(i){ return any.indexOf(i) >= 0; }));
+  /* 単語の途中でも分ける場合の分け方をすべて並べ、それぞれ単語の途中で分けた回数(mid)を数えておく */
+  var all = [];
+  function add(cs){
+    var ls = [], at = 0;
+    cs.concat([s.length]).forEach(function(c){ ls.push(s.slice(at, c).trim()); at = c; });
+    if (ls.some(function(l){ return !l; })) return;
+    all.push({ lines: ls, r: fitR(ls), mid: cs.filter(function(c){ return !nat[c]; }).length });
+  }
+  any.forEach(function(i){ add([i]); any.forEach(function(j){ if (j > i) add([i, j]); }); });
+  return { lines: n.lines, r: n.r, all: all };
+});
+var NEED = Math.max.apply(null, LINES.map(function(l){ return l.r; }));
+
+var G = null, sel = -1;
+/* マップを描く。anim が false のとき(幅が変わったときの描き直し)はアニメーションしない */
+function draw(anim){
+  var W = Math.max(220, Math.round(box.clientWidth || 320));
+  /* 正方形。上下に縦軸の言葉の札の分を空ける */
+  var S = Math.min(W, 400), top = 22, H = S + top * 2;
+  var x0 = (W - S) / 2 + 2, x1 = x0 + S - 4, y0 = top, y1 = top + S, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  var s = '<svg' + (anim ? '' : ' class="still"') + ' width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">';
+  /* 軸(両端に矢印) */
+  s += '<line class="ax" x1="' + f1(x0 + 6) + '" x2="' + f1(x1 - 6) + '" y1="' + f1(cy) + '" y2="' + f1(cy) + '"/>';
+  s += '<line class="ax" x1="' + f1(cx) + '" x2="' + f1(cx) + '" y1="' + (y0 + 6) + '" y2="' + (y1 - 6) + '"/>';
+  function arrow(x, y, dx, dy){ return '<path class="ah" d="M' + f1(x) + ' ' + f1(y) + 'L' + f1(x - dx * 7 - dy * 4) + ' ' + f1(y - dy * 7 - dx * 4) + 'L' + f1(x - dx * 7 + dy * 4) + ' ' + f1(y - dy * 7 + dx * 4) + 'Z"/>'; }
+  s += arrow(x0, cy, -1, 0) + arrow(x1, cy, 1, 0) + arrow(cx, y0, 0, -1) + arrow(cx, y1, 0, 1);
+  /* ---- 円が重ならないように位置をずらす(d3 の forceCollide + forceX/forceY と同じ考え方) ----
+   * 位置は目安なので、重なる円どうしを押し離し、本来の位置へ少しずつ引き戻すことをくり返す。
+   * 横軸の両端の札にも重ならないようにする。ずらしても、本来の位置と同じ象限(軸の同じ側)からは出さない。
+   * 半径 rad で配置して、重なったままの組の数を返す */
+  var gap = 2;
+  var OBS = [[data.x[0], x0, 'start'], [data.x[1], x1, 'end']].map(function(a){
+    var w = textW(a[0], 11) + 12;
+    return { x: a[2] === 'start' ? a[1] : a[1] - w, y: cy - 9, w: w, h: 18 };
+  });
+  function layout(rad){
+    var lo = x0 + rad + 2, hi = x1 - rad - 2, top2 = y0 + rad + 2, bot2 = y1 - rad - 2, need = rad * 2 + gap;
+    /* 円が枠からはみ出さないよう、-5〜5 を円の半径ぶん内側に割り当てる */
+    var half = S / 2 - 2 - rad;
+    IT.forEach(function(p, j){
+      p.tx = cx + p.x / LIM * half; p.ty = cy - p.y / LIM * half;
+      /* 同じ位置の円は、押し離す向きが決まらないので、番号ごとに少しだけずらして始める */
+      p.cx = p.tx + Math.cos(j * 2.4) * .01; p.cy = p.ty + Math.sin(j * 2.4) * .01;
+    });
+    for (var it = 0; it < 300; it++) {
+      var pull = it < 200 ? .06 * (1 - it / 200) : 0;
+      IT.forEach(function(p){ p.cx += (p.tx - p.cx) * pull; p.cy += (p.ty - p.cy) * pull; });
+      for (var a = 0; a < IT.length; a++) for (var b = a + 1; b < IT.length; b++) {
+        var A = IT[a], B = IT[b], dx = B.cx - A.cx, dy = B.cy - A.cy, d = Math.sqrt(dx * dx + dy * dy) || .01;
+        if (d >= need) continue;
+        var m = (need - d) / 2 / d;
+        A.cx -= dx * m; A.cy -= dy * m; B.cx += dx * m; B.cy += dy * m;
+      }
+      IT.forEach(function(p){
+        OBS.forEach(function(o){
+          var nx = Math.max(o.x, Math.min(o.x + o.w, p.cx)), ny = Math.max(o.y, Math.min(o.y + o.h, p.cy));
+          var dx = p.cx - nx, dy = p.cy - ny, d = Math.sqrt(dx * dx + dy * dy);
+          if (d >= rad + gap) return;
+          /* 円の中心が札の中に入ったときは、本来の位置のある側(上か下)へ出す */
+          if (d < .01) { p.cy = p.ty <= cy ? o.y - rad - gap : o.y + o.h + rad + gap; return; }
+          p.cx += dx / d * (rad + gap - d); p.cy += dy / d * (rad + gap - d);
+        });
+        p.cx = Math.max(lo, Math.min(hi, p.cx)); p.cy = Math.max(top2, Math.min(bot2, p.cy));
+        if (p.x > 0) p.cx = Math.max(p.cx, cx); else if (p.x < 0) p.cx = Math.min(p.cx, cx);
+        if (p.y > 0) p.cy = Math.min(p.cy, cy); else if (p.y < 0) p.cy = Math.max(p.cy, cy);
+      });
+    }
+    var n = 0;
+    for (var i = 0; i < IT.length; i++) for (var j = i + 1; j < IT.length; j++) {
+      if (Math.sqrt(Math.pow(IT[i].cx - IT[j].cx, 2) + Math.pow(IT[i].cy - IT[j].cy, 2)) < rad * 2 - .5) n++;
+    }
+    return n;
+  }
+  /* ---- 円の大きさ(どれも同じ) ----
+   * 名前が 11px で入る大きさにするが、半径はマップの 10% まで(項目が 8 個を超えると、数に応じて 6% まで小さくする)。
+   * 円を大きくすると本来の位置からのずれが大きくなるので、文字を大きくするために円を大きくはしない。
+   * 名前は円の縁に触れないよう、縁から 3px 内側の円に収める */
+  var PAD = 3;
+  var rad = Math.max(14, Math.min(NEED * 11 + PAD, S * Math.max(.06, .1 * Math.sqrt(Math.min(1, 8 / IT.length)))));
+  layout(rad);
+  var inner = rad - PAD;
+  /* 円と名前。円は少し透かして、それでも重なったとき(項目が多すぎるとき)に下の円が見えるようにする。
+   * 文字は大きくて 11px。入らない名前は小さくする(最小 7px) */
+  IT.forEach(function(p, j){
+    /* 単語の区切りで分けると最小の 7px でも円に収まらないときだけ、単語の途中でも分ける。
+     * そのときは 7px で収まる分け方のうち、単語の途中で分ける回数が少なく、次に文字を大きくできるものを選ぶ
+     * (「分析/ダッシュ/ボード」。収まる分け方が無ければ、文字をいちばん大きくできるもの) */
+    var L = LINES[j];
+    if (inner / L.r < 7) {
+      var fit = L.all.filter(function(c){ return inner / c.r >= 7; });
+      var pool = fit.length ? fit : L.all;
+      pool.sort(function(a, b){ return fit.length ? (a.mid - b.mid || a.r - b.r) : a.r - b.r; });
+      if (pool.length && pool[0].r < L.r) L = pool[0];
+    }
+    var ls = L.lines, fs = Math.max(7, Math.min(11, inner / L.r)), y = p.cy - (ls.length - 1) * fs * LH / 2 + fs * .36;
+    s += '<g class="p" data-j="' + j + '" style="--dx:' + f1(cx - p.cx) + 'px;--dy:' + f1(cy - p.cy) + 'px">' +
+      '<circle cx="' + f1(p.cx) + '" cy="' + f1(p.cy) + '" r="' + f1(rad) + '" fill="' + COLORS[j] + '" fill-opacity=".88" stroke="#fff" stroke-width="1.5"/>' +
+      '<text x="' + f1(p.cx) + '" text-anchor="middle" style="font-size:' + f1(fs) + 'px">' +
+      ls.map(function(l, i){ return '<tspan x="' + f1(p.cx) + '" y="' + f1(y + i * fs * LH) + '">' + esc(l) + '</tspan>'; }).join('') +
+      '</text></g>';
+  });
+  /* 軸の両端の言葉は、円より手前に灰色の札で出す(円が重なっても読めるように)。縦軸は上下の外、横軸は左右の端の軸の上 */
+  function pill(t, x, y, anchor){
+    var w = textW(t, 11) + 12, h = 18, l = anchor === 'start' ? x : anchor === 'end' ? x - w : x - w / 2;
+    return '<g class="pl"><rect x="' + f1(l) + '" y="' + f1(y - h / 2) + '" width="' + f1(w) + '" height="' + h + '" rx="9"/>' +
+      '<text x="' + f1(l + w / 2) + '" y="' + f1(y + 4) + '" text-anchor="middle">' + esc(t) + '</text></g>';
+  }
+  s += pill(data.y[1], cx, y0 - 10, 'middle') + pill(data.y[0], cx, y1 + 10, 'middle');
+  s += pill(data.x[0], x0, cy, 'start') + pill(data.x[1], x1, cy, 'end');
+  box.innerHTML = s + '</svg><div class="tip" hidden></div>';
+  G = { W: W, rad: rad };
+  if (sel >= 0) select(sel);
+}
+
+/* ---- タップした円を目立たせ、名前を吹き出しで出す(小さい文字の名前も確かめられる) ---- */
+function select(j){
+  sel = j;
+  var sv = box.querySelector('svg'), tip = box.querySelector('.tip');
+  sv.classList.toggle('has-sel', j >= 0);
+  [].forEach.call(sv.querySelectorAll('.p'), function(c){ c.classList.toggle('on', +c.dataset.j === j); });
+  if (j < 0) { tip.hidden = true; return; }
+  var p = IT[j];
+  tip.textContent = p.name;
+  tip.hidden = false;
+  var tw = tip.offsetWidth, th = tip.offsetHeight, top = p.cy - G.rad - th - 6;
+  if (top < 0) top = p.cy + G.rad + 6;
+  tip.style.left = Math.round(Math.max(0, Math.min(G.W - tw, p.cx - tw / 2))) + 'px';
+  tip.style.top = Math.round(top) + 'px';
+}
+/* 円の中をタップしたら、その円を選ぶ(重なっているときは、上に描いた円) */
+box.addEventListener('click', function(e){
+  if (e.target.closest('.tip')) return;
+  var b = box.getBoundingClientRect(), mx = e.clientX - b.left, my = e.clientY - b.top, hit = -1;
+  IT.forEach(function(p, j){ if ((p.cx - mx) * (p.cx - mx) + (p.cy - my) * (p.cy - my) <= G.rad * G.rad) hit = j; });
+  select(hit === sel ? -1 : hit);
+});
+
+draw(true);
+var lastW = box.clientWidth;
+if (window.ResizeObserver) new ResizeObserver(function(){ if (box.clientWidth !== lastW) { lastW = box.clientWidth; draw(false); } }).observe(box);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>

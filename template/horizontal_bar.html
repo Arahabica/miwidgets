@@ -1,0 +1,193 @@
+<!-- 棒グラフ(横): 項目名を左に、棒を右へ伸ばし、棒の先に値を出す。系列が2つ以上なら項目ごとに棒を縦に並べて凡例を出す。マイナスの値は左へ伸ばす。タップで値を出す。表示内容は data で変更できる。 -->
+<div id="hbar-w"></div>
+<style>
+#hbar-w{box-sizing:border-box;width:100%;padding:14px 12px 12px;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#hbar-w *{box-sizing:border-box;}
+#hbar-w .hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 10px;}
+#hbar-w .ti{min-width:0;overflow-wrap:anywhere;font-size:17px;font-weight:800;}
+#hbar-w .un{flex:none;font-size:11px;color:var(--hatch-widget-muted,#6e6e73);}
+#hbar-w .cv{position:relative;-webkit-tap-highlight-color:transparent;}
+#hbar-w svg{display:block;overflow:visible;}
+#hbar-w .gl{stroke:var(--hatch-widget-border,#d1d1d6);stroke-width:1;opacity:.6;}
+#hbar-w .gl.z{opacity:1;}
+#hbar-w .tk,#hbar-w .vl{font-size:10px;font-variant-numeric:tabular-nums;fill:var(--hatch-widget-muted,#6e6e73);}
+#hbar-w .vl{font-weight:600;}
+#hbar-w .yl{font-size:12px;fill:var(--hatch-widget-text,#1c1c1e);}
+#hbar-w .hit{cursor:pointer;}
+#hbar-w .grp{transition:opacity .2s;}
+#hbar-w .has-sel .grp:not(.on){opacity:.3;}
+#hbar-w .lg{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0 2px 8px;font-size:11px;font-weight:600;color:var(--hatch-widget-muted,#6e6e73);}
+#hbar-w .lg span{display:inline-flex;align-items:center;gap:5px;}
+#hbar-w .sw{display:inline-block;flex:none;width:9px;height:9px;}
+#hbar-w .tip{position:absolute;z-index:2;pointer-events:none;white-space:nowrap;font-size:11px;line-height:1.5;background:#1c1c1e;color:#fff;border-radius:10px;padding:7px 10px;box-shadow:0 6px 18px rgba(0,0,0,.25);}
+#hbar-w .tip b{display:block;color:rgba(255,255,255,.7);font-weight:500;white-space:normal;max-width:220px;}
+#hbar-w .tip .tr{display:flex;align-items:center;gap:6px;}
+#hbar-w .tip .tv{margin-left:auto;padding-left:8px;font-weight:600;font-variant-numeric:tabular-nums;}
+#hbar-w .tip .tv.one{margin:0;padding:0;font-size:15px;}
+/* アニメーション: 棒は 0 の線から伸びる。棒の先の値は同時に薄く現れる。どの棒も同時に動く */
+#hbar-w .b{transform-box:fill-box;transform-origin:0 50%;animation:hbar-grow .7s cubic-bezier(.2,.8,.2,1) both;}
+#hbar-w .b.neg{transform-origin:100% 50%;}
+#hbar-w .vl{animation:hbar-fade .7s ease-out both;}
+@keyframes hbar-grow{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+@keyframes hbar-fade{from{opacity:0;}to{opacity:1;}}
+#hbar-w .still *{animation:none !important;}
+@media (prefers-reduced-motion:reduce){#hbar-w svg *{animation:none !important;}}
+</style>
+<script>
+(function(){
+var R = document.getElementById("hbar-w");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',                    // 'ja' | 'en': 画面の文言と数値の書式の言語
+  title: '店舗別の来店者数',     // string: グラフのタイトル
+  unit: '人',                    // string: 値の単位。値の後ろに付けて表示する。無ければ ''
+  labels: ['渋谷店', '新宿店', '池袋店', '横浜店', '大宮店'],   // 縦に並べる項目(上から順)
+  /* 系列。2つ以上あると項目ごとに棒を縦に並べ、凡例を出す。values は labels と同じ数の数値。
+   * name は凡例とタップ時の表示に使う(系列が1つなら省略できる)。color で色を指定できる(省略すると下の PALETTE の順) */
+  series: [
+    { name: '10月', values: [3820, 4150, 2980, 2610, 1740] },
+    { name: '11月', values: [4010, 3960, 3120, 2890, 1920] }
+  ]
+};
+
+/* color を省略した系列の色(この順に使い、足りなければ色相をずらして作る) */
+var PALETTE = ['#3a5ad1', '#f0883e', '#20a46b', '#e5484d', '#9b6dff'];
+var EN = data.lang === 'en';
+var T = EN ? { series: 'Series ' } : { series: '系列' };
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
+  badLabels: "labels must be an array of the items (e.g. ['Tokyo', 'Osaka'])",
+  badSeries: 'series must be an array of one or more series',
+  badColor: function(s){ return s + ': color must be a CSS color string (e.g. \'#3a5ad1\')'; },
+  badLen: function(s, m, n){ return s + ': values has ' + m + ' items but labels has ' + n + '. Make them the same length'; },
+  badVal: function(s, l, v){ return s + ', ' + l + ': ' + JSON.stringify(v) + ' is not a number'; }
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ---- data を確かめる ---- */
+var labels = data.labels, series = data.series;
+if (!Array.isArray(labels) || !labels.length) throw new Error(E.badLabels);
+if (!Array.isArray(series) || !series.length) throw new Error(E.badSeries);
+var NAMES = series.map(function(s, k){ return s && s.name != null ? String(s.name) : T.series + (k + 1); });
+series.forEach(function(s, k){
+  var n = s && Array.isArray(s.values) ? s.values.length : 0;
+  if (n !== labels.length) throw new Error(E.badLen(NAMES[k], n, labels.length));
+  s.values.forEach(function(v, i){ if (typeof v !== 'number' || !isFinite(v)) throw new Error(E.badVal(NAMES[k], labels[i], v)); });
+  if (s.color != null && (typeof s.color !== 'string' || !s.color)) throw new Error(E.badColor(NAMES[k]));
+});
+var COLORS = series.map(function(s, k){ return esc(s.color || PALETTE[k] || 'hsl(' + Math.round(k * 137.5 % 360) + ',62%,52%)'); });
+var N = labels.length, M = series.length;
+var unit = data.unit == null ? '' : String(data.unit);
+var LOC = EN ? 'en-US' : 'ja-JP';
+function num(v){ return v.toLocaleString(LOC, { maximumFractionDigits: 2 }); }
+function fmt(v){ return num(v) + unit; }
+
+/* ---- 横軸の目盛り(きりのよい値で4区間ほど。0を必ず含める) ---- */
+var all = [].concat.apply([], series.map(function(s){ return s.values; }));
+var vmin = Math.min(0, Math.min.apply(null, all)), vmax = Math.max(0, Math.max.apply(null, all));
+if (vmin === vmax) vmax = 1;
+var raw = (vmax - vmin) / 4, mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), r = raw / mag;
+var step = (r > 7.5 ? 10 : r > 3.5 ? 5 : r > 1.5 ? 2 : 1) * mag;
+var TICKS = [];
+for (var t = Math.floor(vmin / step + 1e-9); t <= Math.ceil(vmax / step - 1e-9); t++) TICKS.push(+(t * step).toPrecision(12));
+var lo = TICKS[0], hi = TICKS[TICKS.length - 1];
+
+/* ---- 見出しと凡例(凡例は棒の上に置き、棒の並び順と合わせる) ---- */
+function swatch(k){ return '<i class="sw" style="background:' + COLORS[k] + '"></i>'; }
+R.innerHTML = '<div class="hd"><span class="ti">' + esc(data.title || '') + '</span>' + (unit ? '<span class="un">' + esc(unit) + '</span>' : '') + '</div>' +
+  (M > 1 ? '<div class="lg">' + NAMES.map(function(n, k){ return '<span>' + swatch(k) + esc(n) + '</span>'; }).join('') + '</div>' : '') +
+  '<div class="cv"></div>';
+var box = R.querySelector('.cv');
+
+function textW(s, size){ var w = 0; String(s).split('').forEach(function(c){ w += c.charCodeAt(0) < 128 ? .6 : 1; }); return w * size; }
+/* 幅 w に収まるよう、長い項目名は末尾を … にする */
+function clip(s, w, size){
+  s = String(s);
+  if (textW(s, size) <= w) return s;
+  var a = s.split('');
+  while (a.length > 1 && textW(a.join('') + '…', size) > w) a.pop();
+  return a.join('') + '…';
+}
+function f1(n){ return Math.round(n * 10) / 10; }
+
+var G = null, sel = -1;
+/* グラフを描く。anim が false のとき(幅が変わったときの描き直し)はアニメーションしない */
+function draw(anim){
+  var W = Math.max(220, Math.round(box.clientWidth || 320));
+  /* 棒の太さ: 系列が1つなら 18px、多いほど細く(最小 9px)。項目どうしの間は 12px */
+  var bh = Math.max(9, Math.round(18 / Math.sqrt(M))), gap = M > 1 ? 2 : 0, pad = 12;
+  var rowH = bh * M + gap * (M - 1) + pad;
+  var y0 = 2, H = y0 + rowH * N + 18;
+  /* 項目名の列は、いちばん長い名前の幅(画面の 38% まで) */
+  var labW = Math.min(Math.round(W * .38), Math.ceil(Math.max.apply(null, labels.map(function(l){ return textW(l, 12); }))));
+  /* 値は棒の先に出すので、その幅を左右に空ける */
+  var valW = Math.ceil(Math.max.apply(null, all.map(function(v){ return textW(num(v), 10); }))) + 6;
+  var x0 = labW + 10 + (vmin < 0 ? valW : 0), x1 = W - 4 - (vmax > 0 ? valW : 0);
+  function X(v){ return x0 + (v - lo) / (hi - lo) * (x1 - x0); }
+  var base = X(0), yEnd = y0 + rowH * N;
+  var s = '<svg class="sv' + (anim ? '' : ' still') + '" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">';
+
+  /* 目盛り線と下の値。値どうしが重なるときは、0 を残して間引く */
+  var tkW = Math.max.apply(null, TICKS.map(function(t){ return textW(num(t), 10); })) + 6;
+  var every = Math.max(1, Math.ceil(tkW / ((x1 - x0) / (TICKS.length - 1))));
+  var z0 = TICKS.indexOf(0);
+  TICKS.forEach(function(t, j){
+    var x = f1(X(t));
+    s += '<line class="gl' + (t === 0 ? ' z' : '') + '" x1="' + x + '" x2="' + x + '" y1="' + y0 + '" y2="' + yEnd + '"/>';
+    if ((j - z0) % every === 0) s += '<text class="tk" x="' + x + '" y="' + (H - 4) + '" text-anchor="middle">' + num(t) + '</text>';
+  });
+
+  /* 項目名と棒と値 */
+  labels.forEach(function(l, i){
+    var top = y0 + rowH * i + pad / 2;
+    s += '<g class="grp" data-i="' + i + '">';
+    s += '<text class="yl" x="0" y="' + f1(top + (rowH - pad) / 2 + 4) + '">' + esc(clip(l, labW, 12)) + '</text>';
+    series.forEach(function(se, k){
+      var v = se.values[i], y = top + (bh + gap) * k, xv = X(v);
+      var x = Math.min(xv, base), w = Math.max(.5, Math.abs(xv - base));
+      s += '<rect class="b' + (v < 0 ? ' neg' : '') + '" x="' + f1(x) + '" y="' + f1(y) + '" width="' + f1(w) + '" height="' + bh + '" fill="' + COLORS[k] + '"/>';
+      s += '<text class="vl" x="' + f1(v < 0 ? x - 4 : x + w + 4) + '" y="' + f1(y + bh / 2 + 3.5) + '" text-anchor="' + (v < 0 ? 'end' : 'start') + '">' + num(v) + '</text>';
+    });
+    s += '</g>';
+  });
+  /* タップの当たり判定(項目ごとの横長の帯) */
+  labels.forEach(function(l, i){ s += '<rect class="hit" data-i="' + i + '" x="0" y="' + f1(y0 + rowH * i) + '" width="' + W + '" height="' + rowH + '" fill="transparent"/>'; });
+  box.innerHTML = s + '</svg><div class="tip" hidden></div>';
+  G = { W: W, H: H, y0: y0, rowH: rowH, X: X, x0: x0 };
+  if (sel >= 0) select(sel);
+}
+
+/* ---- タップした項目の名前(省略しない)と値を出す ---- */
+function select(i){
+  sel = i;
+  var sv = box.querySelector('svg'), tip = box.querySelector('.tip');
+  sv.classList.toggle('has-sel', i >= 0);
+  [].forEach.call(sv.querySelectorAll('.grp'), function(g){ g.classList.toggle('on', +g.dataset.i === i); });
+  if (i < 0) { tip.hidden = true; return; }
+  tip.innerHTML = '<b>' + esc(labels[i]) + '</b>' + series.map(function(se, k){
+    return M > 1 ? '<span class="tr">' + swatch(k) + '<span>' + esc(NAMES[k]) + '</span><span class="tv">' + esc(fmt(se.values[i])) + '</span></span>'
+      : '<span class="tv one">' + esc(fmt(se.values[i])) + '</span>';
+  }).join('');
+  tip.hidden = false;
+  /* 吹き出しは項目の帯の下(入らなければ上)に、右寄せで出す */
+  var tw = tip.offsetWidth, th = tip.offsetHeight, top = G.y0 + G.rowH * (i + 1);
+  if (top + th > G.H) top = Math.max(0, G.y0 + G.rowH * i - th);
+  tip.style.left = Math.round(Math.max(0, G.W - tw)) + 'px';
+  tip.style.top = Math.round(top) + 'px';
+}
+R.addEventListener('click', function(e){
+  var h = e.target.closest('.hit');
+  if (h) { var i = +h.dataset.i; select(sel === i ? -1 : i); return; }
+  if (!e.target.closest('.tip') && sel >= 0) select(-1);
+});
+
+draw(true);
+var lastW = box.clientWidth;
+if (window.ResizeObserver) new ResizeObserver(function(){ if (box.clientWidth !== lastW) { lastW = box.clientWidth; draw(false); } }).observe(box);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>
