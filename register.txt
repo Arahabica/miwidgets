@@ -34,8 +34,11 @@ https://miwidgets.com/template/quiz.html
 Analog clock — an analog clock with a second hand
 https://miwidgets.com/template/clock.html
 
-Calendar — one month, with a mark (◯ △ x -) or up to 2 characters on each day
+Calendar (bookings) — one month, with a mark (◯ △ x -) or up to 2 characters on each day
 https://miwidgets.com/template/calendar.html
+
+Calendar (events) — one month with a small dot under each day that has events, one dot per calendar color (up to 3); tap a day to list its events below the calendar with start and end times and a color dot; give each event a date, optional start and end times (leave them out for all-day events), a title and an optional calendar name with its color; maps directly from Google Calendar events
+https://miwidgets.com/template/calendar_events.html
 
 Time slots — 7 days × times (every 15, 30 or 60 minutes), with a mark (◯ △ x -) or up to 2 characters in each slot
 https://miwidgets.com/template/timetable.html

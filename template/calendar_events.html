@@ -1,0 +1,195 @@
+<!-- カレンダー（予定）テンプレート: 1か月のカレンダー。予定のある日に色の点を表示し、日付をタップすると下にその日の予定を一覧表示。表示内容は data で変更できる。 -->
+<div id="cal-ev"></div>
+<style>
+#cal-ev{box-sizing:border-box;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
+#cal-ev *{box-sizing:border-box;}
+
+#cal-ev{padding:16px 14px 14px;background:#fff;color:#1c1c1e;}
+#cal-ev .hd{display:flex;align-items:flex-end;gap:8px;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid #1c1c1e;}
+#cal-ev .mn{font-size:44px;line-height:.9;font-weight:200;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+#cal-ev .yr{display:flex;flex-direction:column;font-size:12px;line-height:1.4;letter-spacing:.1em;}
+#cal-ev .yr b{font-size:15px;font-weight:500;}
+#cal-ev .gr{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}
+#cal-ev .wd{padding:4px 0 6px;font-size:11px;text-align:center;letter-spacing:.1em;color:#8e8e93;}
+/* 日付のマス。押せるようにボタンにする */
+#cal-ev .c{position:relative;display:block;width:100%;min-height:44px;aspect-ratio:1/1;margin:0;padding:0;border:0;border-top:1px dashed #e0e0e5;background:none;color:inherit;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#cal-ev .c:focus{outline:none;}
+#cal-ev .c:focus-visible{outline:2px solid #2f6fd6;outline-offset:-2px;}
+#cal-ev .c.adj > *{opacity:.2;}
+#cal-ev .dn{position:absolute;top:5px;left:50%;width:26px;height:26px;margin-left:-13px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-variant-numeric:tabular-nums;}
+#cal-ev .sun .dn,#cal-ev .wd.sun{color:#d64545;}
+#cal-ev .sat .dn,#cal-ev .wd.sat{color:#2f6fd6;}
+/* 選んだ日は、日付を薄い青の丸で囲む */
+#cal-ev .c.sel .dn{background:#e3ecfb;color:#1f5fc9;font-weight:700;}
+/* 予定の点。色ごとに1つ、3つまで横に並べる */
+#cal-ev .ds{position:absolute;left:0;right:0;top:35px;display:flex;justify-content:center;gap:3px;}
+#cal-ev .ds i{width:5px;height:5px;border-radius:50%;}
+/* カレンダーの下の、選んだ日の予定の一覧 */
+#cal-ev .ls{margin-top:2px;border-top:1px solid #1c1c1e;}
+#cal-ev .lh{padding:10px 2px 6px;font-size:13px;font-weight:600;letter-spacing:.04em;}
+#cal-ev .ev{display:flex;gap:12px;padding:9px 2px;border-top:1px dashed #e0e0e5;font-size:14px;line-height:1.4;}
+#cal-ev .tm{flex:none;width:52px;font-size:12px;line-height:1.65;color:#8e8e93;font-variant-numeric:tabular-nums;white-space:nowrap;}
+#cal-ev .tm small{display:block;font-size:inherit;}
+#cal-ev .tt{min-width:0;overflow-wrap:anywhere;}
+/* 予定のタイトルの前の、カレンダーの色の点(1行目の高さの中央に置く) */
+#cal-ev .tt i{display:inline-block;width:7px;height:7px;margin:0 7px 0 0;border-radius:50%;vertical-align:.12em;}
+#cal-ev .no{padding:9px 2px 4px;border-top:1px dashed #e0e0e5;font-size:13px;color:#8e8e93;}
+</style>
+<script>
+(function(){
+var R = document.getElementById("cal-ev");
+try {
+
+/* ===== data: 表示内容はすべてここで変える ===== */
+var data = {
+  lang: 'ja',         // 'ja' | 'en': 曜日・月・エラーの文言の言語
+  month: '2026-11',   // string: 表示する年月('YYYY-MM')
+  /* カレンダーの名前と色。予定の calendar に名前を書くと、その色の点を描く。
+   * 型: { [名前]: CSS の色 } ・色分けしないなら {} */
+  calendars: { '仕事': '#3a5ad1', 'プライベート': '#20a46b', '家族': '#f0883e' },
+  /* 予定。date は 'YYYY-MM-DD'(カレンダーの端に出る前月・翌月の日も書ける)。
+   * start と end は '10:00' のような時刻(終日の予定なら両方省く。end だけ省いてもよい)。
+   * calendar は calendars の名前(省くと灰色)。同じ日の予定は開始時刻の順に並べて表示する */
+  events: [
+    { date: '2026-11-06', start: '19:00', end: '21:00', title: '同期と食事', calendar: 'プライベート' },
+    { date: '2026-11-10', start: '10:00', end: '11:00', title: '歯医者', calendar: 'プライベート' },
+    { date: '2026-11-13', start: '9:30', end: '10:30', title: '定例ミーティング', calendar: '仕事' },
+    { date: '2026-11-13', start: '15:00', end: '16:00', title: '企画レビュー', calendar: '仕事' },
+    { date: '2026-11-18', start: '12:00', end: '13:00', title: 'ランチ会', calendar: '仕事' },
+    { date: '2026-11-21', title: '家族で日帰り旅行', calendar: '家族' },
+    { date: '2026-11-25', start: '18:30', end: '19:30', title: 'ヨガ', calendar: 'プライベート' },
+    { date: '2026-11-27', start: '9:30', end: '10:30', title: '定例ミーティング', calendar: '仕事' },
+    { date: '2026-11-27', start: '14:00', end: '14:30', title: '面談', calendar: '仕事' },
+    { date: '2026-11-27', start: '20:00', end: '20:50', title: 'オンライン英会話', calendar: 'プライベート' },
+    { date: '2026-11-28', title: '子どもの誕生日', calendar: '家族' },
+    { date: '2026-12-01', start: '10:00', title: '健康診断', calendar: 'プライベート' }
+  ],
+  /* 祝日。日曜と同じ赤で表示する。型: string[] ・無ければ [] */
+  holidays: ['2026-11-03', '2026-11-23']
+};
+
+var EN = data.lang === 'en';
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var NO_CAL = '#8e8e93';
+/* 画面とエラーの文言 */
+var T = EN ? {
+  wd: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  monthLabel: function(mo){ return MONTHS[mo - 1]; },
+  dayLabel: function(dt){ return T.wd[dt.getDay()] + ', ' + MONTHS[dt.getMonth()].slice(0, 3) + ' ' + dt.getDate(); },
+  allDay: 'All day', none: 'No events'
+} : {
+  wd: ['日', '月', '火', '水', '木', '金', '土'],
+  monthLabel: function(){ return '月'; },
+  dayLabel: function(dt){ return (dt.getMonth() + 1) + '月' + dt.getDate() + '日(' + T.wd[dt.getDay()] + ')'; },
+  allDay: '終日', none: '予定はありません'
+};
+/* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
+var E = {
+  badMonth: "month must look like '2026-12'",
+  badDate: function(k){ return JSON.stringify(k) + " is not a date. Write it like '2026-12-01'"; },
+  notShown: function(k){ return k + ' is not shown on this calendar'; },
+  badEvents: "events must be an array of { date, start, end, title, calendar } (e.g. [{ date: '2026-11-03', start: '10:00', title: 'Dentist' }])",
+  badTitle: function(i){ return 'events[' + i + ']: each event needs a title'; },
+  badTime: function(i, t){ return 'events[' + i + ']: ' + JSON.stringify(t) + " is not a time. Write it like '10:00', or leave start and end out for an all-day event"; },
+  endOnly: function(i){ return 'events[' + i + ']: end needs a start'; },
+  badCals: "calendars must be an object of names and colors (e.g. { Work: '#3a5ad1' })",
+  noCal: function(i, c){ return 'events[' + i + ']: ' + JSON.stringify(c) + ' is not in calendars'; },
+  badList: function(name){ return name + " must be an array of dates (e.g. ['2026-12-01', '2026-12-02'])"; }
+};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+var ym = /^(\d{4})-(\d{1,2})$/.exec(String(data.month));
+if (!ym || +ym[2] < 1 || +ym[2] > 12) throw new Error(E.badMonth);
+var y = +ym[1], mo = +ym[2];
+var days = new Date(y, mo, 0).getDate();
+var lead = new Date(y, mo - 1, 1).getDay();
+var cells = Math.ceil((lead + days) / 7) * 7;
+/* 表示するマス(前月・翌月の日を含む)。日付は 'YYYY-MM-DD' で表す */
+function p2(n){ return (n < 10 ? '0' : '') + n; }
+function iso(dt){ return dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-' + p2(dt.getDate()); }
+var CELLS = [], SHOWN = {};
+for (var c = 0; c < cells; c++) {
+  var dt = new Date(y, mo - 1, 1 - lead + c);
+  CELLS.push({ key: iso(dt), dt: dt, adj: dt.getMonth() !== mo - 1 });
+  SHOWN[iso(dt)] = true;
+}
+/* 日付を確かめる */
+function day(k){
+  if (typeof k !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(k)) throw new Error(E.badDate(k));
+  if (!SHOWN[k]) throw new Error(E.notShown(k));
+  return k;
+}
+/* 時刻を分にする('9:30' → 570)。無ければ -1 */
+function minutes(t, i){
+  if (t == null || t === '') return -1;
+  var m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim());
+  if (!m || +m[1] > 23 || +m[2] > 59) throw new Error(E.badTime(i, t));
+  return +m[1] * 60 + +m[2];
+}
+var CALS = data.calendars || {};
+if (typeof CALS !== 'object' || Array.isArray(CALS)) throw new Error(E.badCals);
+if (!Array.isArray(data.events)) throw new Error(E.badEvents);
+/* 日付ごとの予定。終日の予定を先に、あとは開始時刻の順 */
+var EV = {};
+data.events.forEach(function(e, i){
+  if (!e || typeof e !== 'object') throw new Error(E.badEvents);
+  if (typeof e.title !== 'string' || !e.title) throw new Error(E.badTitle(i));
+  var d = day(e.date), s = minutes(e.start, i), en = minutes(e.end, i);
+  if (s < 0 && en >= 0) throw new Error(E.endOnly(i));
+  if (e.calendar != null && !(e.calendar in CALS)) throw new Error(E.noCal(i, e.calendar));
+  (EV[d] = EV[d] || []).push({ s: s, i: i, start: s < 0 ? '' : String(e.start).trim(), end: en < 0 ? '' : String(e.end).trim(), title: e.title,
+    color: e.calendar == null ? NO_CAL : String(CALS[e.calendar]) });
+});
+Object.keys(EV).forEach(function(k){ EV[k].sort(function(a, b){ return a.s - b.s || a.i - b.i; }); });
+function dayset(name){
+  var list = data[name] || [], set = {};
+  if (!Array.isArray(list)) throw new Error(E.badList(name));
+  list.forEach(function(k){ set[day(k)] = true; });
+  return set;
+}
+var hol = dayset('holidays');
+/* 点の色: その日の予定の色を、一覧に出る順に重複を除いて3つまで(同じ色の予定がいくつあっても点は1つ) */
+function colorsOf(list){
+  var out = [];
+  list.forEach(function(e){ if (out.indexOf(e.color) < 0) out.push(e.color); });
+  return out.slice(0, 3);
+}
+
+/* 最初に選ぶ日: 今日がこの月にあれば今日、無ければ予定のある最初の日、それも無ければ1日 */
+var todayKey = iso(new Date()), first = y + '-' + p2(mo) + '-01';
+var monthKeys = Object.keys(EV).filter(function(k){ return k.slice(0, 7) === first.slice(0, 7); }).sort();
+var sel = todayKey.slice(0, 7) === first.slice(0, 7) ? todayKey : (monthKeys[0] || first);
+
+var h = '<div class="hd"><span class="mn">' + mo + '</span><span class="yr"><b>' + T.monthLabel(mo) + '</b>' + y + '</span></div><div class="gr">';
+for (var i = 0; i < 7; i++) h += '<div class="wd' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + T.wd[i] + '</div>';
+CELLS.forEach(function(cell, k){
+  var key = cell.key, list = EV[key] || [];
+  /* 日曜と祝日は赤、土曜は青。土曜の祝日は赤にする。前月・翌月の日は adj(薄く表示) */
+  var cls = 'c' + (k % 7 === 0 || hol[key] ? ' sun' : k % 7 === 6 ? ' sat' : '') + (cell.adj ? ' adj' : '');
+  h += '<button type="button" class="' + cls + '" data-k="' + key + '" aria-label="' + esc(T.dayLabel(cell.dt)) + '"><span class="dn">' + cell.dt.getDate() + '</span>' +
+    (list.length ? '<span class="ds">' + colorsOf(list).map(function(c){ return '<i style="background:' + esc(c) + '"></i>'; }).join('') + '</span>' : '') + '</button>';
+});
+h += '</div><div class="ls" aria-live="polite"></div>';
+R.innerHTML = h;
+var LS = R.querySelector('.ls');
+
+/* 選んだ日に印を付け、その日の予定を一覧にする。終了時刻は開始時刻の下に「~ 10:30」の形で出す */
+function show(key){
+  sel = key;
+  [].forEach.call(R.querySelectorAll('.c'), function(b){ var on = b.dataset.k === key; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', on); });
+  var p = key.split('-'), list = EV[key] || [];
+  LS.innerHTML = '<div class="lh">' + esc(T.dayLabel(new Date(+p[0], +p[1] - 1, +p[2]))) + '</div>' +
+    (list.length ? list.map(function(e){
+      return '<div class="ev"><span class="tm">' + esc(e.start || T.allDay) + (e.end ? '<small>~ ' + esc(e.end) + '</small>' : '') + '</span><span class="tt"><i style="background:' + esc(e.color) + '"></i>' + esc(e.title) + '</span></div>';
+    }).join('') : '<div class="no">' + T.none + '</div>');
+}
+R.querySelector('.gr').addEventListener('click', function(e){
+  var b = e.target.closest('.c');
+  if (b) show(b.dataset.k);
+});
+show(sel);
+
+} catch (e) { R.innerHTML = '<pre style="margin:0;padding:12px;font-size:12px;color:#d33;white-space:pre-wrap;">' + esc0(String(e)) + '</pre>'; }
+function esc0(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+})();
+</script>

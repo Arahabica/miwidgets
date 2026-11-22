@@ -35,21 +35,20 @@ try {
 var data = {
   lang: 'ja',         // 'ja' | 'en': 曜日・月・エラーの文言の言語
   month: '2026-11',   // string: 表示する年月('YYYY-MM')
-  /* 日付の書き方(days・holidays・disabled で共通): その月の日は数値(例: 3)、
-   * カレンダーの端に出る前月・翌月の日は 'YYYY-MM-DD'(例: '2026-12-01') */
+  /* 日付は days・holidays・disabled とも 'YYYY-MM-DD'。カレンダーの端に出る前月・翌月の日も書ける */
   /* 日付ごとの値。値は2文字までの文字か数値。記号の無い日は書かない。
    * '◯' '△' 'x' '-' は線で描く記号になる(○ 〇 × ✕ ー − も同じ)。それ以外は文字のまま描き、2文字の言葉は小さく描く */
   days: {
-    3: '◯', 4: '△', 5: 'x', 6: '◯', 7: '◯',
-    10: '△', 11: '◯', 12: 'x', 13: '◯', 14: 'x',
-    17: 12, 18: 2, 19: 0, 20: 1, 21: 5,
-    24: '◯', 25: '-', 26: 'x', 27: 'x', 28: '△',
+    '2026-11-03': '◯', '2026-11-04': '△', '2026-11-05': 'x', '2026-11-06': '◯', '2026-11-07': '◯',
+    '2026-11-10': '△', '2026-11-11': '◯', '2026-11-12': 'x', '2026-11-13': '◯', '2026-11-14': 'x',
+    '2026-11-17': 12, '2026-11-18': 2, '2026-11-19': 0, '2026-11-20': 1, '2026-11-21': 5,
+    '2026-11-24': '◯', '2026-11-25': '-', '2026-11-26': 'x', '2026-11-27': 'x', '2026-11-28': '△',
     '2026-12-01': '◯', '2026-12-02': '△'
   },
-  /* 祝日。日曜と同じ赤で表示する。型: (number | string)[] ・無ければ [] */
-  holidays: [3, 23],
-  /* 薄く表示する日(過去の日付・非営業日など)。型: (number | string)[] ・不要なら [] */
-  disabled: [1, 2, 8, 9, 15, 16, 22, 23, 29, 30]
+  /* 祝日。日曜と同じ赤で表示する。型: string[] ・無ければ [] */
+  holidays: ['2026-11-03', '2026-11-23'],
+  /* 薄く表示する日(過去の日付・非営業日など)。型: string[] ・不要なら [] */
+  disabled: ['2026-11-01', '2026-11-02', '2026-11-08', '2026-11-09', '2026-11-15', '2026-11-16', '2026-11-22', '2026-11-23', '2026-11-29', '2026-11-30']
 };
 
 var EN = data.lang === 'en';
@@ -65,11 +64,11 @@ var T = EN ? {
 /* data の書き方の誤りは、直す人(Muse の AI)向けに英語で画面に出す */
 var E = {
   badMonth: "month must look like '2026-12'",
-  noDay: function(mo, k){ return MONTHS[mo - 1] + ' has no day ' + k; },
+  badDate: function(k){ return JSON.stringify(k) + " is not a date. Write it like '2026-12-01'"; },
   notShown: function(k){ return k + ' is not shown on this calendar'; },
   badType: function(d){ return d + ': write the value as a string or a number'; },
   tooLong: function(d, v){ return d + ': ' + JSON.stringify(v) + ' is too long. Each day fits up to 2 characters'; },
-  badList: function(name){ return name + ' must be an array of days (e.g. [1, 2, 6])'; }
+  badList: function(name){ return name + " must be an array of dates (e.g. ['2026-12-01', '2026-12-02'])"; }
 };
 /* ◯ △ x - は線で描く記号として特別扱いする。似た文字はこれらに寄せる */
 var SYMBOLS = ['◯', '△', 'x', '-'];
@@ -94,12 +93,11 @@ for (var c = 0; c < cells; c++) {
   CELLS.push({ key: iso(dt), d: dt.getDate(), adj: dt.getMonth() !== mo - 1 });
   SHOWN[iso(dt)] = true;
 }
-/* 日付と値を確かめる。使えない値は描かずにエラーにする。日付は 'YYYY-MM-DD' にそろえて返す */
+/* 日付と値を確かめる。使えない値は描かずにエラーにする */
 function day(k){
-  if (typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k)) { if (!SHOWN[k]) throw new Error(E.notShown(k)); return k; }
-  var d = Number(k);
-  if (!(d >= 1 && d <= days && d % 1 === 0)) throw new Error(E.noDay(mo, k));
-  return y + '-' + p2(mo) + '-' + p2(d);
+  if (typeof k !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(k)) throw new Error(E.badDate(k));
+  if (!SHOWN[k]) throw new Error(E.notShown(k));
+  return k;
 }
 function mark(v, d){
   if (v === '' || v === null || v === undefined) return '';
