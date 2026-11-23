@@ -51,7 +51,7 @@ function turn(){
 var webpPrefix = 'data:image/webp;base64,';
 if (typeof data.sheet === 'string' && data.sheet.slice(0, webpPrefix.length).toLowerCase() === webpPrefix &&
     data.sheet.slice(webpPrefix.length).replace(/\s/g, '').length > 600000 / 3 * 4) {
-  button.textContent = data.lang === 'en' ? 'Use a WebP image of 600 KB or less.' : 'WebP画像は600 KB以内にしてください';
+  button.textContent = 'Use a WebP image of 600 KB or less.';
   return;
 }
 var image = new Image();
@@ -61,7 +61,7 @@ image.onload = function(){
   button.onclick = turn;
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) turn();
 };
-image.onerror = function(){ button.textContent = data.lang === 'en' ? 'Avatar image unavailable' : 'アバター画像を読み込めません'; };
+image.onerror = function(){ button.textContent = 'Avatar image unavailable'; };
 image.src = data.sheet;
 })();
 </script>
