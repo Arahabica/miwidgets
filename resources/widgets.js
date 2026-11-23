@@ -189,7 +189,7 @@ var RACE_SCENARIOS = [
   { sample: 'gdp', name: LANG === 'en' ? 'Nominal GDP by country (1990–2025)' : '国別名目GDP（1990–2025年）',
     unit: LANG === 'en' ? 'US$ trillions' : '兆米ドル', source: 'https://data.worldbank.org/indicator/NY.GDP.MKTP.CD', sourceLabel: LANG === 'en' ? 'GDP data' : 'GDP出典' },
   { sample: 'total-fertility-rate', order: 'asc', name: LANG === 'en' ? 'Lowest total fertility rates in the G20 (2000–2023)' : 'G20各国の合計特殊出生率（低い順・2000–2023年）',
-    unit: LANG === 'en' ? 'births per woman' : '女性1人当たり（人）', source: 'https://population.un.org/wpp/', sourceLabel: LANG === 'en' ? 'Total fertility rate data' : '合計特殊出生率出典' },
+    unit: LANG === 'en' ? 'births' : '人', source: 'https://population.un.org/wpp/', sourceLabel: LANG === 'en' ? 'Total fertility rate data' : '合計特殊出生率出典' },
   { sample: 'suicide-rate', name: LANG === 'en' ? 'Suicide rates by country (2000–2021)' : '各国の自殺死亡率（2000–2021年）',
     note: LANG === 'en' ? 'WHO estimates for 185 countries and areas, all ages and both sexes, without age adjustment.' : '185の国・地域のWHO推計値。男女計・全年齢、年齢調整前。',
     unit: LANG === 'en' ? 'per 100,000' : '人口10万人当たり', source: 'https://data.worldbank.org/indicator/SH.STA.SUIC.P5', sourceLabel: LANG === 'en' ? 'Suicide rate data' : '自殺死亡率出典' }
