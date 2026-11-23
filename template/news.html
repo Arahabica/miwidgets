@@ -3,8 +3,10 @@
 <style>
 #news-w{box-sizing:border-box;width:100%;padding:4px 0;color:var(--hatch-widget-text,#1c1c1e);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%;}
 #news-w *{box-sizing:border-box;}
-#news-w a{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent;}
-#news-w a+a{border-top:1px solid var(--hatch-widget-border,rgba(0,0,0,.1));}
+#news-w .it{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px;}
+#news-w .it+.it{border-top:1px solid var(--hatch-widget-border,rgba(0,0,0,.1));}
+/* リンクは文字の部分だけ。写真はタップしても開かない */
+#news-w a{display:block;margin:-4px;padding:4px;border-radius:6px;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent;}
 #news-w a:active{background:rgba(127,127,127,.12);}
 #news-w .tt{font-size:15px;font-weight:700;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;}
 #news-w .sm{margin-top:4px;font-size:13px;line-height:1.5;color:var(--hatch-widget-muted,#6e6e73);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;}
@@ -12,10 +14,10 @@
 #news-w .mt span+span{margin-left:8px;}
 #news-w img{display:block;width:88px;height:88px;border-radius:8px;object-fit:cover;background:rgba(127,127,127,.15);}
 /* 先頭を大きく(data.large): 写真を上に横いっぱい */
-#news-w a.top{grid-template-columns:minmax(0,1fr);gap:10px;}
-#news-w a.top img{order:-1;width:100%;height:auto;aspect-ratio:16/9;border-radius:10px;}
-#news-w a.top .tt{font-size:18px;-webkit-line-clamp:3;}
-#news-w a.top .sm{-webkit-line-clamp:3;}
+#news-w .it.top{grid-template-columns:minmax(0,1fr);gap:10px;}
+#news-w .it.top img{order:-1;width:100%;height:auto;aspect-ratio:16/9;border-radius:10px;}
+#news-w .it.top .tt{font-size:18px;-webkit-line-clamp:3;}
+#news-w .it.top .sm{-webkit-line-clamp:3;}
 </style>
 <script>
 (function(){
@@ -92,11 +94,11 @@ items.forEach(function(it, i){
   if (!/^https?:\/\//.test(it.url || '')) throw new Error(E.badUrl(i, it.url));
   if (it.image != null && !Object.hasOwn(imgs, it.image)) throw new Error(E.noImage(i, it.image));
   var t = ago(parse(it.time, i));
-  s += '<a' + (data.large && i === 0 && it.image ? ' class="top"' : '') + ' href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer"><div>'
+  s += '<div class="it' + (data.large && i === 0 && it.image ? ' top' : '') + '"><a href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer">'
     + '<div class="tt">' + esc(it.title) + '</div>'
     + (it.summary ? '<div class="sm">' + esc(it.summary) + '</div>' : '')
     + '<div class="mt"><span>' + esc(t) + '</span>' + (it.image && it.credit ? '<span>' + (EN ? 'Photo: ' : '写真: ') + esc(it.credit) + '</span>' : '') + '</div>'
-    + '</div>' + (it.image ? '<img alt="" src="' + esc(imgs[it.image]) + '">' : '') + '</a>';
+    + '</a>' + (it.image ? '<img alt="" src="' + esc(imgs[it.image]) + '">' : '') + '</div>';
 });
 R.innerHTML = s;
 
