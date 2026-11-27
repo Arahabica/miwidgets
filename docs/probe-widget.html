@@ -1,0 +1,181 @@
+<!-- Muse チャット内 HTML ウィジェット 実行環境・CSP・API 一括診断用 -->
+<div id="probe-w">
+  <h3>Muse Widget 環境診断</h3>
+  <div id="probe-out">診断中...</div>
+  <div class="btns">
+    <button type="button" id="b-state">setState テスト</button>
+    <button type="button" id="b-clip">Clipboard テスト</button>
+    <button type="button" id="b-grow">高さ+200px</button>
+    <button type="button" id="b-alert">alert テスト</button>
+  </div>
+  <div id="probe-log"></div>
+  <div id="probe-grow"></div>
+</div>
+<style>
+#probe-w{box-sizing:border-box;width:100%;padding:12px;color:var(--hatch-widget-text,#1c1c1e);font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all;}
+#probe-w *{box-sizing:border-box;}
+#probe-w h3{margin:0 0 8px;font-size:13px;}
+#probe-w .sec{margin-top:8px;padding-top:6px;border-top:1px solid rgba(127,127,127,.25);}
+#probe-w .sec b{display:block;margin-bottom:3px;font-size:11px;color:var(--hatch-widget-muted,#6e6e73);}
+#probe-w .row{display:flex;gap:8px;justify-content:space-between;padding:2px 0;}
+#probe-w .k{flex:none;color:var(--hatch-widget-muted,#6e6e73);}
+#probe-w .v{text-align:right;}
+#probe-w pre{margin:4px 0 0;padding:6px;border-radius:6px;background:rgba(127,127,127,.12);white-space:pre-wrap;font-size:10.5px;}
+#probe-w .btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+#probe-w button{padding:5px 8px;border:1px solid rgba(127,127,127,.4);border-radius:6px;background:transparent;color:inherit;font:inherit;cursor:pointer;}
+#probe-w #probe-log{margin-top:6px;font-size:11px;white-space:pre-wrap;}
+</style>
+<script>
+(function(){
+var out = document.getElementById('probe-out');
+var logEl = document.getElementById('probe-log');
+var cspEvents = [];
+var rows = [];
+
+function add(sec, k, v){ rows.push([sec, k, String(v)]); }
+function log(m){ logEl.textContent += m + '\n'; }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+/* CSP 違反イベントから originalPolicy 全文を拾う */
+document.addEventListener('securitypolicyviolation', function(e){
+  cspEvents.push({
+    directive: e.effectiveDirective || e.violatedDirective,
+    blocked: e.blockedURI,
+    policy: e.originalPolicy
+  });
+  render();
+});
+
+/* 1. 実行環境・iframe・origin・サイズ */
+add('Env', 'location.href', location.href);
+add('Env', 'origin', location.origin);
+add('Env', 'in iframe', window.top !== window.self);
+add('Env', 'inner WxH', window.innerWidth + ' x ' + window.innerHeight);
+add('Env', 'client WxH', document.documentElement.clientWidth + ' x ' + document.documentElement.clientHeight);
+add('Env', 'UA', navigator.userAgent);
+
+/* 2. CSP 関連 */
+var metaCsp = [].slice.call(document.querySelectorAll('meta[http-equiv]'))
+  .filter(function(m){ return /content-security-policy/i.test(m.httpEquiv); })
+  .map(function(m){ return m.content; });
+add('CSP', '<meta> CSP', metaCsp.length ? metaCsp.join(' | ') : '(none)');
+
+try { add('CSP', 'eval("1+1")', 'OK: ' + eval('1+1')); }
+catch (e) { add('CSP', 'eval("1+1")', 'NG: ' + e.name + ': ' + e.message); }
+
+try { add('CSP', 'new Function', 'OK: ' + (new Function('return 1+1'))()); }
+catch (e) { add('CSP', 'new Function', 'NG: ' + e.name + ': ' + e.message); }
+
+try {
+  var b = new Blob(['window.__blobOk=1'], {type:'text/javascript'});
+  add('CSP', 'Blob URL', URL.createObjectURL(b));
+} catch (e) { add('CSP', 'Blob URL', 'NG: ' + e.name); }
+
+/* 外部 fetch（CSP / ネットワーク遮断の確認＋originalPolicy 発火狙い） */
+try {
+  fetch('https://example.com/').then(
+    function(r){ add('CSP', 'fetch(ext)', 'OK: ' + r.status); render(); },
+    function(e){ add('CSP', 'fetch(ext)', 'NG: ' + e.name + ': ' + e.message); render(); }
+  );
+} catch (e) { add('CSP', 'fetch(ext)', 'THROW: ' + e.name + ': ' + e.message); }
+
+/* 3. ストレージ */
+['localStorage', 'sessionStorage'].forEach(function(name){
+  try {
+    window[name].setItem('__p', '1');
+    var v = window[name].getItem('__p');
+    window[name].removeItem('__p');
+    add('Storage', name, 'OK (' + v + ')');
+  } catch (e) { add('Storage', name, 'NG: ' + e.name + ': ' + e.message); }
+});
+try {
+  document.cookie = '__p=1';
+  add('Storage', 'cookie', document.cookie ? 'OK: ' + document.cookie : 'empty/ignored');
+} catch (e) { add('Storage', 'cookie', 'NG: ' + e.name + ': ' + e.message); }
+add('Storage', 'indexedDB', typeof indexedDB);
+
+/* 4. hatchWidget と独自グローバル探索 */
+if (window.hatchWidget) {
+  var own = Object.getOwnPropertyNames(window.hatchWidget);
+  var proto = Object.getPrototypeOf(window.hatchWidget);
+  var pnames = proto && proto !== Object.prototype ? Object.getOwnPropertyNames(proto) : [];
+  add('hatchWidget', 'own keys', own.join(', ') || '(none)');
+  if (pnames.length) add('hatchWidget', 'proto keys', pnames.join(', '));
+  own.forEach(function(k){
+    var v = window.hatchWidget[k];
+    add('hatchWidget', '.' + k, typeof v === 'function' ? v.toString().slice(0, 120) : JSON.stringify(v));
+  });
+} else {
+  add('hatchWidget', 'exists', 'undefined');
+}
+
+var interesting = Object.getOwnPropertyNames(window).filter(function(k){
+  return /hatch|muse|widget|webkit|reactnative|bridge|host|meta/i.test(k);
+});
+add('Globals', 'matching keys', interesting.join(', ') || '(none)');
+
+/* 5. その他ブラウザ API */
+add('API', 'clipboard', navigator.clipboard ? 'present' : 'absent');
+add('API', 'fullscreen', String(document.fullscreenEnabled));
+add('API', 'AudioContext', typeof (window.AudioContext || window.webkitAudioContext));
+add('API', 'postMessage', typeof window.parent.postMessage);
+
+function render(){
+  var grouped = {}, order = [];
+  rows.forEach(function(r){
+    if (!grouped[r[0]]) { grouped[r[0]] = []; order.push(r[0]); }
+    grouped[r[0]].push(r);
+  });
+  var html = order.map(function(sec){
+    return '<div class="sec"><b>' + esc(sec) + '</b>' +
+      grouped[sec].map(function(r){
+        return '<div class="row"><span class="k">' + esc(r[1]) + '</span><span class="v">' + esc(r[2]) + '</span></div>';
+      }).join('') + '</div>';
+  }).join('');
+  if (cspEvents.length) {
+    html += '<div class="sec"><b>CSP Violation Events (' + cspEvents.length + ')</b>' +
+      cspEvents.map(function(ev){
+        return '<pre>directive: ' + esc(ev.directive) + '\nblocked: ' + esc(ev.blocked) + '\npolicy: ' + esc(ev.policy) + '</pre>';
+      }).join('') + '</div>';
+  }
+  out.innerHTML = html;
+}
+render();
+
+/* インタラクティブ検証 */
+window.addEventListener('hatch-widget-state', function(e){
+  log('[event] hatch-widget-state: ' + JSON.stringify(e.detail));
+});
+
+document.getElementById('b-state').addEventListener('click', function(){
+  if (!window.hatchWidget) { log('hatchWidget undefined'); return; }
+  var cur = window.hatchWidget.getState({ n: 0 });
+  var next = { n: (cur && cur.n ? cur.n : 0) + 1, t: Date.now() };
+  window.hatchWidget.setState(next);
+  log('setState -> ' + JSON.stringify(next) + ' / getState -> ' + JSON.stringify(window.hatchWidget.getState(null)));
+});
+
+document.getElementById('b-clip').addEventListener('click', function(){
+  if (!navigator.clipboard) { log('clipboard absent'); return; }
+  navigator.clipboard.writeText('muse-probe-ok').then(
+    function(){ log('clipboard writeText: OK'); },
+    function(e){ log('clipboard writeText NG: ' + e.name + ': ' + e.message); }
+  );
+});
+
+var grown = 0;
+document.getElementById('b-grow').addEventListener('click', function(){
+  grown += 200;
+  var g = document.getElementById('probe-grow');
+  g.style.height = grown + 'px';
+  g.style.border = '1px dashed rgba(127,127,127,.4)';
+  g.textContent = 'height = ' + grown + 'px / scrollHeight = ' + document.documentElement.scrollHeight;
+  log('grown to ' + grown + 'px, innerH=' + window.innerHeight + ', scrollH=' + document.documentElement.scrollHeight);
+});
+
+document.getElementById('b-alert').addEventListener('click', function(){
+  try { alert('muse-probe-alert'); log('alert returned'); }
+  catch (e) { log('alert NG: ' + e.name + ': ' + e.message); }
+});
+})();
+</script>
