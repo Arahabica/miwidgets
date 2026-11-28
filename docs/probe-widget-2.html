@@ -1,0 +1,242 @@
+<!-- Muse チャット内 HTML ウィジェット 追加検証（WebGL / Wasm / SVG url(#) / ファイル入出力 / 権限API / テーマ変数） -->
+<div id="probe2-w">
+  <h3>Muse Widget 追加環境診断</h3>
+  <div class="sec">
+    <b>1. WebGL 描画テスト（下に色付き三角形が見えれば OK）</b>
+    <div class="gl-wrap">
+      <canvas id="p2-gl" width="120" height="70"></canvas>
+      <div id="p2-gl-info" class="info">checking...</div>
+    </div>
+  </div>
+  <div class="sec">
+    <b>2. SVG url(#id) 4種テスト（左から: グラデ / 丸抜き / マスク / ぼかし）</b>
+    <svg id="p2-svg" viewBox="0 0 280 64" width="280" height="64">
+      <defs>
+        <linearGradient id="p2Grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ff5e62"/>
+          <stop offset="100%" stop-color="#ff9966"/>
+        </linearGradient>
+        <clipPath id="p2Clip"><circle cx="105" cy="24" r="20"/></clipPath>
+        <mask id="p2Mask">
+          <rect x="145" y="4" width="56" height="40" fill="#fff"/>
+          <circle cx="173" cy="24" r="14" fill="#000"/>
+        </mask>
+        <filter id="p2Blur"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+      <rect x="7" y="4" width="56" height="40" rx="6" fill="url(#p2Grad)" stroke="#888"/>
+      <text x="35" y="58" text-anchor="middle" font-size="9" fill="currentColor">grad</text>
+      <rect x="77" y="4" width="56" height="40" fill="#2b7fff" clip-path="url(#p2Clip)"/>
+      <rect x="77" y="4" width="56" height="40" fill="none" stroke="#888"/>
+      <text x="105" y="58" text-anchor="middle" font-size="9" fill="currentColor">clip</text>
+      <rect x="145" y="4" width="56" height="40" fill="#22a06b" mask="url(#p2Mask)"/>
+      <rect x="145" y="4" width="56" height="40" fill="none" stroke="#888"/>
+      <text x="173" y="58" text-anchor="middle" font-size="9" fill="currentColor">mask</text>
+      <rect x="215" y="8" width="48" height="32" rx="4" fill="#8b5cf6" filter="url(#p2Blur)"/>
+      <text x="239" y="58" text-anchor="middle" font-size="9" fill="currentColor">filter</text>
+    </svg>
+  </div>
+  <div id="p2-out"></div>
+  <div class="sec">
+    <b>5. インタラクティブテスト（押して確認）</b>
+    <div class="btns">
+      <a id="p2-dl" class="btn" download="muse-probe.txt" href="#">ダウンロード</a>
+      <label class="btn">ファイル選択<input id="p2-file" type="file" style="display:none"></label>
+      <button type="button" id="p2-geo">位置情報</button>
+      <button type="button" id="p2-cam">カメラ</button>
+      <button type="button" id="p2-mic">マイク</button>
+      <button type="button" id="p2-vib">振動</button>
+    </div>
+    <pre id="p2-log">(ボタンを押すとここにログが出ます)</pre>
+  </div>
+</div>
+<style>
+#probe2-w{box-sizing:border-box;width:100%;padding:12px;color:var(--hatch-widget-text,#1c1c1e);font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all;}
+#probe2-w *{box-sizing:border-box;}
+#probe2-w h3{margin:0 0 8px;font-size:13px;}
+#probe2-w .sec{margin-top:8px;padding-top:6px;border-top:1px solid rgba(127,127,127,.25);}
+#probe2-w .sec b{display:block;margin-bottom:4px;font-size:11px;color:var(--hatch-widget-muted,#6e6e73);}
+#probe2-w .gl-wrap{display:flex;gap:10px;align-items:center;}
+#probe2-w canvas{border:1px solid rgba(127,127,127,.35);border-radius:4px;background:#111;flex:none;}
+#probe2-w #p2-svg{display:block;width:100%;max-width:300px;height:auto;}
+#probe2-w .row{display:flex;gap:8px;justify-content:space-between;padding:2px 0;}
+#probe2-w .k{flex:none;color:var(--hatch-widget-muted,#6e6e73);}
+#probe2-w .v{text-align:right;}
+#probe2-w .btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+#probe2-w button,#probe2-w .btn{display:inline-block;padding:5px 8px;border:1px solid rgba(127,127,127,.4);border-radius:6px;background:transparent;color:inherit;font:inherit;text-decoration:none;cursor:pointer;}
+#probe2-w pre{margin:6px 0 0;padding:6px;border-radius:6px;background:rgba(127,127,127,.12);white-space:pre-wrap;font-size:10.5px;}
+</style>
+<script>
+(function(){
+var out = document.getElementById('p2-out');
+var logEl = document.getElementById('p2-log');
+var rows = [];
+function add(sec, k, v){ rows.push([sec, k, String(v)]); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function log(m){
+  if (logEl.textContent.charAt(0) === '(') logEl.textContent = '';
+  logEl.textContent += m + '\n';
+}
+
+/* 1. WebGL / WebGL2 テスト */
+(function(){
+  var cv = document.getElementById('p2-gl');
+  var info = document.getElementById('p2-gl-info');
+  try {
+    var ver = 'webgl2';
+    var gl = cv.getContext('webgl2');
+    if (!gl) { ver = 'webgl'; gl = cv.getContext('webgl') || cv.getContext('experimental-webgl'); }
+    if (!gl) { info.textContent = 'NG: WebGL context unavailable'; return; }
+    var vs = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vs, 'attribute vec2 p;attribute vec3 c;varying vec3 vc;void main(){vc=c;gl_Position=vec4(p,0,1);}');
+    gl.compileShader(vs);
+    var fs = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fs, 'precision mediump float;varying vec3 vc;void main(){gl_FragColor=vec4(vc,1);}');
+    gl.compileShader(fs);
+    var pr = gl.createProgram();
+    gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr); gl.useProgram(pr);
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      0, 0.75, 1, 0.2, 0.3,
+      -0.75, -0.7, 0.2, 0.9, 0.4,
+      0.75, -0.7, 0.2, 0.5, 1
+    ]), gl.STATIC_DRAW);
+    var lp = gl.getAttribLocation(pr, 'p');
+    var lc = gl.getAttribLocation(pr, 'c');
+    gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 20, 0);
+    gl.enableVertexAttribArray(lc); gl.vertexAttribPointer(lc, 3, gl.FLOAT, false, 20, 8);
+    gl.clearColor(0.08, 0.08, 0.12, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    var px = new Uint8Array(4);
+    gl.readPixels(60, 35, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    info.textContent = 'OK (' + ver + ')\n' + gl.getParameter(gl.RENDERER) + '\ncenter rgba=' + [].slice.call(px).join(',');
+  } catch (e) {
+    info.textContent = 'NG: ' + e.name + ': ' + e.message;
+  }
+})();
+
+/* 3. WebAssembly & ブラウザ API テスト */
+add('3. Runtime / API', 'origin', location.origin);
+add('3. Runtime / API', 'UA', navigator.userAgent);
+add('3. Runtime / API', 'prefers-dark', window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'n/a');
+add('3. Runtime / API', 'Notification', typeof Notification + (typeof Notification !== 'undefined' ? ' (' + Notification.permission + ')' : ''));
+add('3. Runtime / API', 'mediaDevices', navigator.mediaDevices ? 'present' : 'absent');
+add('3. Runtime / API', 'geolocation', navigator.geolocation ? 'present' : 'absent');
+add('3. Runtime / API', 'vibrate', typeof navigator.vibrate);
+
+try {
+  history.replaceState({p: 1}, '', '#probe');
+  add('3. Runtime / API', 'history.replaceState', 'OK');
+} catch (e) {
+  add('3. Runtime / API', 'history.replaceState', 'NG: ' + e.name);
+}
+
+var wasmIdx = rows.length;
+add('3. Runtime / API', 'WebAssembly', 'testing...');
+if (typeof WebAssembly !== 'undefined') {
+  try {
+    var bytes = new Uint8Array([
+      0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
+      0x01,0x07, 0x01, 0x60, 0x02,0x7f,0x7f, 0x01,0x7f,
+      0x03,0x02, 0x01, 0x00,
+      0x07,0x07, 0x01, 0x03,0x61,0x64,0x64, 0x00, 0x00,
+      0x0a,0x09, 0x01, 0x07, 0x00, 0x20,0x00, 0x20,0x01, 0x6a, 0x0b
+    ]);
+    WebAssembly.instantiate(bytes).then(function(r){
+      rows[wasmIdx][2] = 'OK: add(2,3)=' + r.instance.exports.add(2, 3);
+      render();
+    }, function(e){
+      rows[wasmIdx][2] = 'NG: ' + e.name + ': ' + e.message;
+      render();
+    });
+  } catch (e) {
+    rows[wasmIdx][2] = 'THROW: ' + e.name + ': ' + e.message;
+  }
+} else {
+  rows[wasmIdx][2] = 'undefined';
+}
+
+/* 4. --hatch-widget-* CSS 変数 10 種 */
+var cs = getComputedStyle(document.documentElement);
+[
+  '--hatch-widget-bg',
+  '--hatch-widget-surface',
+  '--hatch-widget-surface-muted',
+  '--hatch-widget-text',
+  '--hatch-widget-muted',
+  '--hatch-widget-border',
+  '--hatch-widget-accent',
+  '--hatch-widget-on-accent',
+  '--hatch-widget-focus',
+  '--hatch-widget-shadow'
+].forEach(function(v){
+  var val = cs.getPropertyValue(v).trim();
+  add('4. CSS Variables', v, val || '(empty)');
+});
+
+function render(){
+  var grouped = {}, order = [];
+  rows.forEach(function(r){
+    if (!grouped[r[0]]) { grouped[r[0]] = []; order.push(r[0]); }
+    grouped[r[0]].push(r);
+  });
+  out.innerHTML = order.map(function(sec){
+    return '<div class="sec"><b>' + esc(sec) + '</b>' +
+      grouped[sec].map(function(r){
+        return '<div class="row"><span class="k">' + esc(r[1]) + '</span><span class="v">' + esc(r[2]) + '</span></div>';
+      }).join('') + '</div>';
+  }).join('');
+}
+render();
+
+/* 5. インタラクティブテスト */
+try {
+  var dlBlob = new Blob(['muse widget download test\n'], {type: 'text/plain'});
+  var dlUrl = URL.createObjectURL(dlBlob);
+  var dlEl = document.getElementById('p2-dl');
+  dlEl.href = dlUrl;
+  dlEl.addEventListener('click', function(){ log('download clicked: ' + dlUrl); });
+} catch (e) {
+  log('download setup NG: ' + e.name);
+}
+
+document.getElementById('p2-file').addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0];
+  if (!f) { log('file: canceled'); return; }
+  log('file selected: ' + f.name + ' (' + f.size + ' bytes, ' + (f.type || 'unknown') + ')');
+  var r = new FileReader();
+  r.onload = function(){ log('file read OK: ' + String(r.result).slice(0, 60)); };
+  r.onerror = function(){ log('file read NG'); };
+  r.readAsText(f);
+});
+
+document.getElementById('p2-geo').addEventListener('click', function(){
+  if (!navigator.geolocation) { log('geo: absent'); return; }
+  log('geo: requesting...');
+  navigator.geolocation.getCurrentPosition(
+    function(p){ log('geo OK: lat=' + p.coords.latitude.toFixed(3) + ', lon=' + p.coords.longitude.toFixed(3)); },
+    function(e){ log('geo NG: code=' + e.code + ' ' + e.message); },
+    { timeout: 6000 }
+  );
+});
+
+function reqMedia(label, constraints){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { log(label + ': unavailable'); return; }
+  log(label + ': requesting...');
+  navigator.mediaDevices.getUserMedia(constraints).then(
+    function(s){
+      log(label + ' OK: tracks=' + s.getTracks().length);
+      s.getTracks().forEach(function(t){ t.stop(); });
+    },
+    function(e){ log(label + ' NG: ' + e.name + ': ' + e.message); }
+  );
+}
+document.getElementById('p2-cam').addEventListener('click', function(){ reqMedia('camera', {video: true}); });
+document.getElementById('p2-mic').addEventListener('click', function(){ reqMedia('mic', {audio: true}); });
+
+document.getElementById('p2-vib').addEventListener('click', function(){
+  if (typeof navigator.vibrate !== 'function') { log('vibrate: unavailable'); return; }
+  log('vibrate(50) -> ' + navigator.vibrate(50));
+});
+})();
+</script>
